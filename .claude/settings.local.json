@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rm -f src/App.css src/assets/react.svg src/assets/vite.svg src/assets/hero.png public/icons.svg)",
+      "Bash(rmdir src/assets)",
+      "Bash(node -e ' *)",
+      "Bash(npm run *)",
+      "Bash(psql --version)",
+      "Bash(VITE_DEV_MOCK=1 npx vite --port 5199)",
+      "Bash(curl -s -o /dev/null -w \"index.html %{http_code}\\\\n\" http://localhost:5199/)",
+      "Bash(curl -s \"http://localhost:5199/src/App.jsx\")",
+      "Bash(curl -s \"http://localhost:5199/src/lib/api.js\")",
+      "Read(//tmp/**)",
+      "Bash(pkill -f \"vite --port 5199\")",
+      "Bash(curl -s \"http://localhost:5199/src/lib/telegram.js\")",
+      "Bash(node -e \"console.log\\(typeof fetch\\)\")"
+    ]
+  }
+}

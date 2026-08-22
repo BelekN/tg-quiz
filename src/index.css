@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+/* Палитра берётся из Telegram (themeParams.bindCssVars),
+   значения после запятой — фолбэк для обычного браузера. */
+@theme {
+  --color-tg-bg: var(--tg-theme-bg-color, #17212b);
+  --color-tg-surface: var(--tg-theme-secondary-bg-color, #1f2c3a);
+  --color-tg-section: var(--tg-theme-section-bg-color, #232e3c);
+  --color-tg-text: var(--tg-theme-text-color, #ffffff);
+  --color-tg-hint: var(--tg-theme-hint-color, #8a9bab);
+  --color-tg-link: var(--tg-theme-link-color, #62bcf9);
+  --color-tg-accent: var(--tg-theme-button-color, #40a7e3);
+  --color-tg-accent-text: var(--tg-theme-button-text-color, #ffffff);
+  --color-tg-danger: var(--tg-theme-destructive-text-color, #ec3942);
+
+  --color-quiz-right: #2ecc71;
+  --color-quiz-wrong: #ef4444;
+  --color-quiz-gold: #f5b544;
+
+  --animate-pop: pop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --animate-rise: rise 0.35s ease-out both;
+  --animate-shake: shake 0.32s ease-in-out;
+}
+
+@keyframes pop {
+  0% { transform: scale(0.9); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes rise {
+  0% { transform: translateY(12px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-tg-bg);
+  color: var(--color-tg-text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", sans-serif;
+  /* Mini App: убираем инерционный «оттяг» и выделение текста */
+  overscroll-behavior-y: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Безопасные зоны: на iOS с фуллскрином контент лезет под «шапку» */
+.safe-top {
+  padding-top: max(env(safe-area-inset-top), var(--tg-safe-area-inset-top, 0px));
+}
+.safe-bottom {
+  padding-bottom: max(
+    env(safe-area-inset-bottom),
+    var(--tg-safe-area-inset-bottom, 0px)
+  );
+}
