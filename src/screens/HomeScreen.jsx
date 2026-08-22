@@ -12,6 +12,7 @@ export default function HomeScreen({
   onLeaderboard,
   onSaveCity,
   onQuizTests,
+  onSprint,
   busy,
 }) {
   const name = tgUser?.firstName || user?.first_name || user?.username || 'Игрок'
@@ -74,7 +75,10 @@ export default function HomeScreen({
           icon="⚡"
           title="Спринт"
           subtitle="Успей ответить на максимум за 60 секунд"
-          soon
+          onClick={() => {
+            haptic.tap()
+            onSprint()
+          }}
         />
         <ModeCard
           icon="🧠"

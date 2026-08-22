@@ -6,6 +6,8 @@ import LeaderboardScreen from './screens/LeaderboardScreen'
 import CategoryScreen from './screens/CategoryScreen'
 import SoloQuizScreen from './screens/SoloQuizScreen'
 import SoloResultScreen from './screens/SoloResultScreen'
+import SprintScreen from './screens/SprintScreen'
+import SprintResultScreen from './screens/SprintResultScreen'
 import { Loader, ErrorView } from './components/StateView'
 import {
   fetchMe,
@@ -15,6 +17,8 @@ import {
   setCity,
   startSolo,
   finishSolo,
+  startSprint,
+  finishSprint,
 } from './lib/api'
 import { initTelegram, getTgUser, getStartParam } from './lib/telegram'
 
@@ -39,6 +43,9 @@ export default function App() {
 
   const [solo, setSolo] = useState(null) // { session_id, category, questions }
   const [soloResult, setSoloResult] = useState(null)
+
+  const [sprint, setSprint] = useState(null) // { session_id, questions }
+  const [sprintResult, setSprintResult] = useState(null)
 
   const tgUser = getTgUser()
 
@@ -162,11 +169,49 @@ export default function App() {
     }
   }, [solo])
 
+  const startSprintRun = useCallback(async () => {
+    setBusy(true)
+    try {
+      const started = await startSprint()
+      setSprint(started)
+      setScreen('sprint')
+    } catch (e) {
+      setError(e.message)
+      setScreen('error')
+    } finally {
+      setBusy(false)
+    }
+  }, [])
+
+  // 60 секунд истекли (или вопросы кончились) -> считаем итог
+  const completeSprint = useCallback(async () => {
+    setScreen('finishing')
+    try {
+      const res = await finishSprint(sprint.session_id)
+      setSprintResult(res)
+      setScreen('sprint-result')
+      setUser((u) =>
+        u
+          ? {
+              ...u,
+              coins: res.coins_balance ?? u.coins + res.coins_earned,
+              total_score: u.total_score + res.score,
+            }
+          : u,
+      )
+    } catch (e) {
+      setError(e.message)
+      setScreen('error')
+    }
+  }, [sprint])
+
   const goHome = useCallback(async () => {
     setDuel(null)
     setResult(null)
     setSolo(null)
     setSoloResult(null)
+    setSprint(null)
+    setSprintResult(null)
     setError(null)
     setScreen('home')
     // подтянуть баланс на случай, если соперник дозакрыл дуэль
@@ -239,6 +284,28 @@ export default function App() {
         />
       )
 
+    case 'sprint':
+      return (
+        <SprintScreen
+          sessionId={sprint.session_id}
+          questions={sprint.questions}
+          onComplete={completeSprint}
+          onError={(code) => {
+            setError(code)
+            setScreen('error')
+          }}
+        />
+      )
+
+    case 'sprint-result':
+      return (
+        <SprintResultScreen
+          result={sprintResult}
+          onHome={goHome}
+          onPlayAgain={startSprintRun}
+        />
+      )
+
     default:
       return (
         <HomeScreen
@@ -249,6 +316,7 @@ export default function App() {
           onLeaderboard={() => setScreen('leaderboard')}
           onSaveCity={saveCity}
           onQuizTests={() => setScreen('categories')}
+          onSprint={startSprintRun}
         />
       )
   }

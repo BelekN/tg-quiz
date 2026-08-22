@@ -81,6 +81,17 @@ export const answerSolo = (sessionId, index, answer) =>
 export const finishSolo = (sessionId) =>
   call('finish_solo', { session_id: sessionId })
 
+/** Начать спринт: 40 вопросов вперемешку, 60 сек считает сервер. -> { session_id, started_at, duration_ms, questions } */
+export const startSprint = () => call('start_sprint')
+
+/** Ответ в спринте. Сервер сам отклонит, если 60 сек истекли. -> { correct_option_index, is_correct, points } */
+export const answerSprint = (sessionId, index, answer) =>
+  call('answer_sprint', { session_id: sessionId, index, answer })
+
+/** Закрыть спринт. Очки суммирует сервер из уже записанных ответов. */
+export const finishSprint = (sessionId) =>
+  call('finish_sprint', { session_id: sessionId })
+
 /** duel_<uuid> -> uuid */
 export function parseDuelStartParam(startParam) {
   const m = /^duel_([0-9a-fA-F-]{36})$/.exec(startParam ?? '')

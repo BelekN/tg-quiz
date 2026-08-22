@@ -56,7 +56,10 @@ const SOLO_QUESTIONS = {
   ],
 }
 
+const SPRINT_POOL = [...QUESTIONS, ...Object.values(SOLO_QUESTIONS).flat()]
+
 const soloState = { score: 0, correct: 0, category: null }
+const sprintState = { score: 0, correct: 0, questions: [] }
 const state = { score: 0, correct: 0 }
 const meUser = {
   tg_id: 99281932,
@@ -191,6 +194,42 @@ export const mockApi = {
       score: soloState.score,
       coins_earned: soloState.correct * 5,
       coins_balance: 85 + soloState.correct * 5,
+    }
+  },
+
+  async start_sprint() {
+    await wait(250)
+    sprintState.score = 0
+    sprintState.correct = 0
+    sprintState.questions = SPRINT_POOL
+    return {
+      session_id: 'sprint-1',
+      started_at: new Date().toISOString(),
+      duration_ms: 60_000,
+      questions: SPRINT_POOL.map(({ correct: _c, ...q }) => q),
+    }
+  },
+
+  async answer_sprint({ index, answer }) {
+    await wait(150)
+    const right = sprintState.questions[index].correct
+    const ok = answer === right
+    const points = ok ? 50 : 0
+    if (ok) {
+      sprintState.correct += 1
+      sprintState.score += points
+    }
+    return { correct_option_index: right, is_correct: ok, points }
+  },
+
+  async finish_sprint() {
+    await wait(300)
+    return {
+      answered: sprintState.correct,
+      correct: sprintState.correct,
+      score: sprintState.score,
+      coins_earned: sprintState.correct * 3,
+      coins_balance: 85 + sprintState.correct * 3,
     }
   },
 }

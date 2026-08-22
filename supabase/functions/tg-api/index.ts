@@ -162,6 +162,37 @@ Deno.serve(async (req) => {
         return json(data);
       }
 
+      // ---- старт спринта: 40 вопросов вперемешку, 60 сек на сервере ----
+      case "start_sprint": {
+        const { data, error } = await supabase.rpc("start_sprint", {
+          p_tg_id: tgId,
+        });
+        if (error) throw error;
+        return json(data);
+      }
+
+      // ---- ответ в спринте: сервер сам отклонит просроченный ----
+      case "answer_sprint": {
+        const { data, error } = await supabase.rpc("answer_sprint", {
+          p_tg_id: tgId,
+          p_session_id: payload.session_id,
+          p_index: payload.index,
+          p_answer: payload.answer ?? null,
+        });
+        if (error) throw error;
+        return json(data);
+      }
+
+      // ---- финиш спринта: очки суммирует Postgres из sprint_answers ----
+      case "finish_sprint": {
+        const { data, error } = await supabase.rpc("finish_sprint", {
+          p_tg_id: tgId,
+          p_session_id: payload.session_id,
+        });
+        if (error) throw error;
+        return json(data);
+      }
+
       default:
         return json({ error: "UNKNOWN_ACTION" }, 400);
     }
