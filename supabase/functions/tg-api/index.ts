@@ -10,8 +10,11 @@
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { verifyInitData } from "./initData.ts";
+import { appDeepLink, sendTelegramMessage } from "../_shared/telegramNotify.ts";
 
 const BOT_TOKEN = Deno.env.get("BOT_TOKEN")!;
+const BOT_USERNAME = Deno.env.get("BOT_USERNAME") ?? "";
+const APP_SHORT_NAME = Deno.env.get("APP_SHORT_NAME") ?? "";
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -99,6 +102,27 @@ Deno.serve(async (req) => {
           p_duel_id: payload.duel_id,
         });
         if (error) throw error;
+
+        // Пуш №1: соперник (доигравший первым) узнаёт исход сразу
+        const notify = data.notify;
+        delete data.notify;
+        if (notify) {
+          const outcomeText = {
+            win: "🏆 Ты выиграл дуэль!",
+            lose: "💔 Соперник обошёл тебя в дуэли",
+            draw: "🤝 Ничья в дуэли",
+          }[notify.outcome_for_rival as string] ?? "Дуэль завершена";
+
+          // ждём отправки: после ответа клиенту изолят функции может
+          // быть остановлен раньше, чем фоновый fetch успеет уйти
+          await sendTelegramMessage(
+            BOT_TOKEN,
+            notify.tg_id,
+            `${outcomeText}\n\n${notify.finisher_name} набрал ${notify.finisher_score}, у тебя ${notify.rival_score}.`,
+            { text: "Посмотреть итог", url: appDeepLink(BOT_USERNAME, APP_SHORT_NAME) },
+          ).catch(() => {});
+        }
+
         return json(data);
       }
 
