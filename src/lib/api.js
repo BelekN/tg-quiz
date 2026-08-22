@@ -67,6 +67,9 @@ export const fetchLeaderboard = () => call('leaderboard')
 /** Сохранить город (вводится пользователем один раз). -> { user } */
 export const setCity = (city) => call('set_city', { city })
 
+/** Сохранить выбранную аватарку. avatarKey=null -> вернуть фото Telegram. -> { user } */
+export const setAvatar = (avatarKey) => call('set_avatar', { avatar_key: avatarKey })
+
 /** Категории соло-режима с числом вопросов. -> { categories: [{category, count}] } */
 export const fetchCategories = () => call('categories')
 

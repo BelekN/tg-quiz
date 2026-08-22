@@ -8,6 +8,7 @@ import SoloQuizScreen from './screens/SoloQuizScreen'
 import SoloResultScreen from './screens/SoloResultScreen'
 import SprintScreen from './screens/SprintScreen'
 import SprintResultScreen from './screens/SprintResultScreen'
+import AvatarPickerScreen from './screens/AvatarPickerScreen'
 import { Loader, ErrorView } from './components/StateView'
 import {
   fetchMe,
@@ -15,6 +16,7 @@ import {
   finishDuel,
   parseDuelStartParam,
   setCity,
+  setAvatar,
   startSolo,
   finishSolo,
   startSprint,
@@ -133,6 +135,11 @@ export default function App() {
 
   const saveCity = useCallback(async (city) => {
     const res = await setCity(city)
+    setUser(res.user)
+  }, [])
+
+  const pickAvatar = useCallback(async (avatarKey) => {
+    const res = await setAvatar(avatarKey)
     setUser(res.user)
   }, [])
 
@@ -256,6 +263,18 @@ export default function App() {
     case 'leaderboard':
       return <LeaderboardScreen onBack={() => setScreen('home')} />
 
+    case 'avatar-picker':
+      return (
+        <AvatarPickerScreen
+          currentAvatarKey={user?.avatar_key}
+          onBack={() => setScreen('home')}
+          onPick={async (key) => {
+            await pickAvatar(key)
+            setScreen('home')
+          }}
+        />
+      )
+
     case 'categories':
       return (
         <CategoryScreen onBack={() => setScreen('home')} onPick={pickCategory} />
@@ -317,6 +336,7 @@ export default function App() {
           onSaveCity={saveCity}
           onQuizTests={() => setScreen('categories')}
           onSprint={startSprintRun}
+          onEditAvatar={() => setScreen('avatar-picker')}
         />
       )
   }

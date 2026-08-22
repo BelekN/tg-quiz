@@ -81,7 +81,7 @@ function Row({ player, isMe }) {
       <span className="w-7 text-center text-base font-bold tabular-nums text-tg-hint">
         {medal ?? player.rank}
       </span>
-      <Avatar src={player.photo_url} name={name} size={38} />
+      <Avatar src={player.photo_url} avatarKey={player.avatar_key} name={name} size={38} />
       <span className="min-w-0 flex-1">
         <span className="block truncate text-[15px] font-medium">
           {name}

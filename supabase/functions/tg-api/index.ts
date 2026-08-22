@@ -136,6 +136,16 @@ Deno.serve(async (req) => {
         return json(data);
       }
 
+      // ---- сохранить выбранную аватарку (null = вернуть фото Telegram) ----
+      case "set_avatar": {
+        const { data, error } = await supabase.rpc("set_avatar", {
+          p_tg_id: tgId,
+          p_avatar_key: payload.avatar_key ?? null,
+        });
+        if (error) throw error;
+        return json({ user: data });
+      }
+
       // ---- сохранить город (вводится один раз вручную) ----
       case "set_city": {
         const { data, error } = await supabase.rpc("set_city", {

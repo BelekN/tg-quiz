@@ -13,6 +13,7 @@ export default function HomeScreen({
   onSaveCity,
   onQuizTests,
   onSprint,
+  onEditAvatar,
   busy,
 }) {
   const name = tgUser?.firstName || user?.first_name || user?.username || 'Игрок'
@@ -21,7 +22,15 @@ export default function HomeScreen({
     <Screen>
       {/* ---- шапка: кто вошёл + баланс ---- */}
       <header className="flex items-center gap-3">
-        <Avatar src={tgUser?.photoUrl || user?.photo_url} name={name} />
+        <Avatar
+          src={tgUser?.photoUrl || user?.photo_url}
+          avatarKey={user?.avatar_key}
+          name={name}
+          onClick={() => {
+            haptic.tap()
+            onEditAvatar()
+          }}
+        />
         <div className="min-w-0 flex-1">
           <p className="text-xs text-tg-hint">Привет,</p>
           <p className="truncate text-[17px] font-semibold leading-tight">
