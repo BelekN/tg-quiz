@@ -35,8 +35,13 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "METHOD_NOT_ALLOWED" }, 405);
 
   // Authorization: tma <initDataRaw>
+  // ВАЖНО: split(" ") резал бы initData на куски по КАЖДОМУ пробелу
+  // (первый попавшийся пробел в значении любого поля обрезал бы
+  // всё, что после), поэтому делим только по первому пробелу.
   const auth = req.headers.get("Authorization") ?? "";
-  const [scheme, raw] = auth.split(" ");
+  const sep = auth.indexOf(" ");
+  const scheme = sep === -1 ? auth : auth.slice(0, sep);
+  const raw = sep === -1 ? "" : auth.slice(sep + 1);
   if (scheme !== "tma" || !raw) return json({ error: "UNAUTHORIZED" }, 401);
 
   let tg;

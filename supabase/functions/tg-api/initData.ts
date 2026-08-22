@@ -48,9 +48,12 @@ export async function verifyInitData(
   const hash = params.get("hash");
   if (!hash) throw new Error("INIT_DATA_NO_HASH");
 
-  // data_check_string: все пары кроме hash/signature, отсортированы по ключу
+  // data_check_string: все пары КРОМЕ hash, отсортированы по ключу.
+  // signature (Ed25519, отдельная независимая подпись) остаётся —
+  // это обычное поле данных для классической HMAC-проверки, здесь
+  // не участвует только сам hash, который мы и сверяем.
   const checkString = [...params.entries()]
-    .filter(([k]) => k !== "hash" && k !== "signature")
+    .filter(([k]) => k !== "hash")
     .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
     .map(([k, v]) => `${k}=${v}`)
     .join("\n");
@@ -59,10 +62,9 @@ export async function verifyInitData(
   const signature = toHex(await hmac(secret, checkString));
 
   // сравнение постоянного времени
-  if (signature.length !== hash.length) throw new Error("INIT_DATA_BAD_HASH");
-  let diff = 0;
-  for (let i = 0; i < signature.length; i++) {
-    diff |= signature.charCodeAt(i) ^ hash.charCodeAt(i);
+  let diff = signature.length === hash.length ? 0 : 1;
+  for (let i = 0; i < Math.max(signature.length, hash.length); i++) {
+    diff |= (signature.charCodeAt(i) || 0) ^ (hash.charCodeAt(i) || 0);
   }
   if (diff !== 0) throw new Error("INIT_DATA_BAD_HASH");
 
