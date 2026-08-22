@@ -102,6 +102,16 @@ Deno.serve(async (req) => {
         return json(data);
       }
 
+      // ---- таблица лидеров: топ N + позиция текущего игрока ----
+      case "leaderboard": {
+        const { data, error } = await supabase.rpc("get_leaderboard", {
+          p_tg_id: tgId,
+          p_limit: 20,
+        });
+        if (error) throw error;
+        return json(data);
+      }
+
       default:
         return json({ error: "UNKNOWN_ACTION" }, 400);
     }

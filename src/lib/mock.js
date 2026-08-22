@@ -101,4 +101,25 @@ export const mockApi = {
       outcome: 'pending',
     }
   },
+
+  async leaderboard() {
+    await wait(300)
+    const me = {
+      rank: 4,
+      tg_id: 99281932,
+      username: 'dev_user',
+      first_name: 'Dev',
+      photo_url: null,
+      total_score: 1240,
+      coins: 85,
+    }
+    const top = [
+      { rank: 1, tg_id: 1, username: 'quiz_master', first_name: 'Алина', photo_url: null, total_score: 4820, coins: 210 },
+      { rank: 2, tg_id: 2, username: 'nikita', first_name: 'Никита', photo_url: null, total_score: 3390, coins: 150 },
+      { rank: 3, tg_id: 3, username: null, first_name: 'Асель', photo_url: null, total_score: 2005, coins: 90 },
+      me,
+      { rank: 5, tg_id: 5, username: 'bob', first_name: 'Боб', photo_url: null, total_score: 980, coins: 40 },
+    ]
+    return { top, me }
+  },
 }

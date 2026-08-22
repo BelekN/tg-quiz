@@ -61,6 +61,9 @@ export const answerQuestion = (duelId, index, answer, elapsedMs) =>
 /** Закрыть дуэль. Очки суммирует сервер из своих же записей. */
 export const finishDuel = (duelId) => call('finish_duel', { duel_id: duelId })
 
+/** Топ-20 по total_score + позиция текущего игрока. -> { top, me } */
+export const fetchLeaderboard = () => call('leaderboard')
+
 /** duel_<uuid> -> uuid */
 export function parseDuelStartParam(startParam) {
   const m = /^duel_([0-9a-fA-F-]{36})$/.exec(startParam ?? '')

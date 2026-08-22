@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import HomeScreen from './screens/HomeScreen'
 import QuizScreen from './screens/QuizScreen'
 import ResultScreen from './screens/ResultScreen'
+import LeaderboardScreen from './screens/LeaderboardScreen'
 import { Loader, ErrorView } from './components/StateView'
 import { fetchMe, startDuel, finishDuel, parseDuelStartParam } from './lib/api'
 import { initTelegram, getTgUser, getStartParam } from './lib/telegram'
@@ -153,6 +154,9 @@ export default function App() {
         <ResultScreen result={result} role={duel?.role} onHome={goHome} />
       )
 
+    case 'leaderboard':
+      return <LeaderboardScreen onBack={() => setScreen('home')} />
+
     default:
       return (
         <HomeScreen
@@ -160,6 +164,7 @@ export default function App() {
           tgUser={tgUser}
           busy={busy}
           onCreateDuel={createDuel}
+          onLeaderboard={() => setScreen('leaderboard')}
         />
       )
   }

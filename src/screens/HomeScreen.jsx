@@ -4,7 +4,7 @@ import CoinBadge from '../components/CoinBadge'
 import ModeCard from '../components/ModeCard'
 import { haptic } from '../lib/telegram'
 
-export default function HomeScreen({ user, tgUser, onCreateDuel, busy }) {
+export default function HomeScreen({ user, tgUser, onCreateDuel, onLeaderboard, busy }) {
   const name = tgUser?.firstName || user?.first_name || user?.username || 'Игрок'
 
   return (
@@ -18,6 +18,17 @@ export default function HomeScreen({ user, tgUser, onCreateDuel, busy }) {
             {name}
           </p>
         </div>
+        <button
+          type="button"
+          onClick={() => {
+            haptic.tap()
+            onLeaderboard()
+          }}
+          className="grid h-9 w-9 place-items-center rounded-full bg-tg-surface text-lg active:scale-95"
+          aria-label="Рейтинг"
+        >
+          🏆
+        </button>
         <CoinBadge value={user?.coins ?? 0} />
       </header>
 
