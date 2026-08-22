@@ -21,7 +21,11 @@ async function call(action, payload = {}) {
       'Content-Type': 'application/json',
       // Схема `tma` — рекомендованный Telegram способ передачи initData
       Authorization: `tma ${initDataRaw}`,
-      apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+      // apikey намеренно не шлём: функция задеплоена с --no-verify-jwt,
+      // шлюз Supabase этот заголовок не требует, а Edge Function
+      // разрешает в CORS только authorization/content-type — лишний
+      // заголовок валит preflight с "not allowed by
+      // Access-Control-Allow-Headers" ещё до отправки запроса.
     },
     body: JSON.stringify({ action, payload }),
   })
