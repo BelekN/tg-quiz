@@ -8,7 +8,7 @@
 //   supabase secrets set CRON_SECRET=... BOT_USERNAME=... APP_SHORT_NAME=...
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
-import { appDeepLink, sendTelegramMessage } from "../_shared/telegramNotify.ts";
+import { appDeepLink, escapeHtml, sendTelegramMessage } from "../_shared/telegramNotify.ts";
 
 const BOT_TOKEN = Deno.env.get("BOT_TOKEN")!;
 const BOT_USERNAME = Deno.env.get("BOT_USERNAME") ?? "";
@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
   if (inactiveErr) console.error("get_inactivity_reminders failed", inactiveErr);
 
   for (const r of inactiveReminders ?? []) {
-    const name = r.first_name ? `${r.first_name}, ` : "";
+    const name = r.first_name ? `${escapeHtml(r.first_name)}, ` : "";
     await sendTelegramMessage(
       BOT_TOKEN,
       r.tg_id,

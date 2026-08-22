@@ -29,6 +29,15 @@ export async function sendTelegramMessage(
   }
 }
 
+// parse_mode: "HTML" интерпретирует <, > и & как разметку. Имена
+// пользователей (first_name, username) приходят от самого Telegram,
+// но их значение задаёт человек — без экранирования кривое имя
+// валит sendMessage ("can't parse entities"), а умышленно подобранное
+// может воткнуть в чужой чат произвольную ссылку/форматирование.
+export function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
 export function appDeepLink(botUsername: string, appShortName: string, startParam?: string) {
   const base = appShortName
     ? `https://t.me/${botUsername}/${appShortName}`

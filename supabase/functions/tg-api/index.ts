@@ -10,7 +10,7 @@
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { verifyInitData } from "./initData.ts";
-import { appDeepLink, sendTelegramMessage } from "../_shared/telegramNotify.ts";
+import { appDeepLink, escapeHtml, sendTelegramMessage } from "../_shared/telegramNotify.ts";
 
 const BOT_TOKEN = Deno.env.get("BOT_TOKEN")!;
 const BOT_USERNAME = Deno.env.get("BOT_USERNAME") ?? "";
@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
           await sendTelegramMessage(
             BOT_TOKEN,
             notify.tg_id,
-            `${outcomeText}\n\n${notify.finisher_name} набрал ${notify.finisher_score}, у тебя ${notify.rival_score}.`,
+            `${outcomeText}\n\n${escapeHtml(notify.finisher_name)} набрал ${notify.finisher_score}, у тебя ${notify.rival_score}.`,
             { text: "Посмотреть итог", url: appDeepLink(BOT_USERNAME, APP_SHORT_NAME) },
           ).catch(() => {});
         }
