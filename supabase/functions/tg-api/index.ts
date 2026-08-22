@@ -122,6 +122,46 @@ Deno.serve(async (req) => {
         return json({ user: data });
       }
 
+      // ---- список категорий соло-режима с числом вопросов ----
+      case "categories": {
+        const { data, error } = await supabase.rpc("get_categories");
+        if (error) throw error;
+        return json({ categories: data });
+      }
+
+      // ---- старт соло-сессии по категории ----
+      case "start_solo": {
+        const { data, error } = await supabase.rpc("start_solo", {
+          p_tg_id: tgId,
+          p_category: payload.category,
+          p_count: 10,
+        });
+        if (error) throw error;
+        return json(data);
+      }
+
+      // ---- ответ в соло-режиме: пишем выбор, возвращаем правильный ----
+      case "answer_solo": {
+        const { data, error } = await supabase.rpc("answer_solo", {
+          p_tg_id: tgId,
+          p_session_id: payload.session_id,
+          p_index: payload.index,
+          p_answer: payload.answer ?? null,
+        });
+        if (error) throw error;
+        return json(data);
+      }
+
+      // ---- финиш соло-сессии: очки суммирует Postgres ----
+      case "finish_solo": {
+        const { data, error } = await supabase.rpc("finish_solo", {
+          p_tg_id: tgId,
+          p_session_id: payload.session_id,
+        });
+        if (error) throw error;
+        return json(data);
+      }
+
       default:
         return json({ error: "UNKNOWN_ACTION" }, 400);
     }

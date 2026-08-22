@@ -11,6 +11,7 @@ export default function HomeScreen({
   onCreateDuel,
   onLeaderboard,
   onSaveCity,
+  onQuizTests,
   busy,
 }) {
   const name = tgUser?.firstName || user?.first_name || user?.username || 'Игрок'
@@ -79,7 +80,10 @@ export default function HomeScreen({
           icon="🧠"
           title="Квиз-тесты"
           subtitle="Тематические подборки без таймера"
-          soon
+          onClick={() => {
+            haptic.tap()
+            onQuizTests()
+          }}
         />
       </div>
     </Screen>

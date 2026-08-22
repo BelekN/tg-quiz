@@ -67,6 +67,20 @@ export const fetchLeaderboard = () => call('leaderboard')
 /** Сохранить город (вводится пользователем один раз). -> { user } */
 export const setCity = (city) => call('set_city', { city })
 
+/** Категории соло-режима с числом вопросов. -> { categories: [{category, count}] } */
+export const fetchCategories = () => call('categories')
+
+/** Начать соло-сессию по категории. -> { session_id, category, questions } */
+export const startSolo = (category) => call('start_solo', { category })
+
+/** Ответ в соло-режиме. -> { correct_option_index, is_correct, points } */
+export const answerSolo = (sessionId, index, answer) =>
+  call('answer_solo', { session_id: sessionId, index, answer })
+
+/** Закрыть соло-сессию. Очки суммирует сервер. */
+export const finishSolo = (sessionId) =>
+  call('finish_solo', { session_id: sessionId })
+
 /** duel_<uuid> -> uuid */
 export function parseDuelStartParam(startParam) {
   const m = /^duel_([0-9a-fA-F-]{36})$/.exec(startParam ?? '')

@@ -41,6 +41,22 @@ const QUESTIONS = [
   },
 ]
 
+const SOLO_QUESTIONS = {
+  geo: [
+    { id: 'g1', question: 'Столица Японии?', options: ['Токио', 'Осака', 'Киото', 'Нагоя'], correct: 0, category: 'geo' },
+    { id: 'g2', question: 'Самая высокая гора в мире?', options: ['Эверест', 'К2', 'Килиманджаро', 'Эльбрус'], correct: 0, category: 'geo' },
+  ],
+  movies: [
+    { id: 'm1', question: 'Кто режиссёр фильма «Титаник»?', options: ['Спилберг', 'Кэмерон', 'Нолан', 'Скотт'], correct: 1, category: 'movies' },
+    { id: 'm2', question: 'В какой саге есть Дарт Вейдер?', options: ['Звёздные войны', 'Властелин колец', 'Гарри Поттер', 'Матрица'], correct: 0, category: 'movies' },
+  ],
+  gaming: [
+    { id: 'gm1', question: 'Кто выпускает игры про Марио?', options: ['Sony', 'Nintendo', 'Sega', 'Microsoft'], correct: 1, category: 'gaming' },
+    { id: 'gm2', question: 'Главный герой Zelda?', options: ['Зельда', 'Линк', 'Ганон', 'Марио'], correct: 1, category: 'gaming' },
+  ],
+}
+
+const soloState = { score: 0, correct: 0, category: null }
 const state = { score: 0, correct: 0 }
 const meUser = {
   tg_id: 99281932,
@@ -127,5 +143,54 @@ export const mockApi = {
       { rank: 5, tg_id: 5, username: 'bob', first_name: 'Боб', photo_url: null, city: 'Москва', total_score: 980, coins: 40 },
     ]
     return { top, me }
+  },
+
+  async categories() {
+    await wait(200)
+    return {
+      categories: Object.entries(SOLO_QUESTIONS).map(([category, qs]) => ({
+        category,
+        count: qs.length,
+      })),
+    }
+  },
+
+  async start_solo({ category }) {
+    await wait(250)
+    soloState.score = 0
+    soloState.correct = 0
+    soloState.category = category
+    const qs = SOLO_QUESTIONS[category] ?? []
+    return {
+      session_id: `solo-${category}`,
+      category,
+      questions: qs.map(({ correct: _c, ...q }) => q),
+    }
+  },
+
+  async answer_solo({ index, answer }) {
+    await wait(200)
+    const qs = SOLO_QUESTIONS[soloState.category] ?? []
+    const right = qs[index].correct
+    const ok = answer === right
+    const points = ok ? 100 : 0
+    if (ok) {
+      soloState.correct += 1
+      soloState.score += points
+    }
+    return { correct_option_index: right, is_correct: ok, points }
+  },
+
+  async finish_solo() {
+    await wait(300)
+    const qs = SOLO_QUESTIONS[soloState.category] ?? []
+    return {
+      category: soloState.category,
+      correct: soloState.correct,
+      total: qs.length,
+      score: soloState.score,
+      coins_earned: soloState.correct * 5,
+      coins_balance: 85 + soloState.correct * 5,
+    }
   },
 }

@@ -3,6 +3,9 @@ import HomeScreen from './screens/HomeScreen'
 import QuizScreen from './screens/QuizScreen'
 import ResultScreen from './screens/ResultScreen'
 import LeaderboardScreen from './screens/LeaderboardScreen'
+import CategoryScreen from './screens/CategoryScreen'
+import SoloQuizScreen from './screens/SoloQuizScreen'
+import SoloResultScreen from './screens/SoloResultScreen'
 import { Loader, ErrorView } from './components/StateView'
 import {
   fetchMe,
@@ -10,6 +13,8 @@ import {
   finishDuel,
   parseDuelStartParam,
   setCity,
+  startSolo,
+  finishSolo,
 } from './lib/api'
 import { initTelegram, getTgUser, getStartParam } from './lib/telegram'
 
@@ -31,6 +36,9 @@ export default function App() {
   const [user, setUser] = useState(null)
   const [duel, setDuel] = useState(null) // { duel_id, role, questions }
   const [result, setResult] = useState(null)
+
+  const [solo, setSolo] = useState(null) // { session_id, category, questions }
+  const [soloResult, setSoloResult] = useState(null)
 
   const tgUser = getTgUser()
 
@@ -121,9 +129,44 @@ export default function App() {
     setUser(res.user)
   }, [])
 
+  const pickCategory = useCallback(async (category) => {
+    try {
+      const started = await startSolo(category)
+      setSolo(started)
+      setScreen('solo-quiz')
+    } catch (e) {
+      setError(e.message)
+      setScreen('error')
+    }
+  }, [])
+
+  // все вопросы соло-сессии отвечены -> считаем итог
+  const completeSolo = useCallback(async () => {
+    setScreen('finishing')
+    try {
+      const res = await finishSolo(solo.session_id)
+      setSoloResult(res)
+      setScreen('solo-result')
+      setUser((u) =>
+        u
+          ? {
+              ...u,
+              coins: res.coins_balance ?? u.coins + res.coins_earned,
+              total_score: u.total_score + res.score,
+            }
+          : u,
+      )
+    } catch (e) {
+      setError(e.message)
+      setScreen('error')
+    }
+  }, [solo])
+
   const goHome = useCallback(async () => {
     setDuel(null)
     setResult(null)
+    setSolo(null)
+    setSoloResult(null)
     setError(null)
     setScreen('home')
     // подтянуть баланс на случай, если соперник дозакрыл дуэль
@@ -168,6 +211,34 @@ export default function App() {
     case 'leaderboard':
       return <LeaderboardScreen onBack={() => setScreen('home')} />
 
+    case 'categories':
+      return (
+        <CategoryScreen onBack={() => setScreen('home')} onPick={pickCategory} />
+      )
+
+    case 'solo-quiz':
+      return (
+        <SoloQuizScreen
+          sessionId={solo.session_id}
+          category={solo.category}
+          questions={solo.questions}
+          onComplete={completeSolo}
+          onError={(code) => {
+            setError(code)
+            setScreen('error')
+          }}
+        />
+      )
+
+    case 'solo-result':
+      return (
+        <SoloResultScreen
+          result={soloResult}
+          onHome={goHome}
+          onPlayAgain={() => setScreen('categories')}
+        />
+      )
+
     default:
       return (
         <HomeScreen
@@ -177,6 +248,7 @@ export default function App() {
           onCreateDuel={createDuel}
           onLeaderboard={() => setScreen('leaderboard')}
           onSaveCity={saveCity}
+          onQuizTests={() => setScreen('categories')}
         />
       )
   }
