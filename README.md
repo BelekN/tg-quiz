@@ -1,4 +1,4 @@
-# TG Quiz — Дуэль с друзьями (Фаза 1)
+# КвизДуэль — Дуэль с друзьями (Фаза 1)
 
 Telegram Mini App: React 19 + Vite + Tailwind v4 + Supabase.
 
