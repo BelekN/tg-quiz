@@ -82,9 +82,16 @@ function Row({ player, isMe }) {
         {medal ?? player.rank}
       </span>
       <Avatar src={player.photo_url} name={name} size={38} />
-      <span className="flex-1 truncate text-[15px] font-medium">
-        {name}
-        {isMe && <span className="ml-1.5 text-xs text-tg-hint">(вы)</span>}
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[15px] font-medium">
+          {name}
+          {isMe && <span className="ml-1.5 text-xs text-tg-hint">(вы)</span>}
+        </span>
+        {player.city && (
+          <span className="block truncate text-xs text-tg-hint">
+            {player.city}
+          </span>
+        )}
       </span>
       <span className="text-[15px] font-bold tabular-nums">
         {player.total_score}

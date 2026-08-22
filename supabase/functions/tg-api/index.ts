@@ -112,6 +112,16 @@ Deno.serve(async (req) => {
         return json(data);
       }
 
+      // ---- сохранить город (вводится один раз вручную) ----
+      case "set_city": {
+        const { data, error } = await supabase.rpc("set_city", {
+          p_tg_id: tgId,
+          p_city: payload.city ?? null,
+        });
+        if (error) throw error;
+        return json({ user: data });
+      }
+
       default:
         return json({ error: "UNKNOWN_ACTION" }, 400);
     }

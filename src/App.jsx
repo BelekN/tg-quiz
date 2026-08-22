@@ -4,7 +4,13 @@ import QuizScreen from './screens/QuizScreen'
 import ResultScreen from './screens/ResultScreen'
 import LeaderboardScreen from './screens/LeaderboardScreen'
 import { Loader, ErrorView } from './components/StateView'
-import { fetchMe, startDuel, finishDuel, parseDuelStartParam } from './lib/api'
+import {
+  fetchMe,
+  startDuel,
+  finishDuel,
+  parseDuelStartParam,
+  setCity,
+} from './lib/api'
 import { initTelegram, getTgUser, getStartParam } from './lib/telegram'
 
 initTelegram()
@@ -110,6 +116,11 @@ export default function App() {
     }
   }, [duel])
 
+  const saveCity = useCallback(async (city) => {
+    const res = await setCity(city)
+    setUser(res.user)
+  }, [])
+
   const goHome = useCallback(async () => {
     setDuel(null)
     setResult(null)
@@ -165,6 +176,7 @@ export default function App() {
           busy={busy}
           onCreateDuel={createDuel}
           onLeaderboard={() => setScreen('leaderboard')}
+          onSaveCity={saveCity}
         />
       )
   }

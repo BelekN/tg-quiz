@@ -2,9 +2,17 @@ import Screen from '../components/Screen'
 import Avatar from '../components/Avatar'
 import CoinBadge from '../components/CoinBadge'
 import ModeCard from '../components/ModeCard'
+import CityPrompt from '../components/CityPrompt'
 import { haptic } from '../lib/telegram'
 
-export default function HomeScreen({ user, tgUser, onCreateDuel, onLeaderboard, busy }) {
+export default function HomeScreen({
+  user,
+  tgUser,
+  onCreateDuel,
+  onLeaderboard,
+  onSaveCity,
+  busy,
+}) {
   const name = tgUser?.firstName || user?.first_name || user?.username || 'Игрок'
 
   return (
@@ -31,6 +39,8 @@ export default function HomeScreen({ user, tgUser, onCreateDuel, onLeaderboard, 
         </button>
         <CoinBadge value={user?.coins ?? 0} />
       </header>
+
+      {user && !user.city && <CityPrompt onSave={onSaveCity} />}
 
       {/* ---- статистика ---- */}
       <div className="mt-5 grid grid-cols-2 gap-3">

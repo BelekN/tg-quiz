@@ -42,22 +42,27 @@ const QUESTIONS = [
 ]
 
 const state = { score: 0, correct: 0 }
+const meUser = {
+  tg_id: 99281932,
+  username: 'dev_user',
+  first_name: 'Dev',
+  photo_url: null,
+  city: null,
+  total_score: 1240,
+  coins: 85,
+}
 const wait = (ms) => new Promise((r) => setTimeout(r, ms))
 
 export const mockApi = {
   async me() {
     await wait(300)
-    return {
-      user: {
-        tg_id: 99281932,
-        username: 'dev_user',
-        first_name: 'Dev',
-        photo_url: null,
-        total_score: 1240,
-        coins: 85,
-      },
-      start_param: null,
-    }
+    return { user: meUser, start_param: null }
+  },
+
+  async set_city({ city }) {
+    await wait(200)
+    meUser.city = city
+    return { user: meUser }
   },
 
   async start_duel() {
@@ -110,15 +115,16 @@ export const mockApi = {
       username: 'dev_user',
       first_name: 'Dev',
       photo_url: null,
+      city: meUser.city,
       total_score: 1240,
       coins: 85,
     }
     const top = [
-      { rank: 1, tg_id: 1, username: 'quiz_master', first_name: 'Алина', photo_url: null, total_score: 4820, coins: 210 },
-      { rank: 2, tg_id: 2, username: 'nikita', first_name: 'Никита', photo_url: null, total_score: 3390, coins: 150 },
-      { rank: 3, tg_id: 3, username: null, first_name: 'Асель', photo_url: null, total_score: 2005, coins: 90 },
+      { rank: 1, tg_id: 1, username: 'quiz_master', first_name: 'Алина', photo_url: null, city: 'Бишкек', total_score: 4820, coins: 210 },
+      { rank: 2, tg_id: 2, username: 'nikita', first_name: 'Никита', photo_url: null, city: 'Алматы', total_score: 3390, coins: 150 },
+      { rank: 3, tg_id: 3, username: null, first_name: 'Асель', photo_url: null, city: null, total_score: 2005, coins: 90 },
       me,
-      { rank: 5, tg_id: 5, username: 'bob', first_name: 'Боб', photo_url: null, total_score: 980, coins: 40 },
+      { rank: 5, tg_id: 5, username: 'bob', first_name: 'Боб', photo_url: null, city: 'Москва', total_score: 980, coins: 40 },
     ]
     return { top, me }
   },
