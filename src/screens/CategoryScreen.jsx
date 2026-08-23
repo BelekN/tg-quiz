@@ -4,6 +4,7 @@ import { Loader, ErrorView } from '../components/StateView'
 import { fetchCategories } from '../lib/api'
 import { categoryMeta } from '../lib/categories'
 import { haptic } from '../lib/telegram'
+import { useBackButton } from '../hooks/useBackButton'
 
 export default function CategoryScreen({ onBack, onPick }) {
   const [state, setState] = useState({ status: 'loading', categories: [] })
@@ -12,6 +13,8 @@ export default function CategoryScreen({ onBack, onPick }) {
   // может доставить сюда старт-сессию уже после перехода на другой
   // экран и рассинхронизировать questions/session_id на нём.
   const [picking, setPicking] = useState(false)
+
+  useBackButton(onBack)
 
   const handlePick = async (category) => {
     if (picking) return

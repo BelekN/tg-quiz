@@ -3,11 +3,14 @@ import Screen from '../components/Screen'
 import Avatar from '../components/Avatar'
 import { fetchLeaderboard } from '../lib/api'
 import { Loader, ErrorView } from '../components/StateView'
+import { useBackButton } from '../hooks/useBackButton'
 
 const MEDAL = { 1: '🥇', 2: '🥈', 3: '🥉' }
 
 export default function LeaderboardScreen({ onBack }) {
   const [state, setState] = useState({ status: 'loading', top: [], me: null })
+
+  useBackButton(onBack)
 
   useEffect(() => {
     let alive = true

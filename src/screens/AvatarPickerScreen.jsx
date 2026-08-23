@@ -2,9 +2,12 @@ import { useState } from 'react'
 import Screen from '../components/Screen'
 import { AVATAR_KEYS, avatarUrl } from '../lib/avatars'
 import { haptic } from '../lib/telegram'
+import { useBackButton } from '../hooks/useBackButton'
 
 export default function AvatarPickerScreen({ currentAvatarKey, onBack, onPick }) {
   const [busyKey, setBusyKey] = useState(null)
+
+  useBackButton(onBack)
 
   const pick = async (key) => {
     if (busyKey || key === currentAvatarKey) return
