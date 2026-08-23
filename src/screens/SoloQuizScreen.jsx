@@ -1,51 +1,31 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect } from 'react'
 import Screen from '../components/Screen'
 import AnswerButton from '../components/AnswerButton'
+import { useAnswerFlow } from '../hooks/useAnswerFlow'
 import { answerSolo } from '../lib/api'
 import { categoryMeta } from '../lib/categories'
-import { haptic } from '../lib/telegram'
 
 const REVEAL_MS = 1100
 
 /** Тот же анти-чит паттерн, что в дуэли, но без таймера и бонуса за скорость. */
 export default function SoloQuizScreen({ sessionId, questions, category, onComplete, onError }) {
-  const [index, setIndex] = useState(0)
-  const [phase, setPhase] = useState('answering') // answering -> sending -> reveal
-  const [selected, setSelected] = useState(null)
-  const [correct, setCorrect] = useState(null)
-  const [correctCount, setCorrectCount] = useState(0)
+  const {
+    index,
+    phase,
+    selected,
+    correct,
+    correctCount,
+    question,
+    isLast,
+    submit,
+    advance,
+    optionState,
+  } = useAnswerFlow({ questions, onError })
 
-  const question = questions[index]
-  const isLast = index === questions.length - 1
-  const lockedRef = useRef(false)
   const meta = categoryMeta(category)
 
-  const submit = useCallback(
-    async (answerIndex) => {
-      if (lockedRef.current) return
-      lockedRef.current = true
-
-      setSelected(answerIndex)
-      setPhase('sending')
-      haptic.tap()
-
-      try {
-        const res = await answerSolo(sessionId, index, answerIndex)
-        setCorrect(res.correct_option_index)
-        setPhase('reveal')
-        if (res.is_correct) {
-          setCorrectCount((c) => c + 1)
-          haptic.success()
-        } else {
-          haptic.error()
-        }
-      } catch (e) {
-        onError(e.message)
-      }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [sessionId, index],
-  )
+  const submitAnswer = (answerIndex) =>
+    submit(answerIndex, () => answerSolo(sessionId, index, answerIndex))
 
   useEffect(() => {
     if (phase !== 'reveal') return
@@ -55,24 +35,12 @@ export default function SoloQuizScreen({ sessionId, questions, category, onCompl
         onComplete()
         return
       }
-      setSelected(null)
-      setCorrect(null)
-      setPhase('answering')
-      setIndex((i) => i + 1)
-      lockedRef.current = false
+      advance()
     }, REVEAL_MS)
 
     return () => clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, isLast])
-
-  const optionState = (i) => {
-    if (phase === 'answering') return 'idle'
-    if (phase === 'sending') return 'muted'
-    if (i === correct) return 'correct'
-    if (i === selected) return 'wrong'
-    return 'muted'
-  }
 
   return (
     <Screen>
@@ -112,7 +80,7 @@ export default function SoloQuizScreen({ sessionId, questions, category, onCompl
             index={i}
             state={optionState(i)}
             disabled={phase !== 'answering'}
-            onClick={() => submit(i)}
+            onClick={() => submitAnswer(i)}
           />
         ))}
       </div>

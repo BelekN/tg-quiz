@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect } from 'react'
 import Screen from '../components/Screen'
 import TimerBar from '../components/TimerBar'
 import AnswerButton from '../components/AnswerButton'
 import { useCountdown } from '../hooks/useCountdown'
+import { useAnswerFlow } from '../hooks/useAnswerFlow'
 import { answerQuestion } from '../lib/api'
-import { haptic } from '../lib/telegram'
 
 const QUESTION_MS = 10_000
 const REVEAL_MS = 1100
@@ -19,52 +19,29 @@ export default function QuizScreen({
   onComplete,
   onError,
 }) {
-  const [index, setIndex] = useState(startIndex)
-  // answering -> sending (ждём сервер) -> reveal (красим) -> следующий
-  const [phase, setPhase] = useState('answering')
-  const [selected, setSelected] = useState(null)
-  const [correct, setCorrect] = useState(null)
-  const [correctCount, setCorrectCount] = useState(startCorrect)
-
-  const question = questions[index]
-  const isLast = index === questions.length - 1
-  const lockedRef = useRef(false) // защита от двойного тапа / тапа на таймауте
+  const {
+    index,
+    phase,
+    selected,
+    correct,
+    correctCount,
+    question,
+    isLast,
+    submit,
+    advance,
+    optionState,
+  } = useAnswerFlow({ questions, startIndex, startCorrect, onError })
 
   // Правильный ответ приходит с сервера и только после того,
   // как наш выбор уже записан. Поэтому «подсмотреть» его нельзя.
-  const submit = useCallback(
-    async (answerIndex, elapsedMs) => {
-      if (lockedRef.current) return
-      lockedRef.current = true
-
-      setSelected(answerIndex)
-      setPhase('sending')
-      haptic.tap()
-
-      try {
-        const res = await answerQuestion(duelId, index, answerIndex, elapsedMs)
-        setCorrect(res.correct_option_index)
-        setPhase('reveal')
-        if (res.is_correct) {
-          setCorrectCount((c) => c + 1)
-          haptic.success()
-        } else {
-          haptic.error()
-        }
-      } catch (e) {
-        onError(e.message)
-      }
-    },
-    // index/duelId стабильны в рамках вопроса
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [duelId, index],
-  )
+  const submitAnswer = (answerIndex, elapsedMs) =>
+    submit(answerIndex, () => answerQuestion(duelId, index, answerIndex, elapsedMs))
 
   const { remaining, elapsed } = useCountdown(
     QUESTION_MS,
     index,
     phase === 'answering',
-    () => submit(null, QUESTION_MS),
+    () => submitAnswer(null, QUESTION_MS),
   )
 
   // после показа результата — следующий вопрос или финиш
@@ -76,24 +53,12 @@ export default function QuizScreen({
         onComplete()
         return
       }
-      setSelected(null)
-      setCorrect(null)
-      setPhase('answering')
-      setIndex((i) => i + 1)
-      lockedRef.current = false
+      advance()
     }, REVEAL_MS)
 
     return () => clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, isLast])
-
-  const optionState = (i) => {
-    if (phase === 'answering') return 'idle'
-    if (phase === 'sending') return 'muted' // ждём вердикт сервера
-    if (i === correct) return 'correct'
-    if (i === selected) return 'wrong'
-    return 'muted'
-  }
 
   return (
     <Screen>
@@ -147,7 +112,7 @@ export default function QuizScreen({
             index={i}
             state={optionState(i)}
             disabled={phase !== 'answering'}
-            onClick={() => submit(i, Math.round(elapsed))}
+            onClick={() => submitAnswer(i, Math.round(elapsed))}
           />
         ))}
       </div>

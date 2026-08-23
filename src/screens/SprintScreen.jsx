@@ -3,8 +3,8 @@ import Screen from '../components/Screen'
 import TimerBar from '../components/TimerBar'
 import AnswerButton from '../components/AnswerButton'
 import { useCountdown } from '../hooks/useCountdown'
+import { useAnswerFlow } from '../hooks/useAnswerFlow'
 import { answerSprint } from '../lib/api'
-import { haptic } from '../lib/telegram'
 
 const DURATION_MS = 60_000
 const REVEAL_MS = 500
@@ -15,14 +15,20 @@ const REVEAL_MS = 500
  * достраиваем этот ответ и завершаем сразу после, а не обрываем его.
  */
 export default function SprintScreen({ sessionId, questions, onComplete, onError }) {
-  const [index, setIndex] = useState(0)
-  const [phase, setPhase] = useState('answering') // answering -> sending -> reveal
-  const [selected, setSelected] = useState(null)
-  const [correct, setCorrect] = useState(null)
-  const [correctCount, setCorrectCount] = useState(0)
+  const {
+    index,
+    phase,
+    correctCount,
+    question,
+    submit,
+    advance,
+    optionState,
+  } = useAnswerFlow({ questions, onError })
 
-  const question = questions[index]
-  const lockedRef = useRef(false)
+  // "done" — сессия закрыта (по таймеру или по последнему вопросу).
+  // Отдельно от phase из useAnswerFlow: тому не нужно знать про сессию
+  // целиком, только про текущий вопрос.
+  const [done, setDone] = useState(false)
   const timeUpRef = useRef(false)
   const finishedRef = useRef(false)
 
@@ -32,44 +38,22 @@ export default function SprintScreen({ sessionId, questions, onComplete, onError
     onComplete()
   }, [onComplete])
 
-  const submit = useCallback(
-    async (answerIndex) => {
-      if (lockedRef.current || timeUpRef.current) return
-      lockedRef.current = true
-
-      setSelected(answerIndex)
-      setPhase('sending')
-      haptic.tap()
-
-      try {
-        const res = await answerSprint(sessionId, index, answerIndex)
-        setCorrect(res.correct_option_index)
-        setPhase('reveal')
-        if (res.is_correct) {
-          setCorrectCount((c) => c + 1)
-          haptic.success()
-        } else {
-          haptic.error()
-        }
-      } catch (e) {
-        onError(e.message)
-      }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [sessionId, index],
-  )
+  const submitAnswer = (answerIndex) => {
+    if (timeUpRef.current) return
+    submit(answerIndex, () => answerSprint(sessionId, index, answerIndex))
+  }
 
   // общий таймер на 60 секунд, не сбрасывается между вопросами.
   // phaseRef нужен, т.к. onExpire захватывается один раз при монтировании.
   const phaseRef = useRef(phase)
   phaseRef.current = phase
 
-  const { remaining } = useCountdown(DURATION_MS, sessionId, phase !== 'done', () => {
+  const { remaining } = useCountdown(DURATION_MS, sessionId, !done, () => {
     timeUpRef.current = true
     // если сейчас идёт отправка/показ ответа — дожидаемся его завершения
     // (эффект на reveal ниже сам увидит timeUpRef и закроет сессию)
     if (phaseRef.current === 'answering') {
-      setPhase('done')
+      setDone(true)
       finishNow()
     }
   })
@@ -80,28 +64,16 @@ export default function SprintScreen({ sessionId, questions, onComplete, onError
     const t = setTimeout(() => {
       const isLast = index + 1 >= questions.length
       if (timeUpRef.current || isLast) {
-        setPhase('done')
+        setDone(true)
         finishNow()
         return
       }
-      setSelected(null)
-      setCorrect(null)
-      setPhase('answering')
-      setIndex((i) => i + 1)
-      lockedRef.current = false
+      advance()
     }, REVEAL_MS)
 
     return () => clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, index, questions.length])
-
-  const optionState = (i) => {
-    if (phase === 'answering') return 'idle'
-    if (phase === 'sending') return 'muted'
-    if (i === correct) return 'correct'
-    if (i === selected) return 'wrong'
-    return 'muted'
-  }
 
   return (
     <Screen>
@@ -133,7 +105,7 @@ export default function SprintScreen({ sessionId, questions, onComplete, onError
             index={i}
             state={optionState(i)}
             disabled={phase !== 'answering'}
-            onClick={() => submit(i)}
+            onClick={() => submitAnswer(i)}
           />
         ))}
       </div>
