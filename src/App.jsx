@@ -30,6 +30,22 @@ import { initTelegram, getTgUser, getStartParam } from './lib/telegram'
 
 initTelegram()
 
+// Первый fetchMe() при холодном старте — самый чувствительный запрос:
+// один сетевой блип здесь оставляет пользователя на экране ошибки без
+// профиля. Ретраим только NETWORK_ERROR (обрыв самого fetch) — если
+// сервер ответил, но с ошибкой (UNAUTHORIZED и т.п.), повтор не
+// поможет и только оттянет показ настоящей причины.
+async function fetchMeWithRetry(retries = 2) {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await fetchMe()
+    } catch (e) {
+      if (e.message !== 'NETWORK_ERROR' || attempt >= retries) throw e
+      await new Promise((r) => setTimeout(r, 600 * (attempt + 1)))
+    }
+  }
+}
+
 /**
  * Роутер MVP — конечный автомат на useState.
  * React Router не подключаем: экранов четыре, а в Mini App
@@ -63,7 +79,7 @@ export default function App() {
 
     ;(async () => {
       try {
-        const me = await fetchMe()
+        const me = await fetchMeWithRetry()
         if (!alive) return
         setUser(me.user)
 

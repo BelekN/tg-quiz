@@ -15,20 +15,28 @@ async function call(action, payload = {}) {
   const initDataRaw = getRawInitData()
   if (!initDataRaw) throw new ApiError('NO_INIT_DATA')
 
-  const res = await fetch(ENDPOINT, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      // Схема `tma` — рекомендованный Telegram способ передачи initData
-      Authorization: `tma ${initDataRaw}`,
-      // apikey намеренно не шлём: функция задеплоена с --no-verify-jwt,
-      // шлюз Supabase этот заголовок не требует, а Edge Function
-      // разрешает в CORS только authorization/content-type — лишний
-      // заголовок валит preflight с "not allowed by
-      // Access-Control-Allow-Headers" ещё до отправки запроса.
-    },
-    body: JSON.stringify({ action, payload }),
-  })
+  let res
+  try {
+    res = await fetch(ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        // Схема `tma` — рекомендованный Telegram способ передачи initData
+        Authorization: `tma ${initDataRaw}`,
+        // apikey намеренно не шлём: функция задеплоена с --no-verify-jwt,
+        // шлюз Supabase этот заголовок не требует, а Edge Function
+        // разрешает в CORS только authorization/content-type — лишний
+        // заголовок валит preflight с "not allowed by
+        // Access-Control-Allow-Headers" ещё до отправки запроса.
+      },
+      body: JSON.stringify({ action, payload }),
+    })
+  } catch {
+    // fetch() сам бросает при разрыве сети/DNS — без этого наружу
+    // утекал бы сырой текст браузера ("Load failed", "Failed to
+    // fetch"), непонятный пользователю и не подхватываемый MESSAGES.
+    throw new ApiError('NETWORK_ERROR')
+  }
 
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new ApiError(data.error || `HTTP_${res.status}`)

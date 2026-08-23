@@ -10,6 +10,7 @@ export function Loader({ label = 'Загрузка…' }) {
 }
 
 const MESSAGES = {
+  NETWORK_ERROR: 'Проблема с соединением. Проверьте интернет и попробуйте снова.',
   NO_INIT_DATA: 'Откройте приложение внутри Telegram.',
   UNAUTHORIZED: 'Не удалось подтвердить вход через Telegram.',
   INIT_DATA_BAD_HASH: 'Подпись Telegram не совпала. Перезапустите приложение.',
