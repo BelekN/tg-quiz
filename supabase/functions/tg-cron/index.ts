@@ -26,6 +26,33 @@ const supabase = createClient(
   { auth: { persistSession: false } },
 );
 
+// A/B на формулировки — только у retention-пушей (напоминания), не у
+// транзакционных (итог дуэли — там текст сообщает факт, не убеждает).
+// Вариант выбирается детерминированно от tg_id: один и тот же
+// пользователь всегда попадает в один и тот же вариант — иначе
+// сравнение вариантов между собой не имеет смысла.
+const DUEL_REMINDER_VARIANTS = [
+  "⏳ Никто пока не принял твой вызов на дуэль. Пригласи ещё раз — вопросы те же ждут соперника.",
+  "👀 Твой вызов на дуэль всё ещё висит без ответа. Скинь ссылку другому другу?",
+];
+
+const INACTIVITY_VARIANTS = [
+  (name: string) => `🧠 ${name}новые дуэли и вопросы уже ждут. Загляни на разок!`,
+  (name: string) => `🎮 ${name}соперники заждались реванша. Есть 2 минуты?`,
+];
+
+function pickVariant(tgId: number, count: number) {
+  return Math.abs(tgId) % count;
+}
+
+async function logPushSent(tgId: number, pushType: string, variant: number) {
+  await supabase.rpc("log_event", {
+    p_tg_id: tgId,
+    p_name: "push_sent",
+    p_payload: { push_type: pushType, variant },
+  }).catch(() => {});
+}
+
 Deno.serve(async (req) => {
   if (!timingSafeEqual(req.headers.get("x-cron-secret") ?? "", CRON_SECRET)) {
     return new Response("UNAUTHORIZED", { status: 401 });
@@ -39,15 +66,19 @@ Deno.serve(async (req) => {
   if (duelErr) console.error("get_duel_reminders failed", duelErr);
 
   for (const r of duelReminders ?? []) {
+    const variant = pickVariant(r.tg_id, DUEL_REMINDER_VARIANTS.length);
     await sendTelegramMessage(
       BOT_TOKEN,
       r.tg_id,
-      "⏳ Никто пока не принял твой вызов на дуэль. Пригласи ещё раз — вопросы те же ждут соперника.",
+      DUEL_REMINDER_VARIANTS[variant],
       { text: "Пригласить друга", url: appDeepLink(BOT_USERNAME, APP_SHORT_NAME, `duel_${r.duel_id}`) },
     ).catch(() => {});
+    await logPushSent(r.tg_id, "duel_reminder", variant);
   }
 
-  // ---- пуш №3: не заходил 24+ часа ----
+  // ---- пуш №3: не заходил 24+ часа (тайминг уже "умный" — см.
+  // get_inactivity_reminders: ждёт привычный час пользователя, если
+  // есть история открытий) ----
   const { data: inactiveReminders, error: inactiveErr } = await supabase.rpc(
     "get_inactivity_reminders",
     { p_limit: 50 },
@@ -56,12 +87,14 @@ Deno.serve(async (req) => {
 
   for (const r of inactiveReminders ?? []) {
     const name = r.first_name ? `${escapeHtml(r.first_name)}, ` : "";
+    const variant = pickVariant(r.tg_id, INACTIVITY_VARIANTS.length);
     await sendTelegramMessage(
       BOT_TOKEN,
       r.tg_id,
-      `🧠 ${name}новые дуэли и вопросы уже ждут. Загляни на разок!`,
+      INACTIVITY_VARIANTS[variant](name),
       { text: "Открыть викторину", url: APP_URL, webApp: true },
     ).catch(() => {});
+    await logPushSent(r.tg_id, "inactivity_nudge", variant);
   }
 
   return new Response(
