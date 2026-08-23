@@ -54,7 +54,7 @@ export default function PersonaListScreen({ onBack, onPick }) {
         <h1 className="text-lg font-bold">🔮 Кто ты из...</h1>
       </header>
       <p className="mt-1 text-sm text-tg-hint">
-        10 вопросов — и красивая карточка, которую можно кинуть в сторис
+        10 вопросов, 2 минуты — и неожиданный результат про тебя
       </p>
 
       <div className="animate-rise mt-5 flex flex-col gap-2.5">
