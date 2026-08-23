@@ -58,6 +58,10 @@ const SOLO_QUESTIONS = {
 
 const SPRINT_POOL = [...QUESTIONS, ...Object.values(SOLO_QUESTIONS).flat()]
 
+/** 'mixed' -> вопросы из всех категорий сразу, как в реальном start_solo. */
+const poolFor = (category) =>
+  category === 'mixed' ? Object.values(SOLO_QUESTIONS).flat() : SOLO_QUESTIONS[category] ?? []
+
 const soloState = { score: 0, correct: 0, category: null }
 const sprintState = { score: 0, correct: 0, questions: [] }
 const state = { score: 0, correct: 0 }
@@ -171,7 +175,7 @@ export const mockApi = {
     soloState.score = 0
     soloState.correct = 0
     soloState.category = category
-    const qs = SOLO_QUESTIONS[category] ?? []
+    const qs = poolFor(category)
     return {
       session_id: `solo-${category}`,
       category,
@@ -181,7 +185,7 @@ export const mockApi = {
 
   async answer_solo({ index, answer }) {
     await wait(200)
-    const qs = SOLO_QUESTIONS[soloState.category] ?? []
+    const qs = poolFor(soloState.category)
     const right = qs[index].correct
     const ok = answer === right
     const points = ok ? 100 : 0
@@ -194,7 +198,7 @@ export const mockApi = {
 
   async finish_solo() {
     await wait(300)
-    const qs = SOLO_QUESTIONS[soloState.category] ?? []
+    const qs = poolFor(soloState.category)
     return {
       category: soloState.category,
       correct: soloState.correct,

@@ -9,6 +9,8 @@ export const CATEGORY_META = {
   movies: { icon: '🎬', label: 'Кино' },
   history: { icon: '🏛', label: 'История' },
   gaming: { icon: '🎮', label: 'Гик-культура' },
+  food: { icon: '🍕', label: 'Еда и напитки' },
+  mixed: { icon: '🎲', label: 'Случайный микс' },
 }
 
 export function categoryMeta(key) {

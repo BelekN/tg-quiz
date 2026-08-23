@@ -42,6 +42,26 @@ export default function CategoryScreen({ onBack, onPick }) {
       </p>
 
       <div className="animate-rise mt-5 flex flex-col gap-2.5">
+        <button
+          type="button"
+          onClick={() => {
+            haptic.tap()
+            onPick('mixed')
+          }}
+          className="flex w-full items-center gap-3.5 rounded-2xl border border-tg-accent/30 bg-tg-accent/10 px-4 py-4 text-left transition-transform active:scale-[0.98]"
+        >
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-tg-accent/20 text-xl">
+            🎲
+          </span>
+          <span className="flex-1">
+            <span className="block text-[15px] font-semibold">Случайный микс</span>
+            <span className="block text-xs text-tg-hint">
+              Вопросы из всех категорий подряд
+            </span>
+          </span>
+          <span className="text-tg-hint">›</span>
+        </button>
+
         {state.categories.map(({ category, count }) => {
           const meta = categoryMeta(category)
           return (
