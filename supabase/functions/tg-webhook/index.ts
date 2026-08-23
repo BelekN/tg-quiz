@@ -10,7 +10,12 @@
 //   (сам зарегистрирует вебхук и меню команд — см. GET-ветку ниже)
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
-import { appDeepLink, escapeHtml, sendTelegramMessage } from "../_shared/telegramNotify.ts";
+import {
+  appDeepLink,
+  escapeHtml,
+  sendTelegramMessage,
+  timingSafeEqual,
+} from "../_shared/telegramNotify.ts";
 
 const BOT_TOKEN = Deno.env.get("BOT_TOKEN")!;
 const BOT_USERNAME = Deno.env.get("BOT_USERNAME") ?? "";
@@ -98,7 +103,11 @@ Deno.serve(async (req) => {
   // Бутстрап: сам регистрирует вебхук и меню команд в Telegram, не
   // выдавая BOT_TOKEN наружу. Дёргается вручную после деплоя/ротации.
   const url = new URL(req.url);
-  if (req.method === "GET" && url.searchParams.get("setup") === WEBHOOK_SECRET) {
+  // Секрет можно передать заголовком (не попадёт в access-логи/прокси,
+  // в отличие от query-параметра) — ?setup= остаётся для обратной
+  // совместимости с уже сохранённой curl-командой.
+  const setupSecret = req.headers.get("x-setup-secret") ?? url.searchParams.get("setup") ?? "";
+  if (req.method === "GET" && timingSafeEqual(setupSecret, WEBHOOK_SECRET)) {
     // req.url — внутренний адрес за прокси Supabase, а не публичный
     // HTTPS-хост, поэтому собираем его из SUPABASE_URL явно.
     const publicUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/tg-webhook`;
@@ -129,7 +138,7 @@ Deno.serve(async (req) => {
     });
   }
 
-  if (req.headers.get("X-Telegram-Bot-Api-Secret-Token") !== WEBHOOK_SECRET) {
+  if (!timingSafeEqual(req.headers.get("X-Telegram-Bot-Api-Secret-Token") ?? "", WEBHOOK_SECRET)) {
     return new Response("UNAUTHORIZED", { status: 401 });
   }
 

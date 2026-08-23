@@ -26,17 +26,24 @@ export async function sendTelegramMessage(
     body.reply_markup = { inline_keyboard: [[btn]] };
   }
 
-  const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
 
-  if (!res.ok) {
-    // Самая частая причина — пользователь не открывал бота вообще
-    // (ещё не запускал /start) или заблокировал его. Не фатально:
-    // просто пропускаем, следующий пуш не должен упасть из-за этого.
-    console.error("sendTelegramMessage failed", tgId, await res.text().catch(() => ""));
+    if (!res.ok) {
+      // Самая частая причина — пользователь не открывал бота вообще
+      // (ещё не запускал /start) или заблокировал его. Не фатально:
+      // просто пропускаем, следующий пуш не должен упасть из-за этого.
+      console.error("sendTelegramMessage failed", tgId, await res.text().catch(() => ""));
+    }
+  } catch {
+    // fetch() сам может бросить (обрыв сети/DNS) с Error, чей .message
+    // часто включает полный URL запроса — а в нём BOT_TOKEN. Ловим здесь
+    // же и логируем без деталей ошибки, чтобы токен не утёк в логи.
+    console.error("sendTelegramMessage network error", tgId);
   }
 }
 
@@ -47,6 +54,23 @@ export async function sendTelegramMessage(
 // может воткнуть в чужой чат произвольную ссылку/форматирование.
 export function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+// Обычное "a !== b" завершается на первом несовпавшем байте — по
+// разнице во времени в принципе можно угадывать секрет байт за байтом.
+// Секреты (WEBHOOK_SECRET/CRON_SECRET) короткоживущие и не публичные,
+// риск невысок, но раз initData.ts уже сравнивает так — держим
+// единый стандарт везде, где сверяем секрет с заголовком запроса.
+export function timingSafeEqual(a: string, b: string): boolean {
+  const enc = new TextEncoder();
+  const aBytes = enc.encode(a);
+  const bBytes = enc.encode(b);
+  const len = Math.max(aBytes.length, bBytes.length);
+  let diff = aBytes.length ^ bBytes.length;
+  for (let i = 0; i < len; i++) {
+    diff |= (aBytes[i] ?? 0) ^ (bBytes[i] ?? 0);
+  }
+  return diff === 0;
 }
 
 export function appDeepLink(botUsername: string, appShortName: string, startParam?: string) {

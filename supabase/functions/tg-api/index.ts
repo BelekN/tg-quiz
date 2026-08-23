@@ -53,7 +53,12 @@ Deno.serve(async (req) => {
     return json({ error: String((e as Error).message) }, 401);
   }
 
-  const { action, payload = {} } = await req.json().catch(() => ({}));
+  const body = await req.json().catch(() => ({}));
+  const action = body?.action;
+  // "payload = {}" по умолчанию сработал бы только на undefined, а не
+  // на явный payload: null — а такой запрос легитимному пользователю
+  // собрать не стоит труда.
+  const payload = body?.payload ?? {};
   const tgId = tg.user.id;
 
   try {
@@ -231,8 +236,13 @@ Deno.serve(async (req) => {
     }
   } catch (e) {
     const message = (e as { message?: string }).message ?? "SERVER_ERROR";
-    // бизнес-ошибки из RPC (DUEL_NOT_FOUND и т.п.) — это 400, не 500
+    // бизнес-ошибки из RPC (DUEL_NOT_FOUND и т.п.) — это 400, не 500.
+    // Всё остальное (PostgREST type-error text, наш собственный TypeError
+    // на кривом payload и т.п.) — не бизнес-ошибка, и наружу её текст не
+    // отдаём: это внутренняя деталь реализации, а не то, что должен
+    // увидеть клиент. Логируем реальное сообщение только на сервере.
     const isBusiness = /^[A-Z_]+$/.test(message);
-    return json({ error: message }, isBusiness ? 400 : 500);
+    if (!isBusiness) console.error("tg-api unhandled error", action, message);
+    return json({ error: isBusiness ? message : "SERVER_ERROR" }, isBusiness ? 400 : 500);
   }
 });

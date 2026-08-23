@@ -8,7 +8,12 @@
 //   supabase secrets set CRON_SECRET=... BOT_USERNAME=... APP_SHORT_NAME=...
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
-import { appDeepLink, escapeHtml, sendTelegramMessage } from "../_shared/telegramNotify.ts";
+import {
+  appDeepLink,
+  escapeHtml,
+  sendTelegramMessage,
+  timingSafeEqual,
+} from "../_shared/telegramNotify.ts";
 
 const BOT_TOKEN = Deno.env.get("BOT_TOKEN")!;
 const BOT_USERNAME = Deno.env.get("BOT_USERNAME") ?? "";
@@ -22,7 +27,7 @@ const supabase = createClient(
 );
 
 Deno.serve(async (req) => {
-  if (req.headers.get("x-cron-secret") !== CRON_SECRET) {
+  if (!timingSafeEqual(req.headers.get("x-cron-secret") ?? "", CRON_SECRET)) {
     return new Response("UNAUTHORIZED", { status: 401 });
   }
 
