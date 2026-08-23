@@ -10,9 +10,15 @@
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { verifyInitData } from "./initData.ts";
-import { escapeHtml, sendTelegramMessage } from "../_shared/telegramNotify.ts";
+import {
+  appDeepLink,
+  escapeHtml,
+  sendTelegramMessage,
+} from "../_shared/telegramNotify.ts";
 
 const BOT_TOKEN = Deno.env.get("BOT_TOKEN")!;
+const BOT_USERNAME = Deno.env.get("BOT_USERNAME") ?? "";
+const APP_SHORT_NAME = Deno.env.get("APP_SHORT_NAME") ?? "";
 const APP_URL = Deno.env.get("APP_URL") ?? "";
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -139,6 +145,35 @@ Deno.serve(async (req) => {
             notify.tg_id,
             `${outcomeText}\n\n${escapeHtml(notify.finisher_name)} набрал ${notify.finisher_score}, у тебя ${notify.rival_score}.`,
             { text: "Посмотреть итог", url: APP_URL, webApp: true },
+          ).catch(() => {});
+        }
+
+        return json(data);
+      }
+
+      // ---- реванш: новая дуэль с тем же соперником + пуш ему ----
+      case "rematch_duel": {
+        const { data, error } = await supabase.rpc("rematch_duel", {
+          p_tg_id: tgId,
+          p_duel_id: payload.duel_id,
+        });
+        if (error) throw error;
+
+        const rivalId = data.rival_tg_id;
+        delete data.rival_tg_id;
+
+        if (rivalId) {
+          // startapp=duel_<id> обязателен, чтобы initData.startParam
+          // донёс id новой дуэли — web_app-кнопка это не умеет,
+          // поэтому тут классическая t.me-ссылка, как у обычного инвайта.
+          await sendTelegramMessage(
+            BOT_TOKEN,
+            rivalId,
+            `🔁 ${escapeHtml(tg.user.first_name ?? "Соперник")} зовёт тебя на реванш!`,
+            {
+              text: "Принять вызов",
+              url: appDeepLink(BOT_USERNAME, APP_SHORT_NAME, `duel_${data.duel_id}`),
+            },
           ).catch(() => {});
         }
 

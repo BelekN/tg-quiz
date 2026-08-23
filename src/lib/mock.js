@@ -137,6 +137,20 @@ export const mockApi = {
     }
   },
 
+  async rematch_duel() {
+    await wait(250)
+    state.score = 0
+    state.correct = 0
+    return {
+      duel_id: '00000000-0000-4000-8000-000000000002',
+      role: 'host',
+      status: 'pending',
+      answered: 0,
+      correct: 0,
+      questions: QUESTIONS.map(({ correct: _c, ...q }) => q),
+    }
+  },
+
   async leaderboard() {
     await wait(300)
     const me = {

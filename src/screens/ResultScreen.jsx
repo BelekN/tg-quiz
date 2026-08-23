@@ -9,11 +9,13 @@ const OUTCOME = {
   pending: { emoji: '⏳', title: 'Ждём соперника', color: 'text-tg-accent' },
 }
 
-export default function ResultScreen({ result, role, onHome }) {
+export default function ResultScreen({ result, role, onHome, onRematch }) {
   const [shared, setShared] = useState(false)
   const view = OUTCOME[result.outcome] ?? OUTCOME.pending
   // Приглашать есть смысл только хосту и только пока дуэль открыта
   const canInvite = role === 'host' && result.outcome === 'pending'
+  // Реванш — когда известны оба счёта и оба участника, независимо от роли
+  const canRematch = result.outcome !== 'pending'
 
   const invite = () => {
     haptic.tap()
@@ -22,6 +24,11 @@ export default function ResultScreen({ result, role, onHome }) {
       `Я набрал ${result.score} очков в дуэли. Побьёшь? ⚔️`,
     )
     setShared(true)
+  }
+
+  const rematch = () => {
+    haptic.tap()
+    onRematch()
   }
 
   const shareStory = () => {
@@ -48,7 +55,9 @@ export default function ResultScreen({ result, role, onHome }) {
               label: shared ? '↗️  Отправить ещё раз' : '🎯  Вызвать друга в Telegram',
               onClick: invite,
             }
-          : null
+          : canRematch
+            ? { label: '🔁 Реванш', onClick: rematch }
+            : null
       }
       secondaryAction={{ label: 'На главную', onClick: onHome }}
       tertiaryAction={{ label: '📖 Поделиться в истории', onClick: shareStory }}

@@ -61,6 +61,14 @@ export const answerQuestion = (duelId, index, answer, elapsedMs) =>
 /** Закрыть дуэль. Очки суммирует сервер из своих же записей. */
 export const finishDuel = (duelId) => call('finish_duel', { duel_id: duelId })
 
+/**
+ * Реванш: новая дуэль с тем же соперником, что был в finishedDuelId
+ * (сервер сам его определяет и пушит ему приглашение).
+ * -> { duel_id, role: 'host', status, questions, answered: 0, correct: 0 }
+ */
+export const rematchDuel = (finishedDuelId) =>
+  call('rematch_duel', { duel_id: finishedDuelId })
+
 /** Топ-20 по total_score + позиция текущего игрока. -> { top, me } */
 export const fetchLeaderboard = () => call('leaderboard')
 

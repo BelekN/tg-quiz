@@ -14,6 +14,7 @@ import {
   fetchMe,
   startDuel,
   finishDuel,
+  rematchDuel,
   parseDuelStartParam,
   setCity,
   setAvatar,
@@ -109,6 +110,22 @@ export default function App() {
       setBusy(false)
     }
   }, [])
+
+  // "Реванш" на экране результата — новая дуэль с тем же соперником,
+  // сервер сам его определяет из только что завершённой дуэли и
+  // шлёт ему пуш с приглашением.
+  const rematch = useCallback(async () => {
+    setScreen('rematching')
+    try {
+      const created = await rematchDuel(result.duel_id)
+      setDuel(created)
+      setResult(null)
+      setScreen('quiz')
+    } catch (e) {
+      setError(e.message)
+      setScreen('error')
+    }
+  }, [result])
 
   // все 5 вопросов отвечены -> просим сервер посчитать итог
   const completeDuel = useCallback(async () => {
@@ -264,6 +281,9 @@ export default function App() {
     case 'resuming':
       return <Loader label="Возвращаемся в дуэль…" />
 
+    case 'rematching':
+      return <Loader label="Готовим реванш…" />
+
     case 'error':
       return (
         <ErrorView
@@ -294,7 +314,12 @@ export default function App() {
 
     case 'result':
       return (
-        <ResultScreen result={result} role={duel?.role} onHome={goHome} />
+        <ResultScreen
+          result={result}
+          role={duel?.role}
+          onHome={goHome}
+          onRematch={rematch}
+        />
       )
 
     case 'leaderboard':
