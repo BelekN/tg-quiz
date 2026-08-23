@@ -174,6 +174,48 @@ export const mockApi = {
     return { top, me }
   },
 
+  async history() {
+    await wait(300)
+    return {
+      items: [
+        {
+          kind: 'duel',
+          id: 'h1',
+          happened_at: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
+          my_score: 420,
+          opponent_score: 310,
+          opponent: { first_name: 'Никита', username: 'nikita', photo_url: null, avatar_key: 'robot' },
+          outcome: 'win',
+        },
+        {
+          kind: 'sprint',
+          id: 'h2',
+          happened_at: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(),
+          score: 350,
+          correct: 7,
+        },
+        {
+          kind: 'duel',
+          id: 'h3',
+          happened_at: new Date(Date.now() - 1000 * 60 * 60 * 26).toISOString(),
+          my_score: 280,
+          opponent_score: null,
+          opponent: null,
+          outcome: 'pending',
+        },
+        {
+          kind: 'solo',
+          id: 'h4',
+          happened_at: new Date(Date.now() - 1000 * 60 * 60 * 30).toISOString(),
+          category: 'geo',
+          score: 900,
+          correct: 9,
+          total: 10,
+        },
+      ],
+    }
+  },
+
   async categories() {
     await wait(200)
     return {

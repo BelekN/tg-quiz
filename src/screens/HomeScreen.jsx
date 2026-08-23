@@ -11,6 +11,7 @@ export default function HomeScreen({
   tgUser,
   onCreateDuel,
   onLeaderboard,
+  onHistory,
   onSaveCity,
   onQuizTests,
   onSprint,
@@ -55,6 +56,17 @@ export default function HomeScreen({
             {name}
           </p>
         </div>
+        <button
+          type="button"
+          onClick={() => {
+            haptic.tap()
+            onHistory()
+          }}
+          className="grid h-9 w-9 place-items-center rounded-full bg-tg-surface text-lg active:scale-95"
+          aria-label="История"
+        >
+          📜
+        </button>
         <button
           type="button"
           onClick={() => {

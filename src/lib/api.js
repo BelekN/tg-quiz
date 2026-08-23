@@ -72,6 +72,9 @@ export const rematchDuel = (finishedDuelId) =>
 /** Топ-20 по total_score + позиция текущего игрока. -> { top, me } */
 export const fetchLeaderboard = () => call('leaderboard')
 
+/** Последние сыгранные дуэли/квиз-тесты/спринты. -> { items: [...] } */
+export const fetchHistory = () => call('history')
+
 /** Сохранить город (вводится пользователем один раз). -> { user } */
 export const setCity = (city) => call('set_city', { city })
 

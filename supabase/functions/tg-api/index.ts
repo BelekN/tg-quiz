@@ -180,6 +180,16 @@ Deno.serve(async (req) => {
         return json(data);
       }
 
+      // ---- история игр: дуэли + завершённые соло/спринт сессии ----
+      case "history": {
+        const { data, error } = await supabase.rpc("get_history", {
+          p_tg_id: tgId,
+          p_limit: 30,
+        });
+        if (error) throw error;
+        return json({ items: data });
+      }
+
       // ---- таблица лидеров: топ N + позиция текущего игрока ----
       case "leaderboard": {
         const { data, error } = await supabase.rpc("get_leaderboard", {

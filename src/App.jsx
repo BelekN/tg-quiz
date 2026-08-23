@@ -3,6 +3,7 @@ import HomeScreen from './screens/HomeScreen'
 import QuizScreen from './screens/QuizScreen'
 import ResultScreen from './screens/ResultScreen'
 import LeaderboardScreen from './screens/LeaderboardScreen'
+import HistoryScreen from './screens/HistoryScreen'
 import CategoryScreen from './screens/CategoryScreen'
 import SoloQuizScreen from './screens/SoloQuizScreen'
 import SoloResultScreen from './screens/SoloResultScreen'
@@ -325,6 +326,9 @@ export default function App() {
     case 'leaderboard':
       return <LeaderboardScreen onBack={() => setScreen('home')} />
 
+    case 'history':
+      return <HistoryScreen onBack={() => setScreen('home')} />
+
     case 'avatar-picker':
       return (
         <AvatarPickerScreen
@@ -392,6 +396,7 @@ export default function App() {
           busy={busy}
           onCreateDuel={createDuel}
           onLeaderboard={() => setScreen('leaderboard')}
+          onHistory={() => setScreen('history')}
           onSaveCity={saveCity}
           onQuizTests={() => setScreen('categories')}
           onSprint={startSprintRun}
