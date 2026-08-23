@@ -8,7 +8,10 @@
 //
 // --no-verify-jwt обязателен: авторизация тут своя, по initData.
 
-import { createClient } from "jsr:@supabase/supabase-js@2";
+// Версия закреплена явно: без пина `@2` резолвится к любой 2.x на
+// момент деплоя — так и вылезла регрессия, где .rpc(...) вернул
+// нечто без .catch() (см. фикс в теле функции ниже).
+import { createClient } from "jsr:@supabase/supabase-js@2.112.3";
 import { verifyInitData } from "./initData.ts";
 import {
   appDeepLink,
@@ -87,39 +90,65 @@ Deno.serve(async (req) => {
     return json({ error: String((e as Error).message) }, 401);
   }
 
-  // Best-effort защита от заспамливания одним initData: 40 запросов
-  // за 10 секунд с одного tg_id. Если сама проверка не выполнилась
-  // (транзиентная ошибка БД) — не роняем весь API, просто пропускаем
-  // запрос дальше; это не единственный рубеж защиты (очки и так
-  // считает Postgres из реально записанных ответов).
-  const { data: withinLimit, error: rlError } = await supabase.rpc(
-    "check_rate_limit",
-    { p_tg_id: tg.user.id },
-  );
-  if (rlError) {
-    console.error("check_rate_limit failed", rlError.message);
-  } else if (withinLimit === false) {
-    return json({ error: "RATE_LIMITED" }, 429);
-  }
-
-  const body = await req.json().catch(() => ({}));
-  const action = body?.action;
-  // "payload = {}" по умолчанию сработал бы только на undefined, а не
-  // на явный payload: null — а такой запрос легитимному пользователю
-  // собрать не стоит труда.
-  const payload = body?.payload ?? {};
-  const tgId = tg.user.id;
-
-  // Воронка: логируем только "крупные" события — старт/финиш каждого
-  // режима, вход, реванш, просмотр рейтинга/истории. Осознанно НЕ логируем
-  // answer_question/answer_solo/answer_sprint — это происходит по разу
-  // на каждый вопрос, для воронки такая частота только шум.
-  if (FUNNEL_ACTIONS.has(action)) {
-    await supabase.rpc("log_event", { p_tg_id: tgId, p_name: action, p_payload: payload })
-      .catch(() => {});
-  }
-
+  // ВАЖНО: всё, что ниже (до конца функции), обёрнуто в один try —
+  // до фикса check_rate_limit/req.json() выполнялись СНАРУЖИ try, и
+  // необработанное исключение там (напр. RPC-промис, который
+  // supabase-js в редких случаях реджектит, а не резолвит с
+  // {error}) улетало мимо json()-хелпера, а значит без CORS-заголовков.
+  // Браузер в таком случае видит не тело ошибки, а fetch()-реджект
+  // ("Load failed"/"Failed to fetch") — ровно то, что ловится по коду
+  // NETWORK_ERROR на клиенте и выглядит как обрыв сети, хотя на самом
+  // деле сервер уже ответил (просто ответом без CORS).
+  let action: string | undefined;
   try {
+    // Best-effort защита от заспамливания одним initData: 40 запросов
+    // за 10 секунд с одного tg_id. Если сама проверка не выполнилась
+    // (транзиентная ошибка БД) — не роняем весь API, просто пропускаем
+    // запрос дальше; это не единственный рубеж защиты (очки и так
+    // считает Postgres из реально записанных ответов).
+    const { data: withinLimit, error: rlError } = await supabase.rpc(
+      "check_rate_limit",
+      { p_tg_id: tg.user.id },
+    );
+    if (rlError) {
+      console.error("check_rate_limit failed", rlError.message);
+    } else if (withinLimit === false) {
+      return json({ error: "RATE_LIMITED" }, 429);
+    }
+
+    const body = await req.json().catch(() => ({}));
+    action = body?.action;
+    // "payload = {}" по умолчанию сработал бы только на undefined, а не
+    // на явный payload: null — а такой запрос легитимному пользователю
+    // собрать не стоит труда.
+    const payload = body?.payload ?? {};
+    const tgId = tg.user.id;
+
+    // Воронка: логируем только "крупные" события — старт/финиш каждого
+    // режима, вход, реванш, просмотр рейтинга/истории. Осознанно НЕ логируем
+    // answer_question/answer_solo/answer_sprint — это происходит по разу
+    // на каждый вопрос, для воронки такая частота только шум.
+    //
+    // "me" — отдельный случай: events.tg_id это FK на users(tg_id), а
+    // для совсем нового пользователя строки в users ещё нет (её создаёт
+    // upsert_user внутри case "me" ниже). Залогировать здесь — верную
+    // FK-ошибку, которая тихо проглатывалась try/catch, и самое важное
+    // событие воронки (первый вход) для новых пользователей никогда не
+    // попадало в events. Логируем "me" отдельно, после upsert_user.
+    if (FUNNEL_ACTIONS.has(action) && action !== "me") {
+      // supabase-js RPC-builder — не всегда настоящий Promise (сборка не
+      // закреплена лок-файлом), .catch() на нём может быть не функцией
+      // вовсе — из-за этого ловили необработанное исключение мимо всех
+      // try/catch и ответ без CORS-заголовков (браузер видел это как
+      // сетевой сбой). try/catch вместо чейнинга работает независимо от
+      // формы возвращаемого объекта.
+      try {
+        await supabase.rpc("log_event", { p_tg_id: tgId, p_name: action, p_payload: payload });
+      } catch {
+        /* воронка — best-effort, не роняем основной запрос */
+      }
+    }
+
     switch (action) {
       // ---- вход: апсертим профиль, отдаём баланс ----
       case "me": {
@@ -130,6 +159,11 @@ Deno.serve(async (req) => {
           p_photo_url: tg.user.photo_url ?? null,
         });
         if (error) throw error;
+        try {
+          await supabase.rpc("log_event", { p_tg_id: tgId, p_name: "me", p_payload: payload });
+        } catch {
+          /* воронка — best-effort */
+        }
         return json({ user: data, start_param: tg.startParam });
       }
 

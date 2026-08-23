@@ -10,7 +10,8 @@ export function Loader({ label = 'Загрузка…' }) {
 }
 
 const MESSAGES = {
-  NETWORK_ERROR: 'Проблема с соединением. Проверьте интернет и попробуйте снова.',
+  OFFLINE: 'Пропал интернет. Проверьте подключение и попробуйте снова.',
+  NETWORK_ERROR: 'Не получилось связаться с сервером. Похоже, ошибка на нашей стороне.',
   NO_INIT_DATA: 'Откройте приложение внутри Telegram.',
   UNAUTHORIZED: 'Не удалось подтвердить вход через Telegram.',
   INIT_DATA_BAD_HASH: 'Подпись Telegram не совпала. Перезапустите приложение.',
@@ -23,14 +24,19 @@ const MESSAGES = {
   NOT_ENOUGH_QUESTIONS: 'В базе пока мало вопросов.',
 }
 
-export function ErrorView({ code, onRetry, secondaryAction }) {
+export function ErrorView({ code, detail, onRetry, secondaryAction }) {
   return (
     <Screen className="items-center justify-center text-center">
       <div className="text-4xl">😕</div>
       <p className="mt-3 text-[15px] font-medium">
         {MESSAGES[code] ?? 'Что-то пошло не так.'}
       </p>
+      {/* Код всегда показываем как есть — если пользователь пришлёт
+          скриншот, по коду (и detail, если есть) сразу понятно, где искать. */}
       <p className="mt-1 text-xs text-tg-hint">{code}</p>
+      {detail && (
+        <p className="mt-1 max-w-xs text-[11px] text-tg-hint/70 break-all">{detail}</p>
+      )}
       {secondaryAction && (
         <button
           type="button"

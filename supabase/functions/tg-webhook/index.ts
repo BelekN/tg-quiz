@@ -9,7 +9,8 @@
 //   curl "https://<project>.supabase.co/functions/v1/tg-webhook?setup=<WEBHOOK_SECRET>"
 //   (сам зарегистрирует вебхук и меню команд — см. GET-ветку ниже)
 
-import { createClient } from "jsr:@supabase/supabase-js@2";
+// Версия закреплена явно — см. комментарий в tg-api/index.ts.
+import { createClient } from "jsr:@supabase/supabase-js@2.112.3";
 import {
   appDeepLink,
   escapeHtml,

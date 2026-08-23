@@ -40,7 +40,7 @@ async function fetchMeWithRetry(retries = 2) {
     try {
       return await fetchMe()
     } catch (e) {
-      if (e.message !== 'NETWORK_ERROR' || attempt >= retries) throw e
+      if ((e.message !== 'NETWORK_ERROR' && e.message !== 'OFFLINE') || attempt >= retries) throw e
       await new Promise((r) => setTimeout(r, 600 * (attempt + 1)))
     }
   }
@@ -57,7 +57,18 @@ async function fetchMeWithRetry(retries = 2) {
 export default function App() {
   const [screen, setScreen] = useState('boot')
   const [error, setError] = useState(null)
+  const [errorDetail, setErrorDetail] = useState(null)
   const [busy, setBusy] = useState(false)
+
+  // Единая точка показа ошибки: код всегда из e.message (стабильный,
+  // на него смотрит MESSAGES и retry-проверки), detail — реальная
+  // причина от браузера/сервера, если она есть, чтобы пользователь мог
+  // прислать её нам как есть, а не только обезличенный код.
+  const showError = useCallback((e) => {
+    setError(e.message)
+    setErrorDetail(e.detail ?? null)
+    setScreen('error')
+  }, [])
 
   const [user, setUser] = useState(null)
   const [duel, setDuel] = useState(null) // { duel_id, role, questions }
@@ -106,17 +117,14 @@ export default function App() {
 
         setScreen('home')
       } catch (e) {
-        if (alive) {
-          setError(e.message)
-          setScreen('error')
-        }
+        if (alive) showError(e)
       }
     })()
 
     return () => {
       alive = false
     }
-  }, [])
+  }, [showError])
 
   const createDuel = useCallback(async () => {
     setBusy(true)
@@ -125,12 +133,11 @@ export default function App() {
       setDuel(created)
       setScreen('quiz')
     } catch (e) {
-      setError(e.message)
-      setScreen('error')
+      showError(e)
     } finally {
       setBusy(false)
     }
-  }, [])
+  }, [showError])
 
   // "Реванш" на экране результата — новая дуэль с тем же соперником,
   // сервер сам его определяет из только что завершённой дуэли и
@@ -143,10 +150,9 @@ export default function App() {
       setResult(null)
       setScreen('quiz')
     } catch (e) {
-      setError(e.message)
-      setScreen('error')
+      showError(e)
     }
-  }, [result])
+  }, [result, showError])
 
   // все 5 вопросов отвечены -> просим сервер посчитать итог
   const completeDuel = useCallback(async () => {
@@ -167,10 +173,9 @@ export default function App() {
       )
       if (res.new_achievements?.length) setNewAchievements(res.new_achievements)
     } catch (e) {
-      setError(e.message)
-      setScreen('error')
+      showError(e)
     }
-  }, [duel])
+  }, [duel, showError])
 
   // Соперник доиграл ПОЗЖЕ нас — пока мы сидели на "Ждём соперника",
   // ResultScreen сам поллит get_duel_progress и вызывает это, когда
@@ -206,10 +211,9 @@ export default function App() {
       setDuel(resumed)
       setScreen('quiz')
     } catch (e) {
-      setError(e.message)
-      setScreen('error')
+      showError(e)
     }
-  }, [duel])
+  }, [duel, showError])
 
   const saveCity = useCallback(async (city) => {
     const res = await setCity(city)
@@ -222,10 +226,9 @@ export default function App() {
       setUser(res.user)
       setScreen('home')
     } catch (e) {
-      setError(e.message)
-      setScreen('error')
+      showError(e)
     }
-  }, [])
+  }, [showError])
 
   const pickCategory = useCallback(async (category) => {
     try {
@@ -233,10 +236,9 @@ export default function App() {
       setSolo(started)
       setScreen('solo-quiz')
     } catch (e) {
-      setError(e.message)
-      setScreen('error')
+      showError(e)
     }
-  }, [])
+  }, [showError])
 
   // все вопросы соло-сессии отвечены -> считаем итог
   const completeSolo = useCallback(async () => {
@@ -256,10 +258,9 @@ export default function App() {
       )
       if (res.new_achievements?.length) setNewAchievements(res.new_achievements)
     } catch (e) {
-      setError(e.message)
-      setScreen('error')
+      showError(e)
     }
-  }, [solo])
+  }, [solo, showError])
 
   const startSprintRun = useCallback(async () => {
     setBusy(true)
@@ -268,12 +269,11 @@ export default function App() {
       setSprint(started)
       setScreen('sprint')
     } catch (e) {
-      setError(e.message)
-      setScreen('error')
+      showError(e)
     } finally {
       setBusy(false)
     }
-  }, [])
+  }, [showError])
 
   // 60 секунд истекли (или вопросы кончились) -> считаем итог
   const completeSprint = useCallback(async () => {
@@ -293,10 +293,9 @@ export default function App() {
       )
       if (res.new_achievements?.length) setNewAchievements(res.new_achievements)
     } catch (e) {
-      setError(e.message)
-      setScreen('error')
+      showError(e)
     }
-  }, [sprint])
+  }, [sprint, showError])
 
   const goHome = useCallback(async () => {
     setDuel(null)
@@ -334,6 +333,7 @@ export default function App() {
       return (
         <ErrorView
           code={error}
+          detail={errorDetail}
           onRetry={goHome}
           secondaryAction={
             duel?.duel_id
@@ -351,10 +351,7 @@ export default function App() {
           startIndex={duel.answered ?? 0}
           startCorrect={duel.correct ?? 0}
           onComplete={completeDuel}
-          onError={(code) => {
-            setError(code)
-            setScreen('error')
-          }}
+          onError={showError}
         />
       )
 
@@ -399,10 +396,7 @@ export default function App() {
           category={solo.category}
           questions={solo.questions}
           onComplete={completeSolo}
-          onError={(code) => {
-            setError(code)
-            setScreen('error')
-          }}
+          onError={showError}
         />
       )
 
@@ -421,10 +415,7 @@ export default function App() {
           sessionId={sprint.session_id}
           questions={sprint.questions}
           onComplete={completeSprint}
-          onError={(code) => {
-            setError(code)
-            setScreen('error')
-          }}
+          onError={showError}
         />
       )
 

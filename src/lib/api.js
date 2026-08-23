@@ -24,26 +24,41 @@ async function call(action, payload = {}) {
         // Схема `tma` — рекомендованный Telegram способ передачи initData
         Authorization: `tma ${initDataRaw}`,
         // apikey намеренно не шлём: функция задеплоена с --no-verify-jwt,
-        // шлюз Supabase этот заголовок не требует, а Edge Function
-        // разрешает в CORS только authorization/content-type — лишний
-        // заголовок валит preflight с "not allowed by
-        // Access-Control-Allow-Headers" ещё до отправки запроса.
+        // шлюз Supabase этот заголовок не требует, а на CORS его
+        // добавление ничего не даёт — Edge Function и так разрешает
+        // authorization, content-type, apikey, x-client-info (см.
+        // supabase/functions/tg-api/index.ts).
       },
       body: JSON.stringify({ action, payload }),
     })
-  } catch {
-    // fetch() сам бросает при разрыве сети/DNS — без этого наружу
+  } catch (e) {
+    // fetch() сам бросает при разрыве сети/DNS/CORS — без этого наружу
     // утекал бы сырой текст браузера ("Load failed", "Failed to
     // fetch"), непонятный пользователю и не подхватываемый MESSAGES.
-    throw new ApiError('NETWORK_ERROR')
+    // Настоящую причину не прячем: кладём её в detail, чтобы было что
+    // показать пользователю и что присылать нам для диагностики —
+    // OFFLINE и NETWORK_ERROR выглядят для юзера одинаково подозрительно,
+    // но если navigator.onLine=false, это точно не наша сторона.
+    const offline = typeof navigator !== 'undefined' && navigator.onLine === false
+    throw new ApiError(
+      offline ? 'OFFLINE' : 'NETWORK_ERROR',
+      `${e?.name ?? 'Error'}: ${e?.message ?? String(e)}`,
+    )
   }
 
   const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new ApiError(data.error || `HTTP_${res.status}`)
+  if (!res.ok) {
+    throw new ApiError(data.error || `HTTP_${res.status}`, `HTTP ${res.status}`)
+  }
   return data
 }
 
-export class ApiError extends Error {}
+export class ApiError extends Error {
+  constructor(code, detail = null) {
+    super(code)
+    this.detail = detail
+  }
+}
 
 /** Апсерт профиля + баланс. -> { user, start_param } */
 export const fetchMe = () => call('me')

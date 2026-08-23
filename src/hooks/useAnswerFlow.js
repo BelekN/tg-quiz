@@ -40,7 +40,15 @@ export function useAnswerFlow({ questions, startIndex = 0, startCorrect = 0, onE
         }
         return res
       } catch (e) {
-        onError(e.message)
+        // Сегодня onError всегда уводит на весь экран ошибки (см.
+        // App.jsx), так что этот экран размонтируется вместе со
+        // своим состоянием — но если когда-нибудь появится восстановление
+        // на месте без перемонтирования, вопрос иначе навечно останется
+        // заблокированным на 'sending'.
+        setSelected(null)
+        setPhase('answering')
+        lockedRef.current = false
+        onError(e)
       }
     },
     [onError],

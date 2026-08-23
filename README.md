@@ -57,7 +57,7 @@ supabase/
 
 **1. База.** Открыть Supabase SQL Editor → по очереди:
 `supabase/migrations/001_init.sql` → Run, затем все `002_*.sql` …
-`019_*.sql` по номерам (это схема, RPC и расписание pg_cron, не
+`020_*.sql` по номерам (это схема, RPC и расписание pg_cron, не
 вопросы; в `011_cron_schedule.sql` перед запуском подставь свой
 `CRON_SECRET` вместо `<CRON_SECRET>`), затем `supabase/questions/bank.sql`
 — он даёт полный текущий набор вопросов. Все скрипты идемпотентны,

@@ -7,7 +7,8 @@
 //   supabase functions deploy tg-cron --no-verify-jwt
 //   supabase secrets set CRON_SECRET=... BOT_USERNAME=... APP_SHORT_NAME=...
 
-import { createClient } from "jsr:@supabase/supabase-js@2";
+// Версия закреплена явно — см. комментарий в tg-api/index.ts.
+import { createClient } from "jsr:@supabase/supabase-js@2.112.3";
 import {
   appDeepLink,
   escapeHtml,
@@ -46,11 +47,17 @@ function pickVariant(tgId: number, count: number) {
 }
 
 async function logPushSent(tgId: number, pushType: string, variant: number) {
-  await supabase.rpc("log_event", {
-    p_tg_id: tgId,
-    p_name: "push_sent",
-    p_payload: { push_type: pushType, variant },
-  }).catch(() => {});
+  // .catch() чейнингом на RPC-builder'е — не всегда настоящий Promise,
+  // .catch может быть не функцией вовсе (см. аналогичный фикс в tg-api).
+  try {
+    await supabase.rpc("log_event", {
+      p_tg_id: tgId,
+      p_name: "push_sent",
+      p_payload: { push_type: pushType, variant },
+    });
+  } catch {
+    /* воронка — best-effort */
+  }
 }
 
 Deno.serve(async (req) => {
