@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import ResultCard from '../components/ResultCard'
+import { fetchDuelProgress } from '../lib/api'
 import { haptic, shareDuelLink, shareResultToStory } from '../lib/telegram'
 
 const OUTCOME = {
@@ -9,9 +10,32 @@ const OUTCOME = {
   pending: { emoji: '⏳', title: 'Ждём соперника', color: 'text-tg-accent' },
 }
 
-export default function ResultScreen({ result, role, onHome, onRematch }) {
+const POLL_MS = 4000
+
+export default function ResultScreen({ result, role, onHome, onRematch, onOpponentFinished }) {
   const [shared, setShared] = useState(false)
   const view = OUTCOME[result.outcome] ?? OUTCOME.pending
+
+  // Пока ждём соперника — поллим вместо того, чтобы заставлять
+  // человека самому выходить и заходить обратно, чтобы узнать исход.
+  useEffect(() => {
+    if (result.outcome !== 'pending' || !result.duel_id) return
+    let alive = true
+
+    const tick = () => {
+      fetchDuelProgress(result.duel_id)
+        .then((progress) => {
+          if (alive && progress.opponent_finished) onOpponentFinished(progress)
+        })
+        .catch(() => {}) // сеть моргнула — попробуем на следующем тике
+    }
+    const id = setInterval(tick, POLL_MS)
+
+    return () => {
+      alive = false
+      clearInterval(id)
+    }
+  }, [result.outcome, result.duel_id, onOpponentFinished])
   // Приглашать есть смысл только хосту и только пока дуэль открыта
   const canInvite = role === 'host' && result.outcome === 'pending'
   // Реванш — когда известны оба счёта и оба участника, независимо от роли

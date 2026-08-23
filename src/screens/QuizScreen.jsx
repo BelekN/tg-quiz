@@ -1,13 +1,14 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import Screen from '../components/Screen'
 import TimerBar from '../components/TimerBar'
 import AnswerButton from '../components/AnswerButton'
 import { useCountdown } from '../hooks/useCountdown'
 import { useAnswerFlow } from '../hooks/useAnswerFlow'
-import { answerQuestion } from '../lib/api'
+import { answerQuestion, fetchDuelProgress } from '../lib/api'
 
 const QUESTION_MS = 10_000
 const REVEAL_MS = 1100
+const PROGRESS_POLL_MS = 3000
 
 export default function QuizScreen({
   duelId,
@@ -60,6 +61,25 @@ export default function QuizScreen({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, isLast])
 
+  // Прогресс соперника — поллинг вместо realtime (см. get_duel_progress).
+  // Чисто информационное: свой прогресс/защита от накрутки не зависят
+  // от этого ни капли.
+  const [opponentProgress, setOpponentProgress] = useState(null)
+  useEffect(() => {
+    let alive = true
+    const tick = () => {
+      fetchDuelProgress(duelId)
+        .then((p) => alive && setOpponentProgress(p))
+        .catch(() => {})
+    }
+    tick()
+    const id = setInterval(tick, PROGRESS_POLL_MS)
+    return () => {
+      alive = false
+      clearInterval(id)
+    }
+  }, [duelId])
+
   return (
     <Screen>
       {/* ---- прогресс по вопросам ---- */}
@@ -87,6 +107,14 @@ export default function QuizScreen({
           />
         ))}
       </div>
+
+      {opponentProgress?.opponent_joined && (
+        <p className="mt-2 text-right text-xs text-tg-hint">
+          {opponentProgress.opponent_finished
+            ? 'Соперник закончил'
+            : `Соперник: ${opponentProgress.opponent_answered}/${opponentProgress.total}`}
+        </p>
+      )}
 
       {/* ---- таймер ---- */}
       <div className="mt-5">
