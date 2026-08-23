@@ -1,12 +1,16 @@
-/** Плашка режима. soon=true -> некликабельна, с бейджем «Скоро». */
-export default function ModeCard({ icon, title, subtitle, soon, onClick }) {
+/**
+ * Плашка режима. soon=true -> некликабельна, с бейджем «Скоро».
+ * disabled=true -> временно некликабельна (например, пока запускается
+ * другой режим) без бейджа — просто чуть притушена.
+ */
+export default function ModeCard({ icon, title, subtitle, soon, disabled, onClick }) {
   return (
     <button
       type="button"
-      disabled={soon}
+      disabled={soon || disabled}
       onClick={onClick}
       className={`relative flex w-full items-center gap-3.5 rounded-2xl border border-white/5 bg-tg-section px-4 py-4 text-left transition-transform ${
-        soon ? 'opacity-45' : 'active:scale-[0.98]'
+        soon || disabled ? 'opacity-45' : 'active:scale-[0.98]'
       }`}
     >
       <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-tg-accent/15 text-xl">

@@ -5,16 +5,19 @@ import { haptic } from '../lib/telegram'
 export default function CityPrompt({ onSave }) {
   const [value, setValue] = useState('')
   const [saving, setSaving] = useState(false)
+  const [failed, setFailed] = useState(false)
 
   const submit = async () => {
     const city = value.trim()
     if (!city || saving) return
     setSaving(true)
+    setFailed(false)
     try {
       await onSave(city)
       haptic.success()
     } catch {
       haptic.error()
+      setFailed(true)
       setSaving(false)
     }
   }
@@ -44,6 +47,11 @@ export default function CityPrompt({ onSave }) {
           {saving ? '…' : 'Сохранить'}
         </button>
       </div>
+      {failed && (
+        <p className="mt-2 text-xs text-tg-danger">
+          Не получилось сохранить, попробуйте ещё раз
+        </p>
+      )}
     </div>
   )
 }

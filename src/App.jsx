@@ -139,8 +139,14 @@ export default function App() {
   }, [])
 
   const pickAvatar = useCallback(async (avatarKey) => {
-    const res = await setAvatar(avatarKey)
-    setUser(res.user)
+    try {
+      const res = await setAvatar(avatarKey)
+      setUser(res.user)
+      setScreen('home')
+    } catch (e) {
+      setError(e.message)
+      setScreen('error')
+    }
   }, [])
 
   const pickCategory = useCallback(async (category) => {
@@ -268,10 +274,7 @@ export default function App() {
         <AvatarPickerScreen
           currentAvatarKey={user?.avatar_key}
           onBack={() => setScreen('home')}
-          onPick={async (key) => {
-            await pickAvatar(key)
-            setScreen('home')
-          }}
+          onPick={pickAvatar}
         />
       )
 

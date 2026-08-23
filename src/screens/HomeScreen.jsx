@@ -84,6 +84,7 @@ export default function HomeScreen({
           icon="⚡"
           title="Спринт"
           subtitle="Успей ответить на максимум за 60 секунд"
+          disabled={busy}
           onClick={() => {
             haptic.tap()
             onSprint()

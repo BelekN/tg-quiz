@@ -7,6 +7,22 @@ import { haptic } from '../lib/telegram'
 
 export default function CategoryScreen({ onBack, onPick }) {
   const [state, setState] = useState({ status: 'loading', categories: [] })
+  // Блокируем повторный тап по любой карточке, пока предыдущий выбор
+  // категории ещё в полёте — иначе двойной тап на разные категории
+  // может доставить сюда старт-сессию уже после перехода на другой
+  // экран и рассинхронизировать questions/session_id на нём.
+  const [picking, setPicking] = useState(false)
+
+  const handlePick = async (category) => {
+    if (picking) return
+    setPicking(true)
+    haptic.tap()
+    try {
+      await onPick(category)
+    } finally {
+      setPicking(false)
+    }
+  }
 
   useEffect(() => {
     let alive = true
@@ -44,11 +60,9 @@ export default function CategoryScreen({ onBack, onPick }) {
       <div className="animate-rise mt-5 flex flex-col gap-2.5">
         <button
           type="button"
-          onClick={() => {
-            haptic.tap()
-            onPick('mixed')
-          }}
-          className="flex w-full items-center gap-3.5 rounded-2xl border border-tg-accent/30 bg-tg-accent/10 px-4 py-4 text-left transition-transform active:scale-[0.98]"
+          disabled={picking}
+          onClick={() => handlePick('mixed')}
+          className="flex w-full items-center gap-3.5 rounded-2xl border border-tg-accent/30 bg-tg-accent/10 px-4 py-4 text-left transition-transform active:scale-[0.98] disabled:opacity-60"
         >
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-tg-accent/20 text-xl">
             🎲
@@ -68,11 +82,9 @@ export default function CategoryScreen({ onBack, onPick }) {
             <button
               key={category}
               type="button"
-              onClick={() => {
-                haptic.tap()
-                onPick(category)
-              }}
-              className="flex w-full items-center gap-3.5 rounded-2xl border border-white/5 bg-tg-section px-4 py-4 text-left transition-transform active:scale-[0.98]"
+              disabled={picking}
+              onClick={() => handlePick(category)}
+              className="flex w-full items-center gap-3.5 rounded-2xl border border-white/5 bg-tg-section px-4 py-4 text-left transition-transform active:scale-[0.98] disabled:opacity-60"
             >
               <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-tg-accent/15 text-xl">
                 {meta.icon}
