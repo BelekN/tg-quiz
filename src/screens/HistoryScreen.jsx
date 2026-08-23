@@ -67,6 +67,8 @@ export default function HistoryScreen({ onBack }) {
             <DuelRow key={item.id} item={item} />
           ) : item.kind === 'solo' ? (
             <SoloRow key={item.id} item={item} />
+          ) : item.kind === 'persona' ? (
+            <PersonaRow key={item.id} item={item} />
           ) : (
             <SprintRow key={item.id} item={item} />
           ),
@@ -135,6 +137,21 @@ function SoloRow({ item }) {
           {item.correct}/{item.total}
         </p>
       }
+    />
+  )
+}
+
+function PersonaRow({ item }) {
+  return (
+    <Card
+      icon={
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-tg-accent/15 text-lg">
+          🔮
+        </span>
+      }
+      title={item.result_title}
+      subtitle={`${item.test_title} · ${dateFormatter.format(new Date(item.happened_at))}`}
+      score={item.icon}
     />
   )
 }

@@ -75,6 +75,59 @@ const meUser = {
   total_score: 1240,
   coins: 85,
 }
+const PERSONA_TESTS = {
+  mock_categorical: {
+    key: 'mock_categorical',
+    title: 'Мок-тест (категории)',
+    description: 'Заглушка для вёрстки — categorical scoring',
+    icon: '🔮',
+    scoring: 'categorical',
+    questions: [
+      {
+        id: 'p1',
+        question: 'Вопрос 1?',
+        options: [
+          { label: 'Вариант A', result_key: 'foo' },
+          { label: 'Вариант B', result_key: 'bar' },
+        ],
+      },
+      {
+        id: 'p2',
+        question: 'Вопрос 2?',
+        options: [
+          { label: 'Вариант A', result_key: 'foo' },
+          { label: 'Вариант B', result_key: 'bar' },
+        ],
+      },
+    ],
+    results: [
+      { key: 'foo', title: 'Ты — Фу', description: 'Мок-результат Foo для вёрстки.', icon: '🦊' },
+      { key: 'bar', title: 'Ты — Бар', description: 'Мок-результат Bar для вёрстки.', icon: '🐻' },
+    ],
+  },
+  mock_scale: {
+    key: 'mock_scale',
+    title: 'Мок-тест (шкала)',
+    description: 'Заглушка для вёрстки — scale scoring',
+    icon: '🔥',
+    scoring: 'scale',
+    questions: [
+      {
+        id: 'p3',
+        question: 'Вопрос со шкалой?',
+        options: [
+          { label: 'Никогда', value: 0 },
+          { label: 'Почти всегда', value: 3 },
+        ],
+      },
+    ],
+    results: [
+      { key: 'low', title: 'Низкий уровень', description: 'Мок-результат для низкого счёта.', icon: '🌤️', min_score: 0, max_score: 1 },
+      { key: 'high', title: 'Высокий уровень', description: 'Мок-результат для высокого счёта.', icon: '🚨', min_score: 2, max_score: 3 },
+    ],
+  },
+}
+const personaState = { session_id: null, test_key: null }
 const wait = (ms) => new Promise((r) => setTimeout(r, ms))
 
 export const mockApi = {
@@ -213,6 +266,16 @@ export const mockApi = {
           correct: 9,
           total: 10,
         },
+        {
+          kind: 'persona',
+          id: 'h5',
+          happened_at: new Date(Date.now() - 1000 * 60 * 60 * 40).toISOString(),
+          test_key: 'mock_categorical',
+          test_title: 'Мок-тест (категории)',
+          result_key: 'foo',
+          result_title: 'Ты — Фу',
+          icon: '🦊',
+        },
       ],
     }
   },
@@ -317,6 +380,35 @@ export const mockApi = {
         { key: 'score_5000', title: 'Профи', description: 'Наберите 5000 очков всего', icon: '🏆', unlocked_at: null },
       ],
     }
+  },
+
+  async persona_tests() {
+    await wait(200)
+    return {
+      items: Object.values(PERSONA_TESTS).map(({ questions: _q, results: _r, ...t }) => t),
+    }
+  },
+
+  async start_persona({ test_key }) {
+    await wait(250)
+    const test = PERSONA_TESTS[test_key]
+    personaState.session_id = `persona-${test_key}`
+    personaState.test_key = test_key
+    return {
+      session_id: personaState.session_id,
+      test_key: test.key,
+      title: test.title,
+      scoring: test.scoring,
+      questions: test.questions,
+      results: test.results.map(({ title: _t, description: _d, icon: _i, ...r }) => r),
+    }
+  },
+
+  async finish_persona({ result_key }) {
+    await wait(300)
+    const test = PERSONA_TESTS[personaState.test_key]
+    const result = test.results.find((r) => r.key === result_key)
+    return { test_key: test.key, key: result.key, title: result.title, description: result.description, icon: result.icon }
   },
 
   async duel_progress() {

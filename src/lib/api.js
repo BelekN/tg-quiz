@@ -138,6 +138,16 @@ export const answerSprint = (sessionId, index, answer) =>
 export const finishSprint = (sessionId) =>
   call('finish_sprint', { session_id: sessionId })
 
+/** Каталог тестов "Кто ты из...". -> { items: [{key, title, description, icon}] } */
+export const fetchPersonaTests = () => call('persona_tests')
+
+/** Начать тест: все вопросы целиком (нет ни таймера, ни скрытых полей). */
+export const startPersona = (testKey) => call('start_persona', { test_key: testKey })
+
+/** Результат считает клиент (см. lib/persona.js), сервер только валидирует result_key. */
+export const finishPersona = (sessionId, resultKey) =>
+  call('finish_persona', { session_id: sessionId, result_key: resultKey })
+
 /** duel_<uuid> -> uuid */
 export function parseDuelStartParam(startParam) {
   const m = /^duel_([0-9a-fA-F-]{36})$/.exec(startParam ?? '')

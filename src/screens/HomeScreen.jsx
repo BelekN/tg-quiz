@@ -16,6 +16,7 @@ export default function HomeScreen({
   onSaveCity,
   onQuizTests,
   onSprint,
+  onPersona,
   onEditAvatar,
   busy,
 }) {
@@ -155,6 +156,15 @@ export default function HomeScreen({
           onClick={() => {
             haptic.tap()
             onQuizTests()
+          }}
+        />
+        <ModeCard
+          icon="🔮"
+          title="Кто ты из..."
+          subtitle="Пройди тест — получи карточку для сторис"
+          onClick={() => {
+            haptic.tap()
+            onPersona()
           }}
         />
       </div>

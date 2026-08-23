@@ -12,6 +12,9 @@ import SoloResultScreen from './screens/SoloResultScreen'
 import SprintScreen from './screens/SprintScreen'
 import SprintResultScreen from './screens/SprintResultScreen'
 import AvatarPickerScreen from './screens/AvatarPickerScreen'
+import PersonaListScreen from './screens/PersonaListScreen'
+import PersonaQuizScreen from './screens/PersonaQuizScreen'
+import PersonaResultScreen from './screens/PersonaResultScreen'
 import { Loader, ErrorView } from './components/StateView'
 import {
   fetchMe,
@@ -25,7 +28,10 @@ import {
   finishSolo,
   startSprint,
   finishSprint,
+  startPersona,
+  finishPersona,
 } from './lib/api'
+import { computePersonaResult } from './lib/persona'
 import { initTelegram, getTgUser, getStartParam } from './lib/telegram'
 
 initTelegram()
@@ -79,6 +85,9 @@ export default function App() {
 
   const [sprint, setSprint] = useState(null) // { session_id, questions }
   const [sprintResult, setSprintResult] = useState(null)
+
+  const [persona, setPersona] = useState(null) // { session_id, test_key, title, scoring, questions, results }
+  const [personaResult, setPersonaResult] = useState(null)
 
   const [newAchievements, setNewAchievements] = useState(null)
 
@@ -297,6 +306,30 @@ export default function App() {
     }
   }, [sprint, showError])
 
+  const pickPersonaTest = useCallback(async (testKey) => {
+    try {
+      const started = await startPersona(testKey)
+      setPersona(started)
+      setScreen('persona-quiz')
+    } catch (e) {
+      showError(e)
+    }
+  }, [showError])
+
+  // result_key считаем на клиенте (см. lib/persona.js) — сервер здесь
+  // только проверяет, что такой результат существует у этого теста.
+  const completePersona = useCallback(async (answers) => {
+    setScreen('finishing')
+    try {
+      const resultKey = computePersonaResult(persona.scoring, answers, persona.results)
+      const res = await finishPersona(persona.session_id, resultKey)
+      setPersonaResult(res)
+      setScreen('persona-result')
+    } catch (e) {
+      showError(e)
+    }
+  }, [persona, showError])
+
   const goHome = useCallback(async () => {
     setDuel(null)
     setResult(null)
@@ -304,6 +337,8 @@ export default function App() {
     setSoloResult(null)
     setSprint(null)
     setSprintResult(null)
+    setPersona(null)
+    setPersonaResult(null)
     setError(null)
     setScreen('home')
     // подтянуть баланс на случай, если соперник дозакрыл дуэль
@@ -428,6 +463,30 @@ export default function App() {
         />
       )
 
+    case 'persona-list':
+      return (
+        <PersonaListScreen onBack={() => setScreen('home')} onPick={pickPersonaTest} />
+      )
+
+    case 'persona-quiz':
+      return (
+        <PersonaQuizScreen
+          title={persona.title}
+          questions={persona.questions}
+          onComplete={completePersona}
+        />
+      )
+
+    case 'persona-result':
+      return (
+        <PersonaResultScreen
+          testTitle={persona.title}
+          result={personaResult}
+          onHome={goHome}
+          onPlayAgain={() => setScreen('persona-list')}
+        />
+      )
+
     default:
       return (
         <HomeScreen
@@ -441,6 +500,7 @@ export default function App() {
           onSaveCity={saveCity}
           onQuizTests={() => setScreen('categories')}
           onSprint={startSprintRun}
+          onPersona={() => setScreen('persona-list')}
           onEditAvatar={() => setScreen('avatar-picker')}
         />
       )

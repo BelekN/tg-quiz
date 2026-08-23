@@ -44,6 +44,8 @@ const FUNNEL_ACTIONS = new Set([
   "finish_solo",
   "start_sprint",
   "finish_sprint",
+  "start_persona",
+  "finish_persona",
   "leaderboard",
   "history",
   "set_city",
@@ -362,6 +364,34 @@ Deno.serve(async (req) => {
         });
         if (error) throw error;
         await attachNewAchievements(tgId, data);
+        return json(data);
+      }
+
+      // ---- "Кто ты из...": каталог тестов ----
+      case "persona_tests": {
+        const { data, error } = await supabase.rpc("get_persona_tests");
+        if (error) throw error;
+        return json({ items: data });
+      }
+
+      // ---- старт теста: вопросы целиком, без скрытых полей ----
+      case "start_persona": {
+        const { data, error } = await supabase.rpc("start_persona", {
+          p_tg_id: tgId,
+          p_test_key: payload.test_key,
+        });
+        if (error) throw error;
+        return json(data);
+      }
+
+      // ---- финиш: результат считает клиент, сервер только валидирует ----
+      case "finish_persona": {
+        const { data, error } = await supabase.rpc("finish_persona", {
+          p_tg_id: tgId,
+          p_session_id: payload.session_id,
+          p_result_key: payload.result_key,
+        });
+        if (error) throw error;
         return json(data);
       }
 
