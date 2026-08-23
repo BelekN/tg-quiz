@@ -13,6 +13,7 @@ import { appDeepLink, escapeHtml, sendTelegramMessage } from "../_shared/telegra
 const BOT_TOKEN = Deno.env.get("BOT_TOKEN")!;
 const BOT_USERNAME = Deno.env.get("BOT_USERNAME") ?? "";
 const APP_SHORT_NAME = Deno.env.get("APP_SHORT_NAME") ?? "";
+const APP_URL = Deno.env.get("APP_URL") ?? "";
 const CRON_SECRET = Deno.env.get("CRON_SECRET")!;
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -54,7 +55,7 @@ Deno.serve(async (req) => {
       BOT_TOKEN,
       r.tg_id,
       `🧠 ${name}новые дуэли и вопросы уже ждут. Загляни на разок!`,
-      { text: "Открыть викторину", url: appDeepLink(BOT_USERNAME, APP_SHORT_NAME) },
+      { text: "Открыть викторину", url: APP_URL, webApp: true },
     ).catch(() => {});
   }
 

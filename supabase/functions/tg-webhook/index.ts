@@ -15,6 +15,7 @@ import { appDeepLink, escapeHtml, sendTelegramMessage } from "../_shared/telegra
 const BOT_TOKEN = Deno.env.get("BOT_TOKEN")!;
 const BOT_USERNAME = Deno.env.get("BOT_USERNAME") ?? "";
 const APP_SHORT_NAME = Deno.env.get("APP_SHORT_NAME") ?? "";
+const APP_URL = Deno.env.get("APP_URL") ?? "";
 const WEBHOOK_SECRET = Deno.env.get("WEBHOOK_SECRET")!;
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -41,8 +42,15 @@ const HELP_TEXT =
   "/rating — топ игроков и твоё место\n" +
   "/help — это сообщение";
 
+// Без startParam кнопка — web_app: Telegram запускает мини-апп прямо
+// и показывает "OPEN" в списке чатов у этого сообщения (как у Wallet).
+// Со startParam (инвайт на дуэль из /start duel_xxx) web_app не подходит:
+// он не прокидывает startParam в initData, поэтому там — классическая
+// t.me-ссылка через appDeepLink.
 function openAppButton(startParam?: string) {
-  return { text: "🎮 Играть", url: appDeepLink(BOT_USERNAME, APP_SHORT_NAME, startParam) };
+  return startParam
+    ? { text: "🎮 Играть", url: appDeepLink(BOT_USERNAME, APP_SHORT_NAME, startParam) }
+    : { text: "🎮 Играть", url: APP_URL, webApp: true };
 }
 
 async function sendRating(chatId: number, tgId: number) {
@@ -94,7 +102,7 @@ Deno.serve(async (req) => {
     // req.url — внутренний адрес за прокси Supabase, а не публичный
     // HTTPS-хост, поэтому собираем его из SUPABASE_URL явно.
     const publicUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/tg-webhook`;
-    const [webhookRes, commandsRes] = await Promise.all([
+    const [webhookRes, commandsRes, menuButtonRes] = await Promise.all([
       fetch(`https://api.telegram.org/bot${BOT_TOKEN}/setWebhook`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -105,8 +113,18 @@ Deno.serve(async (req) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ commands: COMMANDS }),
       }).then((r) => r.json()),
+      // Кнопка "OPEN" в списке чатов (как у Wallet) — это НЕ inline-кнопка
+      // под сообщением, а глобальная настройка бота: menu button типа
+      // web_app. Ставится один раз, без chat_id — как дефолт для всех.
+      fetch(`https://api.telegram.org/bot${BOT_TOKEN}/setChatMenuButton`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          menu_button: { type: "web_app", text: "Играть", web_app: { url: APP_URL } },
+        }),
+      }).then((r) => r.json()),
     ]);
-    return new Response(JSON.stringify({ webhookRes, commandsRes }), {
+    return new Response(JSON.stringify({ webhookRes, commandsRes, menuButtonRes }), {
       headers: { "Content-Type": "application/json" },
     });
   }

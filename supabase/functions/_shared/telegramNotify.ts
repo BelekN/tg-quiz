@@ -1,10 +1,18 @@
 // Обычное сообщение бота = наш "пуш": Telegram сам показывает его
 // как системную нотификацию, никакого Push API не нужно.
+//
+// button.webApp=true -> кнопка типа web_app (запускает Mini App
+// напрямую и даёт Telegram показать быстрый "OPEN" прямо в списке
+// чатов у последнего сообщения — как у Wallet и других мини-аппов).
+// ВАЖНО: у web_app-кнопки нет startParam — Telegram не прокидывает
+// его в initData так, как для t.me/bot/short_name?startapp=...
+// Поэтому там, где нужен startParam (приглашение на дуэль), кнопка
+// остаётся обычной url-ссылкой на t.me, без web_app.
 export async function sendTelegramMessage(
   botToken: string,
   tgId: number | bigint,
   text: string,
-  button?: { text: string; url: string },
+  button?: { text: string; url: string; webApp?: boolean },
 ) {
   const body: Record<string, unknown> = {
     chat_id: tgId,
@@ -12,7 +20,10 @@ export async function sendTelegramMessage(
     parse_mode: "HTML",
   };
   if (button) {
-    body.reply_markup = { inline_keyboard: [[{ text: button.text, url: button.url }]] };
+    const btn = button.webApp
+      ? { text: button.text, web_app: { url: button.url } }
+      : { text: button.text, url: button.url };
+    body.reply_markup = { inline_keyboard: [[btn]] };
   }
 
   const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
