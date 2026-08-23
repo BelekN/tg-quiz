@@ -61,9 +61,13 @@ body {
    (имена без "viewport-" не существуют — раньше здесь была опечатка,
    из-за которой второе слагаемое всегда падало в 0px). */
 .safe-top {
+  /* + 12px: в обычном (не fullscreen) режиме Telegram уже сам подвинул
+     веб-контент под свою шапку, так что content-safe-area-inset-top
+     часто приходит 0px — без этой добавки контент липнет к шапке
+     впритык, а не с отступом как в Wallet и других мини-аппах. */
   padding-top: calc(
     max(env(safe-area-inset-top), var(--tg-viewport-safe-area-inset-top, 0px)) +
-      var(--tg-viewport-content-safe-area-inset-top, 0px)
+      var(--tg-viewport-content-safe-area-inset-top, 0px) + 12px
   );
 }
 .safe-bottom {
