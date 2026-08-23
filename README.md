@@ -46,14 +46,21 @@ src/
   components/              Screen, Avatar, CoinBadge, TimerBar,
                            AnswerButton, ModeCard, StateView
 supabase/
-  migrations/001_init.sql  таблицы, RLS, RPC, сид вопросов
+  migrations/001_init.sql  таблицы, RLS, RPC, сид вопросов (10 шт.)
+  migrations/002+          схема и RPC-логика (не вопросы — см. ниже)
+  questions/bank.sql        ЕДИНСТВЕННЫЙ актуальный срез базы вопросов
+                            (500 активных + 3 отключённых дубля,
+                            10 категорий по 50). Идемпотентен.
   functions/tg-api/        Edge Function + проверка подписи initData
 ```
 
 ## Установка
 
-**1. База.** Открыть Supabase SQL Editor → вставить целиком
-`supabase/migrations/001_init.sql` → Run. Скрипт идемпотентен.
+**1. База.** Открыть Supabase SQL Editor → по очереди:
+`supabase/migrations/001_init.sql` → Run, затем все `002_*.sql` …
+`010_*.sql` по номерам (это схема и RPC, не вопросы), затем
+`supabase/questions/bank.sql` — он даёт полный текущий набор вопросов.
+Все скрипты идемпотентны, можно прогонять повторно.
 
 **2. Edge Function.**
 
