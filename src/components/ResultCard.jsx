@@ -1,8 +1,14 @@
 import Screen from './Screen'
+import { useMainButton, useSecondaryButton } from '../hooks/useBottomButton'
 
 /**
  * Общий каркас экрана результата (дуэль/соло/спринт различаются
  * только вердиктом, метриками и действиями, а не разметкой).
+ *
+ * primaryAction/secondaryAction теперь не рисуются в контенте —
+ * это нативные MainButton/SecondaryButton Telegram внизу экрана.
+ * tertiaryAction (например, "поделиться в историю") остаётся обычной
+ * кнопкой в контенте: Telegram не даёт больше двух нативных кнопок.
  */
 export default function ResultCard({
   icon,
@@ -14,8 +20,25 @@ export default function ResultCard({
   coinsEarned,
   primaryAction,
   secondaryAction,
+  tertiaryAction,
   footnote,
 }) {
+  // Без primaryAction (например, дуэль уже завершена и звать больше
+  // некого) secondaryAction — единственное действие. SecondaryButton
+  // без видимой MainButton — недокументированная конфигурация, поэтому
+  // в этом случае просто отдаём его как MainButton, а не рискуем.
+  const mainAction = primaryAction ?? secondaryAction
+  const extraAction = primaryAction ? secondaryAction : null
+
+  useMainButton({
+    text: mainAction?.label,
+    onClick: mainAction?.onClick,
+  })
+  useSecondaryButton({
+    text: extraAction?.label,
+    onClick: extraAction?.onClick,
+  })
+
   return (
     <Screen className="justify-center">
       <div className="animate-pop text-center">
@@ -52,27 +75,15 @@ export default function ResultCard({
         )}
       </div>
 
-      <div className="mt-6 flex flex-col gap-2.5">
-        {primaryAction && (
-          <button
-            type="button"
-            onClick={primaryAction.onClick}
-            className="w-full rounded-2xl bg-tg-accent px-5 py-4 text-[16px] font-semibold text-tg-accent-text shadow-lg shadow-tg-accent/20 transition-transform active:scale-[0.98]"
-          >
-            {primaryAction.label}
-          </button>
-        )}
-
-        {secondaryAction && (
-          <button
-            type="button"
-            onClick={secondaryAction.onClick}
-            className="w-full rounded-2xl bg-tg-surface px-5 py-4 text-[15px] font-medium text-tg-text transition-transform active:scale-[0.98]"
-          >
-            {secondaryAction.label}
-          </button>
-        )}
-      </div>
+      {tertiaryAction && (
+        <button
+          type="button"
+          onClick={tertiaryAction.onClick}
+          className="mt-5 text-center text-sm font-medium text-tg-link active:opacity-70"
+        >
+          {tertiaryAction.label}
+        </button>
+      )}
 
       {footnote}
     </Screen>

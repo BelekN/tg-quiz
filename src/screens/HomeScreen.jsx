@@ -1,9 +1,11 @@
+import { useEffect, useState } from 'react'
 import Screen from '../components/Screen'
 import Avatar from '../components/Avatar'
 import CoinBadge from '../components/CoinBadge'
 import ModeCard from '../components/ModeCard'
 import CityPrompt from '../components/CityPrompt'
-import { haptic } from '../lib/telegram'
+import { haptic, getHomeScreenStatus, promptAddToHomeScreen } from '../lib/telegram'
+import { useMainButton } from '../hooks/useBottomButton'
 
 export default function HomeScreen({
   user,
@@ -17,6 +19,34 @@ export default function HomeScreen({
   busy,
 }) {
   const name = tgUser?.firstName || user?.first_name || user?.username || 'Игрок'
+  const [showHomeScreenPrompt, setShowHomeScreenPrompt] = useState(false)
+
+  useEffect(() => {
+    let alive = true
+    getHomeScreenStatus().then((status) => {
+      if (alive && status === 'missed') setShowHomeScreenPrompt(true)
+    })
+    return () => {
+      alive = false
+    }
+  }, [])
+
+  // Главное действие — нативная MainButton внизу экрана вместо своей.
+  useMainButton({
+    text: busy ? 'Готовим вопросы…' : '⚔️  Создать дуэль',
+    onClick: () => {
+      haptic.tap()
+      onCreateDuel()
+    },
+    disabled: busy,
+    loading: busy,
+  })
+
+  const addHomeScreen = () => {
+    haptic.tap()
+    promptAddToHomeScreen()
+    setShowHomeScreenPrompt(false)
+  }
 
   return (
     <Screen>
@@ -53,26 +83,30 @@ export default function HomeScreen({
 
       {user && !user.city && <CityPrompt onSave={onSaveCity} />}
 
+      {showHomeScreenPrompt && (
+        <div className="animate-rise mt-4 flex items-center gap-3 rounded-2xl border border-white/5 bg-tg-section p-3.5">
+          <span className="text-2xl">📱</span>
+          <p className="flex-1 text-[13px] font-medium leading-snug">
+            Добавить КвизДуэль на домашний экран?
+          </p>
+          <button
+            type="button"
+            onClick={addHomeScreen}
+            className="shrink-0 rounded-xl bg-tg-accent px-3 py-2 text-[13px] font-semibold text-tg-accent-text"
+          >
+            Добавить
+          </button>
+        </div>
+      )}
+
       {/* ---- статистика ---- */}
       <div className="mt-5 grid grid-cols-2 gap-3">
         <Stat label="Всего очков" value={user?.total_score ?? 0} />
         <Stat label="Монеты" value={user?.coins ?? 0} accent />
       </div>
 
-      {/* ---- главное действие ---- */}
-      <button
-        type="button"
-        disabled={busy}
-        onClick={() => {
-          haptic.tap()
-          onCreateDuel()
-        }}
-        className="animate-rise mt-6 w-full rounded-2xl bg-tg-accent px-5 py-4 text-[16px] font-semibold text-tg-accent-text shadow-lg shadow-tg-accent/20 transition-transform active:scale-[0.98] disabled:opacity-60"
-      >
-        {busy ? 'Готовим вопросы…' : '⚔️  Создать дуэль'}
-      </button>
-      <p className="mt-2 text-center text-xs text-tg-hint">
-        5 вопросов · 10 секунд на ответ
+      <p className="mt-4 text-center text-xs text-tg-hint">
+        Дуэль: 5 вопросов · 10 секунд на ответ
       </p>
 
       {/* ---- будущие режимы ---- */}

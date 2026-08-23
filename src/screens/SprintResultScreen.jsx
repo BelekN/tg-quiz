@@ -1,4 +1,5 @@
 import ResultCard from '../components/ResultCard'
+import { haptic, shareResultToStory } from '../lib/telegram'
 
 export default function SprintResultScreen({ result, onHome, onPlayAgain }) {
   const verdict =
@@ -10,6 +11,13 @@ export default function SprintResultScreen({ result, onHome, onPlayAgain }) {
           ? 'Неплохо!'
           : 'Разгоняйся дальше'
 
+  const shareStory = () => {
+    haptic.tap()
+    shareResultToStory(
+      `Ответил правильно на ${result.correct} вопросов за 60 секунд в Спринте КвизДуэль ⚡`,
+    )
+  }
+
   return (
     <ResultCard
       icon="⚡"
@@ -20,6 +28,7 @@ export default function SprintResultScreen({ result, onHome, onPlayAgain }) {
       coinsEarned={result.coins_earned}
       primaryAction={{ label: '⚡ Ещё раз', onClick: onPlayAgain }}
       secondaryAction={{ label: 'На главную', onClick: onHome }}
+      tertiaryAction={{ label: '📖 Поделиться в истории', onClick: shareStory }}
     />
   )
 }

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import ResultCard from '../components/ResultCard'
-import { haptic, shareDuelLink } from '../lib/telegram'
+import { haptic, shareDuelLink, shareResultToStory } from '../lib/telegram'
 
 const OUTCOME = {
   win: { emoji: '🏆', title: 'Победа!', color: 'text-quiz-gold' },
@@ -22,6 +22,11 @@ export default function ResultScreen({ result, role, onHome }) {
       `Я набрал ${result.score} очков в дуэли. Побьёшь? ⚔️`,
     )
     setShared(true)
+  }
+
+  const shareStory = () => {
+    haptic.tap()
+    shareResultToStory(`Набрал ${result.score} очков в дуэли КвизДуэль ⚔️`)
   }
 
   return (
@@ -46,6 +51,7 @@ export default function ResultScreen({ result, role, onHome }) {
           : null
       }
       secondaryAction={{ label: 'На главную', onClick: onHome }}
+      tertiaryAction={{ label: '📖 Поделиться в истории', onClick: shareStory }}
       footnote={
         canInvite && (
           <p className="mt-3 text-center text-xs leading-relaxed text-tg-hint">
