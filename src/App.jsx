@@ -4,6 +4,8 @@ import QuizScreen from './screens/QuizScreen'
 import ResultScreen from './screens/ResultScreen'
 import LeaderboardScreen from './screens/LeaderboardScreen'
 import HistoryScreen from './screens/HistoryScreen'
+import AchievementsScreen from './screens/AchievementsScreen'
+import AchievementToast from './components/AchievementToast'
 import CategoryScreen from './screens/CategoryScreen'
 import SoloQuizScreen from './screens/SoloQuizScreen'
 import SoloResultScreen from './screens/SoloResultScreen'
@@ -50,6 +52,8 @@ export default function App() {
 
   const [sprint, setSprint] = useState(null) // { session_id, questions }
   const [sprintResult, setSprintResult] = useState(null)
+
+  const [newAchievements, setNewAchievements] = useState(null)
 
   const tgUser = getTgUser()
 
@@ -145,11 +149,33 @@ export default function App() {
             }
           : u,
       )
+      if (res.new_achievements?.length) setNewAchievements(res.new_achievements)
     } catch (e) {
       setError(e.message)
       setScreen('error')
     }
   }, [duel])
+
+  // Соперник доиграл ПОЗЖЕ нас — пока мы сидели на "Ждём соперника",
+  // ResultScreen сам поллит get_duel_progress и вызывает это, когда
+  // видит opponent_finished. Бонусные монеты за победу/ничью сервер
+  // уже начислил (это сделал finish_duel самого соперника) — здесь
+  // только подтягиваем актуальную картину, не начисляем повторно.
+  const handleOpponentFinished = useCallback((progress) => {
+    setResult((r) =>
+      r && {
+        ...r,
+        opponent_score: progress.opponent_score,
+        outcome: progress.outcome,
+        coins_earned:
+          r.coins_earned +
+          (progress.outcome === 'win' ? 20 : progress.outcome === 'draw' ? 10 : 0),
+      },
+    )
+    fetchMe()
+      .then((me) => setUser(me.user))
+      .catch(() => {})
+  }, [])
 
   // Сетевой сбой посреди дуэли (например, на answer_question) раньше
   // уводил на общий экран ошибки, откуда единственный путь — "На
@@ -212,6 +238,7 @@ export default function App() {
             }
           : u,
       )
+      if (res.new_achievements?.length) setNewAchievements(res.new_achievements)
     } catch (e) {
       setError(e.message)
       setScreen('error')
@@ -248,6 +275,7 @@ export default function App() {
             }
           : u,
       )
+      if (res.new_achievements?.length) setNewAchievements(res.new_achievements)
     } catch (e) {
       setError(e.message)
       setScreen('error')
@@ -272,6 +300,7 @@ export default function App() {
     }
   }, [])
 
+  const content = (() => {
   switch (screen) {
     case 'boot':
       return <Loader label="Входим через Telegram…" />
@@ -320,6 +349,7 @@ export default function App() {
           role={duel?.role}
           onHome={goHome}
           onRematch={rematch}
+          onOpponentFinished={handleOpponentFinished}
         />
       )
 
@@ -328,6 +358,9 @@ export default function App() {
 
     case 'history':
       return <HistoryScreen onBack={() => setScreen('home')} />
+
+    case 'achievements':
+      return <AchievementsScreen onBack={() => setScreen('home')} />
 
     case 'avatar-picker':
       return (
@@ -397,6 +430,7 @@ export default function App() {
           onCreateDuel={createDuel}
           onLeaderboard={() => setScreen('leaderboard')}
           onHistory={() => setScreen('history')}
+          onAchievements={() => setScreen('achievements')}
           onSaveCity={saveCity}
           onQuizTests={() => setScreen('categories')}
           onSprint={startSprintRun}
@@ -404,4 +438,12 @@ export default function App() {
         />
       )
   }
+  })()
+
+  return (
+    <>
+      <AchievementToast achievements={newAchievements} />
+      {content}
+    </>
+  )
 }

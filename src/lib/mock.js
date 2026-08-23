@@ -134,6 +134,7 @@ export const mockApi = {
       coins_balance: 85 + state.correct * 5,
       opponent_score: null,
       outcome: 'pending',
+      new_achievements: [],
     }
   },
 
@@ -262,6 +263,7 @@ export const mockApi = {
       score: soloState.score,
       coins_earned: soloState.correct * 5,
       coins_balance: 85 + soloState.correct * 5,
+      new_achievements: [],
     }
   },
 
@@ -298,6 +300,34 @@ export const mockApi = {
       score: sprintState.score,
       coins_earned: sprintState.correct * 3,
       coins_balance: 85 + sprintState.correct * 3,
+      new_achievements: [],
+    }
+  },
+
+  async achievements() {
+    await wait(250)
+    return {
+      items: [
+        { key: 'first_duel', title: 'Первая дуэль', description: 'Сыграйте свою первую дуэль', icon: '⚔️', unlocked_at: new Date().toISOString() },
+        { key: 'duel_wins_10', title: 'Ветеран', description: 'Одержите 10 побед в дуэлях', icon: '🎖️', unlocked_at: null },
+        { key: 'win_streak_3', title: 'Не остановить', description: '3 победы в дуэлях подряд', icon: '🔥', unlocked_at: null },
+        { key: 'perfect_solo', title: 'Идеально', description: '100% правильных ответов в квиз-тесте', icon: '💯', unlocked_at: null },
+        { key: 'sprint_ace', title: 'Скорострел', description: '20+ правильных ответов в Спринте', icon: '⚡', unlocked_at: null },
+        { key: 'all_categories', title: 'Эрудит', description: 'Сыграйте квиз-тест во всех категориях', icon: '🧠', unlocked_at: null },
+        { key: 'score_5000', title: 'Профи', description: 'Наберите 5000 очков всего', icon: '🏆', unlocked_at: null },
+      ],
+    }
+  },
+
+  async duel_progress() {
+    await wait(200)
+    return {
+      opponent_joined: true,
+      opponent_answered: 2,
+      opponent_finished: false,
+      opponent_score: null,
+      total: QUESTIONS.length,
+      outcome: 'pending',
     }
   },
 }

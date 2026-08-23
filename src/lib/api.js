@@ -62,6 +62,12 @@ export const answerQuestion = (duelId, index, answer, elapsedMs) =>
 export const finishDuel = (duelId) => call('finish_duel', { duel_id: duelId })
 
 /**
+ * Прогресс соперника в текущей дуэли — поллинг вместо realtime.
+ * -> { opponent_joined, opponent_answered, opponent_finished, opponent_score, total, outcome }
+ */
+export const fetchDuelProgress = (duelId) => call('duel_progress', { duel_id: duelId })
+
+/**
  * Реванш: новая дуэль с тем же соперником, что был в finishedDuelId
  * (сервер сам его определяет и пушит ему приглашение).
  * -> { duel_id, role: 'host', status, questions, answered: 0, correct: 0 }
@@ -74,6 +80,9 @@ export const fetchLeaderboard = () => call('leaderboard')
 
 /** Последние сыгранные дуэли/квиз-тесты/спринты. -> { items: [...] } */
 export const fetchHistory = () => call('history')
+
+/** Каталог достижений + что уже разблокировано. -> { items: [...] } */
+export const fetchAchievements = () => call('achievements')
 
 /** Сохранить город (вводится пользователем один раз). -> { user } */
 export const setCity = (city) => call('set_city', { city })

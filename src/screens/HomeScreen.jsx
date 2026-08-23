@@ -12,6 +12,7 @@ export default function HomeScreen({
   onCreateDuel,
   onLeaderboard,
   onHistory,
+  onAchievements,
   onSaveCity,
   onQuizTests,
   onSprint,
@@ -66,6 +67,17 @@ export default function HomeScreen({
           aria-label="История"
         >
           📜
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            haptic.tap()
+            onAchievements()
+          }}
+          className="grid h-9 w-9 place-items-center rounded-full bg-tg-surface text-lg active:scale-95"
+          aria-label="Достижения"
+        >
+          🏅
         </button>
         <button
           type="button"
