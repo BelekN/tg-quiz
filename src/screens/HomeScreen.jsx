@@ -5,7 +5,6 @@ import CoinBadge from '../components/CoinBadge'
 import ModeCard from '../components/ModeCard'
 import CityPrompt from '../components/CityPrompt'
 import { haptic, getHomeScreenStatus, promptAddToHomeScreen } from '../lib/telegram'
-import { useMainButton } from '../hooks/useBottomButton'
 
 export default function HomeScreen({
   user,
@@ -30,17 +29,6 @@ export default function HomeScreen({
       alive = false
     }
   }, [])
-
-  // Главное действие — нативная MainButton внизу экрана вместо своей.
-  useMainButton({
-    text: busy ? 'Готовим вопросы…' : '⚔️  Создать дуэль',
-    onClick: () => {
-      haptic.tap()
-      onCreateDuel()
-    },
-    disabled: busy,
-    loading: busy,
-  })
 
   const addHomeScreen = () => {
     haptic.tap()
@@ -105,8 +93,20 @@ export default function HomeScreen({
         <Stat label="Монеты" value={user?.coins ?? 0} accent />
       </div>
 
-      <p className="mt-4 text-center text-xs text-tg-hint">
-        Дуэль: 5 вопросов · 10 секунд на ответ
+      {/* ---- главное действие ---- */}
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => {
+          haptic.tap()
+          onCreateDuel()
+        }}
+        className="animate-rise mt-6 w-full rounded-2xl bg-tg-accent px-5 py-4 text-[16px] font-semibold text-tg-accent-text shadow-lg shadow-tg-accent/20 transition-transform active:scale-[0.98] disabled:opacity-60"
+      >
+        {busy ? 'Готовим вопросы…' : '⚔️  Создать дуэль'}
+      </button>
+      <p className="mt-2 text-center text-xs text-tg-hint">
+        5 вопросов · 10 секунд на ответ
       </p>
 
       {/* ---- будущие режимы ---- */}
