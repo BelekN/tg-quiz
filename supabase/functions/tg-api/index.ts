@@ -32,11 +32,39 @@ const CORS = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+const FUNNEL_ACTIONS = new Set([
+  "me",
+  "start_duel",
+  "finish_duel",
+  "rematch_duel",
+  "start_solo",
+  "finish_solo",
+  "start_sprint",
+  "finish_sprint",
+  "leaderboard",
+  "history",
+  "set_city",
+  "set_avatar",
+]);
+
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
     status,
     headers: { ...CORS, "Content-Type": "application/json" },
   });
+
+// Пересчитывает достижения после игры и вешает на ответ новые (для
+// тоста на клиенте). Сбой пересчёта не должен ронять сам финиш игры —
+// в худшем случае просто не покажем тост в этот раз.
+async function attachNewAchievements(tgId: number, data: Record<string, unknown>) {
+  const { data: newly, error } = await supabase.rpc("check_achievements", { p_tg_id: tgId });
+  if (error) {
+    console.error("check_achievements failed", error.message);
+    data.new_achievements = [];
+  } else {
+    data.new_achievements = newly ?? [];
+  }
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
@@ -81,6 +109,15 @@ Deno.serve(async (req) => {
   // собрать не стоит труда.
   const payload = body?.payload ?? {};
   const tgId = tg.user.id;
+
+  // Воронка: логируем только "крупные" события — старт/финиш каждого
+  // режима, вход, реванш, просмотр рейтинга/истории. Осознанно НЕ логируем
+  // answer_question/answer_solo/answer_sprint — это происходит по разу
+  // на каждый вопрос, для воронки такая частота только шум.
+  if (FUNNEL_ACTIONS.has(action)) {
+    await supabase.rpc("log_event", { p_tg_id: tgId, p_name: action, p_payload: payload })
+      .catch(() => {});
+  }
 
   try {
     switch (action) {
@@ -148,6 +185,7 @@ Deno.serve(async (req) => {
           ).catch(() => {});
         }
 
+        await attachNewAchievements(tgId, data);
         return json(data);
       }
 
@@ -257,6 +295,7 @@ Deno.serve(async (req) => {
           p_session_id: payload.session_id,
         });
         if (error) throw error;
+        await attachNewAchievements(tgId, data);
         return json(data);
       }
 
@@ -286,6 +325,24 @@ Deno.serve(async (req) => {
         const { data, error } = await supabase.rpc("finish_sprint", {
           p_tg_id: tgId,
           p_session_id: payload.session_id,
+        });
+        if (error) throw error;
+        await attachNewAchievements(tgId, data);
+        return json(data);
+      }
+
+      // ---- каталог достижений + что уже разблокировано ----
+      case "achievements": {
+        const { data, error } = await supabase.rpc("get_achievements", { p_tg_id: tgId });
+        if (error) throw error;
+        return json({ items: data });
+      }
+
+      // ---- прогресс соперника в текущей дуэли (поллинг вместо realtime) ----
+      case "duel_progress": {
+        const { data, error } = await supabase.rpc("get_duel_progress", {
+          p_tg_id: tgId,
+          p_duel_id: payload.duel_id,
         });
         if (error) throw error;
         return json(data);
