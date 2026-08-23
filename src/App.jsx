@@ -133,6 +133,24 @@ export default function App() {
     }
   }, [duel])
 
+  // Сетевой сбой посреди дуэли (например, на answer_question) раньше
+  // уводил на общий экран ошибки, откуда единственный путь — "На
+  // главную", безвозвратно теряя duel_id (в том числе инвайт-ссылку,
+  // если её уже отправили другу). start_duel теперь разрешает хосту
+  // вернуться в свою же дуэль и резюмирует с уже отвеченного вопроса.
+  const resumeDuel = useCallback(async () => {
+    if (!duel?.duel_id) return
+    setScreen('resuming')
+    try {
+      const resumed = await startDuel(duel.duel_id)
+      setDuel(resumed)
+      setScreen('quiz')
+    } catch (e) {
+      setError(e.message)
+      setScreen('error')
+    }
+  }, [duel])
+
   const saveCity = useCallback(async (city) => {
     const res = await setCity(city)
     setUser(res.user)
@@ -243,8 +261,21 @@ export default function App() {
     case 'finishing':
       return <Loader label="Считаем результат…" />
 
+    case 'resuming':
+      return <Loader label="Возвращаемся в дуэль…" />
+
     case 'error':
-      return <ErrorView code={error} onRetry={goHome} />
+      return (
+        <ErrorView
+          code={error}
+          onRetry={goHome}
+          secondaryAction={
+            duel?.duel_id
+              ? { label: 'Продолжить дуэль', onClick: resumeDuel }
+              : null
+          }
+        />
+      )
 
     case 'quiz':
       return (

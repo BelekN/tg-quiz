@@ -22,7 +22,7 @@ const MESSAGES = {
   NOT_ENOUGH_QUESTIONS: 'В базе пока мало вопросов.',
 }
 
-export function ErrorView({ code, onRetry }) {
+export function ErrorView({ code, onRetry, secondaryAction }) {
   return (
     <Screen className="items-center justify-center text-center">
       <div className="text-4xl">😕</div>
@@ -30,11 +30,24 @@ export function ErrorView({ code, onRetry }) {
         {MESSAGES[code] ?? 'Что-то пошло не так.'}
       </p>
       <p className="mt-1 text-xs text-tg-hint">{code}</p>
+      {secondaryAction && (
+        <button
+          type="button"
+          onClick={secondaryAction.onClick}
+          className="mt-6 w-full max-w-xs rounded-xl bg-tg-accent px-6 py-3 text-sm font-semibold text-tg-accent-text active:scale-[0.98]"
+        >
+          {secondaryAction.label}
+        </button>
+      )}
       {onRetry && (
         <button
           type="button"
           onClick={onRetry}
-          className="mt-6 rounded-xl bg-tg-accent px-6 py-3 text-sm font-semibold text-tg-accent-text active:scale-[0.98]"
+          className={`w-full max-w-xs rounded-xl px-6 py-3 text-sm font-semibold active:scale-[0.98] ${
+            secondaryAction
+              ? 'mt-2.5 bg-tg-surface text-tg-text'
+              : 'mt-6 bg-tg-accent text-tg-accent-text'
+          }`}
         >
           На главную
         </button>
