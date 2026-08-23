@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1920" viewBox="0 0 1080 1920">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1f2c3a"/>
+      <stop offset="55%" stop-color="#3a1f6e"/>
+      <stop offset="100%" stop-color="#7e14ff"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="60"/>
+    </filter>
+  </defs>
+
+  <rect width="1080" height="1920" fill="url(#bg)"/>
+
+  <circle cx="540" cy="650" r="280" fill="#863bff" opacity="0.45" filter="url(#glow)"/>
+
+  <g transform="translate(312,432) scale(9.5)">
+    <path fill="#ffffff" d="M25.946 44.938c-.664.845-2.021.375-2.021-.698V33.937a2.26 2.26 0 0 0-2.262-2.262H10.287c-.92 0-1.456-1.04-.92-1.788l7.48-10.471c1.07-1.497 0-3.578-1.842-3.578H1.237c-.92 0-1.456-1.04-.92-1.788L10.013.474c.214-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.471c-1.07 1.498 0 3.579 1.842 3.579h11.377c.943 0 1.473 1.088.89 1.83L25.947 44.94z"/>
+  </g>
+
+  <text x="540" y="960" text-anchor="middle" font-family="-apple-system, Helvetica, Arial, sans-serif" font-size="88" font-weight="700" fill="#ffffff">КвизДуэль</text>
+  <text x="540" y="1030" text-anchor="middle" font-family="-apple-system, Helvetica, Arial, sans-serif" font-size="38" fill="#c9b8ff">Викторина для дуэлей с друзьями</text>
+</svg>

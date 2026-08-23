@@ -7,9 +7,18 @@ import {
   viewport,
   hapticFeedback,
   shareURL,
+  shareStory,
   mockTelegramEnv,
   retrieveRawInitData,
+  backButton,
+  mainButton,
+  secondaryButton,
+  requestFullscreen,
+  addToHomeScreen,
+  checkHomeScreenStatus,
 } from '@telegram-apps/sdk'
+
+export { backButton, mainButton, secondaryButton }
 
 let booted = false
 
@@ -52,8 +61,22 @@ export function initTelegram() {
     .then(() => {
       safely(() => viewport.bindCssVars())
       safely(() => viewport.expand())
+      // Полноэкранный режим (как у Wallet) — больше места экрану,
+      // хедер Telegram начинает "плавать" сверху контента вместо
+      // отдельной серой плашки. Не критично, если клиент не умеет:
+      // .isAvailable() уже гейтит вызов, а .catch съедает отказ,
+      // если пользователь сам отменил переход в fullscreen.
+      if (requestFullscreen.isAvailable()) {
+        requestFullscreen().catch(() => {})
+      }
     })
     .catch(() => {})
+
+  // Кнопки монтируем один раз здесь; конкретные экраны только
+  // переключают видимость/текст через useBackButton/useMainButton.
+  safely(() => backButton.mount())
+  safely(() => mainButton.mount())
+  safely(() => secondaryButton.mount())
 
   safely(() => miniApp.ready())
 }
@@ -165,4 +188,43 @@ export function shareDuelLink(duelId, text) {
     )
   }
   return url
+}
+
+/**
+ * Публикует результат в Stories пользователя — картинка фиксированная
+ * (брендинг приложения), а сам счёт идёт подписью. Ссылка на приложение
+ * добавляется как виджет (виден только у Premium-подписчиков — это
+ * ограничение Telegram, не наше).
+ * @returns true, если попап открыт; false, если платформа не поддерживает.
+ */
+export function shareResultToStory(caption) {
+  if (!shareStory.isAvailable()) return false
+
+  const bot = import.meta.env.VITE_BOT_USERNAME
+  const app = import.meta.env.VITE_APP_SHORT_NAME
+  const url = app ? `https://t.me/${bot}/${app}` : `https://t.me/${bot}`
+
+  shareStory(`${window.location.origin}/story-bg.png`, {
+    text: caption,
+    widgetLink: { url, name: 'КвизДуэль' },
+  })
+  return true
+}
+
+/**
+ * Один раз спрашивает, добавлено ли приложение на домашний экран.
+ * 'missed' -> можно предложить; 'added' -> уже есть; иначе -> не
+ * поддерживается этим клиентом, лучше вообще не показывать баннер.
+ */
+export async function getHomeScreenStatus() {
+  if (!checkHomeScreenStatus.isAvailable()) return 'unsupported'
+  try {
+    return await checkHomeScreenStatus()
+  } catch {
+    return 'unsupported'
+  }
+}
+
+export function promptAddToHomeScreen() {
+  if (addToHomeScreen.isAvailable()) addToHomeScreen()
 }
