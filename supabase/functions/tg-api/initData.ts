@@ -42,7 +42,11 @@ export interface VerifiedInitData {
 export async function verifyInitData(
   raw: string,
   botToken: string,
-  maxAgeSec = 24 * 60 * 60,
+  // Было 24 часа — намного шире, чем реальная сессия игры (дуэль/спринт
+  // занимают минуты). Telegram переотдаёт initData при каждом открытии
+  // Mini App, так что 1 час — комфортный запас на одну сессию игры, но
+  // не даёт утёкшей строке initData работать почти сутки.
+  maxAgeSec = 60 * 60,
 ): Promise<VerifiedInitData> {
   const params = new URLSearchParams(raw);
   const hash = params.get("hash");

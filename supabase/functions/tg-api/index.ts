@@ -53,6 +53,21 @@ Deno.serve(async (req) => {
     return json({ error: String((e as Error).message) }, 401);
   }
 
+  // Best-effort защита от заспамливания одним initData: 40 запросов
+  // за 10 секунд с одного tg_id. Если сама проверка не выполнилась
+  // (транзиентная ошибка БД) — не роняем весь API, просто пропускаем
+  // запрос дальше; это не единственный рубеж защиты (очки и так
+  // считает Postgres из реально записанных ответов).
+  const { data: withinLimit, error: rlError } = await supabase.rpc(
+    "check_rate_limit",
+    { p_tg_id: tg.user.id },
+  );
+  if (rlError) {
+    console.error("check_rate_limit failed", rlError.message);
+  } else if (withinLimit === false) {
+    return json({ error: "RATE_LIMITED" }, 429);
+  }
+
   const body = await req.json().catch(() => ({}));
   const action = body?.action;
   // "payload = {}" по умолчанию сработал бы только на undefined, а не
