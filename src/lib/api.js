@@ -148,6 +148,16 @@ export const startPersona = (testKey) => call('start_persona', { test_key: testK
 export const finishPersona = (sessionId, resultKey) =>
   call('finish_persona', { session_id: sessionId, result_key: resultKey })
 
+/** Начать ежедневный вызов: 5 вопросов, одни на весь день у всех. */
+export const startDaily = () => call('start_daily')
+
+/** Ответ в ежедневном вызове. -> { correct_option_index, is_correct, points } */
+export const answerDaily = (sessionId, index, answer) =>
+  call('answer_daily', { session_id: sessionId, index, answer })
+
+/** Закрыть сегодняшний вызов. Очки суммирует сервер. */
+export const finishDaily = (sessionId) => call('finish_daily', { session_id: sessionId })
+
 /** duel_<uuid> -> uuid */
 export function parseDuelStartParam(startParam) {
   const m = /^duel_([0-9a-fA-F-]{36})$/.exec(startParam ?? '')

@@ -46,6 +46,8 @@ const FUNNEL_ACTIONS = new Set([
   "finish_sprint",
   "start_persona",
   "finish_persona",
+  "start_daily",
+  "finish_daily",
   "leaderboard",
   "history",
   "set_city",
@@ -367,6 +369,38 @@ Deno.serve(async (req) => {
       // ---- финиш спринта: очки суммирует Postgres из sprint_answers ----
       case "finish_sprint": {
         const { data, error } = await supabase.rpc("finish_sprint", {
+          p_tg_id: tgId,
+          p_session_id: payload.session_id,
+        });
+        if (error) throw error;
+        await attachNewAchievements(tgId, data);
+        return json(data);
+      }
+
+      // ---- старт ежедневного вызова: 5 вопросов, одни на весь день ----
+      case "start_daily": {
+        const { data, error } = await supabase.rpc("start_daily", {
+          p_tg_id: tgId,
+        });
+        if (error) throw error;
+        return json(data);
+      }
+
+      // ---- ответ в ежедневном вызове ----
+      case "answer_daily": {
+        const { data, error } = await supabase.rpc("answer_daily", {
+          p_tg_id: tgId,
+          p_session_id: payload.session_id,
+          p_index: payload.index,
+          p_answer: payload.answer ?? null,
+        });
+        if (error) throw error;
+        return json(data);
+      }
+
+      // ---- финиш ежедневного вызова ----
+      case "finish_daily": {
+        const { data, error } = await supabase.rpc("finish_daily", {
           p_tg_id: tgId,
           p_session_id: payload.session_id,
         });

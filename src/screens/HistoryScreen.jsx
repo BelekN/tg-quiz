@@ -70,6 +70,8 @@ export default function HistoryScreen({ onBack }) {
             <SoloRow key={item.id} item={item} />
           ) : item.kind === 'persona' ? (
             <PersonaRow key={item.id} item={item} />
+          ) : item.kind === 'daily' ? (
+            <DailyRow key={item.id} item={item} />
           ) : (
             <SprintRow key={item.id} item={item} />
           ),
@@ -169,6 +171,26 @@ function SprintRow({ item }) {
       subtitle={dateFormatter.format(new Date(item.happened_at))}
       score={formatNumber(item.score)}
       footer={<p className="text-[11px] text-tg-hint">✓ {item.correct}</p>}
+    />
+  )
+}
+
+function DailyRow({ item }) {
+  return (
+    <Card
+      icon={
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-tg-accent/15 text-lg">
+          📅
+        </span>
+      }
+      title="Ежедневный вызов"
+      subtitle={dateFormatter.format(new Date(item.happened_at))}
+      score={formatNumber(item.score)}
+      footer={
+        <p className="text-[11px] text-tg-hint">
+          {item.correct}/{item.total}
+        </p>
+      }
     />
   )
 }

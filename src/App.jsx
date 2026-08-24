@@ -10,6 +10,8 @@ import RankUpToast from './components/RankUpToast'
 import CategoryScreen from './screens/CategoryScreen'
 import SoloQuizScreen from './screens/SoloQuizScreen'
 import SoloResultScreen from './screens/SoloResultScreen'
+import DailyQuizScreen from './screens/DailyQuizScreen'
+import DailyResultScreen from './screens/DailyResultScreen'
 import SprintScreen from './screens/SprintScreen'
 import SprintResultScreen from './screens/SprintResultScreen'
 import AvatarPickerScreen from './screens/AvatarPickerScreen'
@@ -29,6 +31,8 @@ import {
   finishSolo,
   startSprint,
   finishSprint,
+  startDaily,
+  finishDaily,
   startPersona,
   finishPersona,
 } from './lib/api'
@@ -87,6 +91,9 @@ export default function App() {
 
   const [sprint, setSprint] = useState(null) // { session_id, questions }
   const [sprintResult, setSprintResult] = useState(null)
+
+  const [daily, setDaily] = useState(null) // { session_id, play_date, questions }
+  const [dailyResult, setDailyResult] = useState(null)
 
   const [persona, setPersona] = useState(null) // { session_id, test_key, title, scoring, questions, results }
   const [personaResult, setPersonaResult] = useState(null)
@@ -322,6 +329,45 @@ export default function App() {
     }
   }, [sprint, user, showError])
 
+  const startDailyRun = useCallback(async () => {
+    setBusy(true)
+    try {
+      const started = await startDaily()
+      setDaily(started)
+      setScreen('daily-quiz')
+    } catch (e) {
+      showError(e)
+    } finally {
+      setBusy(false)
+    }
+  }, [showError])
+
+  // все 5 вопросов ежедневного вызова отвечены -> считаем итог
+  const completeDaily = useCallback(async () => {
+    setScreen('finishing')
+    try {
+      const res = await finishDaily(daily.session_id)
+      setDailyResult(res)
+      setScreen('daily-result')
+      const totalBefore = user?.total_score ?? 0
+      const totalAfter = totalBefore + res.score
+      const rankAfter = getRank(totalAfter)
+      if (rankAfter.key !== getRank(totalBefore).key) setNewRank(rankAfter)
+      setUser((u) =>
+        u
+          ? {
+              ...u,
+              coins: res.coins_balance ?? u.coins + res.coins_earned,
+              total_score: totalAfter,
+            }
+          : u,
+      )
+      if (res.new_achievements?.length) setNewAchievements(res.new_achievements)
+    } catch (e) {
+      showError(e)
+    }
+  }, [daily, user, showError])
+
   const pickPersonaTest = useCallback(async (testKey) => {
     try {
       const started = await startPersona(testKey)
@@ -354,6 +400,8 @@ export default function App() {
     setSoloResult(null)
     setSprint(null)
     setSprintResult(null)
+    setDaily(null)
+    setDailyResult(null)
     setPersona(null)
     setPersonaResult(null)
     setError(null)
@@ -480,6 +528,19 @@ export default function App() {
         />
       )
 
+    case 'daily-quiz':
+      return (
+        <DailyQuizScreen
+          sessionId={daily.session_id}
+          questions={daily.questions}
+          onComplete={completeDaily}
+          onError={showError}
+        />
+      )
+
+    case 'daily-result':
+      return <DailyResultScreen result={dailyResult} onHome={goHome} />
+
     case 'persona-list':
       return (
         <PersonaListScreen onBack={() => setScreen('home')} onPick={pickPersonaTest} />
@@ -517,6 +578,7 @@ export default function App() {
           onSaveCity={saveCity}
           onQuizTests={() => setScreen('categories')}
           onSprint={startSprintRun}
+          onDaily={startDailyRun}
           onPersona={() => setScreen('persona-list')}
           onEditAvatar={() => setScreen('avatar-picker')}
         />

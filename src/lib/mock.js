@@ -64,6 +64,7 @@ const poolFor = (category) =>
 
 const soloState = { score: 0, correct: 0, category: null }
 const sprintState = { score: 0, correct: 0, questions: [] }
+const dailyState = { score: 0, correct: 0, questions: QUESTIONS.slice(0, 5), played: false }
 const state = { score: 0, correct: 0 }
 const meUser = {
   tg_id: 99281932,
@@ -367,6 +368,43 @@ export const mockApi = {
       score: sprintState.score,
       coins_earned: sprintState.correct * 3,
       coins_balance: 85 + sprintState.correct * 3,
+      new_achievements: [],
+    }
+  },
+
+  async start_daily() {
+    await wait(250)
+    if (dailyState.played) throw new Error('ALREADY_PLAYED_TODAY')
+    dailyState.score = 0
+    dailyState.correct = 0
+    return {
+      session_id: 'daily-1',
+      play_date: new Date().toISOString().slice(0, 10),
+      questions: dailyState.questions.map(({ correct: _c, ...q }) => q),
+    }
+  },
+
+  async answer_daily({ index, answer }) {
+    await wait(200)
+    const right = dailyState.questions[index].correct
+    const ok = answer === right
+    const points = ok ? 100 : 0
+    if (ok) {
+      dailyState.correct += 1
+      dailyState.score += points
+    }
+    return { correct_option_index: right, is_correct: ok, points }
+  },
+
+  async finish_daily() {
+    await wait(300)
+    dailyState.played = true
+    return {
+      correct: dailyState.correct,
+      total: dailyState.questions.length,
+      score: dailyState.score,
+      coins_earned: dailyState.correct * 5,
+      coins_balance: 85 + dailyState.correct * 5,
       new_achievements: [],
     }
   },

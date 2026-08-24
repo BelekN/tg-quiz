@@ -19,6 +19,7 @@ export default function HomeScreen({
   onSaveCity,
   onQuizTests,
   onSprint,
+  onDaily,
   onPersona,
   onEditAvatar,
   busy,
@@ -206,7 +207,11 @@ export default function HomeScreen({
           icon="📅"
           title="Ежедневный вызов"
           subtitle="Одни и те же 5 вопросов для всех, раз в день"
-          soon
+          disabled={busy}
+          onClick={() => {
+            haptic.tap()
+            onDaily()
+          }}
         />
         <ModeCard
           icon="♾️"
