@@ -22,6 +22,7 @@ import PersonaListScreen from './screens/PersonaListScreen'
 import PersonaQuizScreen from './screens/PersonaQuizScreen'
 import PersonaResultScreen from './screens/PersonaResultScreen'
 import { Loader, ErrorView } from './components/StateView'
+import ReportIssueScreen from './screens/ReportIssueScreen'
 import {
   fetchMe,
   startDuel,
@@ -108,6 +109,7 @@ export default function App() {
 
   const [newAchievements, setNewAchievements] = useState(null)
   const [newRank, setNewRank] = useState(null)
+  const [reportContext, setReportContext] = useState(null)
 
   const tgUser = getTgUser()
 
@@ -491,8 +493,15 @@ export default function App() {
               ? { label: 'Продолжить дуэль', onClick: resumeDuel }
               : null
           }
+          onReport={() => {
+            setReportContext({ screen: 'error', error_code: error, error_detail: errorDetail })
+            setScreen('report-issue')
+          }}
         />
       )
+
+    case 'report-issue':
+      return <ReportIssueScreen context={reportContext} onBack={goHome} />
 
     case 'duel-intro':
       return (
@@ -657,6 +666,10 @@ export default function App() {
           onMarathon={startMarathonRun}
           onPersona={() => setScreen('persona-list')}
           onEditAvatar={() => setScreen('avatar-picker')}
+          onReportIssue={() => {
+            setReportContext({ screen: 'home' })
+            setScreen('report-issue')
+          }}
         />
       )
   }

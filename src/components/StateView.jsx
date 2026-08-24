@@ -11,7 +11,7 @@ export function Loader({ label = 'Загрузка…' }) {
 
 const MESSAGES = {
   OFFLINE: 'Пропал интернет. Проверьте подключение и попробуйте снова.',
-  NETWORK_ERROR: 'Не получилось связаться с сервером. Похоже, ошибка на нашей стороне.',
+  NETWORK_ERROR: 'Не получилось связаться с сервером. Проверьте интернет-соединение и попробуйте снова.',
   NO_INIT_DATA: 'Откройте приложение внутри Telegram.',
   UNAUTHORIZED: 'Не удалось подтвердить вход через Telegram.',
   INIT_DATA_BAD_HASH: 'Подпись Telegram не совпала. Перезапустите приложение.',
@@ -25,7 +25,7 @@ const MESSAGES = {
   NOT_ENOUGH_QUESTIONS: 'В базе пока мало вопросов.',
 }
 
-export function ErrorView({ code, detail, onRetry, secondaryAction }) {
+export function ErrorView({ code, detail, onRetry, secondaryAction, onReport }) {
   return (
     <Screen className="items-center justify-center text-center">
       <div className="text-4xl">😕</div>
@@ -58,6 +58,15 @@ export function ErrorView({ code, detail, onRetry, secondaryAction }) {
           }`}
         >
           На главную
+        </button>
+      )}
+      {onReport && (
+        <button
+          type="button"
+          onClick={onReport}
+          className="mt-4 text-sm font-medium text-tg-link active:opacity-70"
+        >
+          ✉️ Сообщить о проблеме
         </button>
       )}
     </Screen>

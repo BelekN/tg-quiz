@@ -23,6 +23,10 @@ const BOT_TOKEN = Deno.env.get("BOT_TOKEN")!;
 const BOT_USERNAME = Deno.env.get("BOT_USERNAME") ?? "";
 const APP_SHORT_NAME = Deno.env.get("APP_SHORT_NAME") ?? "";
 const APP_URL = Deno.env.get("APP_URL") ?? "";
+// Куда форвардить "Сообщить о проблеме" сообщением от бота — личный
+// chat_id разработчика. Необязательный: без него отчёты всё равно
+// сохраняются в bug_reports, просто без мгновенного пуша.
+const SUPPORT_TG_ID = Deno.env.get("SUPPORT_TG_ID") ?? "";
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -50,6 +54,7 @@ const FUNNEL_ACTIONS = new Set([
   "finish_daily",
   "start_marathon",
   "finish_marathon",
+  "report_issue",
   "leaderboard",
   "history",
   "set_city",
@@ -304,6 +309,30 @@ Deno.serve(async (req) => {
         });
         if (error) throw error;
         return json({ user: data });
+      }
+
+      // ---- сообщить о проблеме: сохраняем + best-effort пуш в SUPPORT_TG_ID ----
+      case "report_issue": {
+        const { data, error } = await supabase.rpc("report_issue", {
+          p_tg_id: tgId,
+          p_message: payload.message,
+          p_context: payload.context ?? null,
+        });
+        if (error) throw error;
+
+        if (SUPPORT_TG_ID) {
+          const who = escapeHtml(tg.user.username ? `@${tg.user.username}` : tg.user.first_name ?? String(tgId));
+          const contextLine = payload.context
+            ? `\n<code>${escapeHtml(JSON.stringify(payload.context))}</code>`
+            : "";
+          await sendTelegramMessage(
+            BOT_TOKEN,
+            Number(SUPPORT_TG_ID),
+            `🐞 Отчёт от ${who} (${tgId}):\n\n${escapeHtml(String(payload.message))}${contextLine}`,
+          ).catch(() => {});
+        }
+
+        return json(data);
       }
 
       // ---- список категорий соло-режима с числом вопросов ----

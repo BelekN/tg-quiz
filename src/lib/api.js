@@ -36,9 +36,16 @@ async function call(action, payload = {}) {
     // утекал бы сырой текст браузера ("Load failed", "Failed to
     // fetch"), непонятный пользователю и не подхватываемый MESSAGES.
     // Настоящую причину не прячем: кладём её в detail, чтобы было что
-    // показать пользователю и что присылать нам для диагностики —
-    // OFFLINE и NETWORK_ERROR выглядят для юзера одинаково подозрительно,
-    // но если navigator.onLine=false, это точно не наша сторона.
+    // показать пользователю и что присылать нам для диагностики.
+    //
+    // ВАЖНО: fetch(), брошенный до получения ответа, почти всегда
+    // значит "запрос не добрался до сервера" (обрыв связи, DNS, CORS) —
+    // это НЕ повод писать пользователю "ошибка на нашей стороне".
+    // navigator.onLine тоже не надёжен как признак обратного: он может
+    // быть true, даже когда реального интернета нет (например, в
+    // лифте — вайфай/сота формально "подключены"), поэтому OFFLINE
+    // ставим только когда браузер сам уверенно сообщил про обрыв, а
+    // формулировка NETWORK_ERROR в MESSAGES ниже не утверждает вину.
     const offline = typeof navigator !== 'undefined' && navigator.onLine === false
     throw new ApiError(
       offline ? 'OFFLINE' : 'NETWORK_ERROR',
@@ -167,6 +174,10 @@ export const answerMarathon = (sessionId, index, answer) =>
 
 /** Закрыть марафон (серия уже оборвалась или пул исчерпан). */
 export const finishMarathon = (sessionId) => call('finish_marathon', { session_id: sessionId })
+
+/** Сообщить о проблеме. context — необязательный объект-диагностика (код/detail последней ошибки, экран). */
+export const reportIssue = (message, context = null) =>
+  call('report_issue', { message, context })
 
 /** duel_<uuid> -> uuid */
 export function parseDuelStartParam(startParam) {

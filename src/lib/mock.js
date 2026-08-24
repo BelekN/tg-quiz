@@ -155,6 +155,12 @@ export const mockApi = {
     return { user: meUser }
   },
 
+  async report_issue({ message }) {
+    await wait(300)
+    if (!message?.trim()) throw new Error('EMPTY_MESSAGE')
+    return { id: 'mock-report-1' }
+  },
+
   async start_duel() {
     await wait(250)
     state.score = 0
