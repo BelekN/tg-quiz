@@ -102,6 +102,41 @@ async function answerDuelInviteQuery(inlineQueryId: string, query: string) {
   if (!res.ok) console.error("answerInlineQuery failed", await res.text().catch(() => ""));
 }
 
+// Регистрирует вебхук + меню команд + menu button. Явно перечисляем
+// allowed_updates: без этого Telegram по умолчанию должен слать все
+// типы кроме chat_member/message_reaction*, но раз вебхук в проде
+// оказался вообще без зарегистрированного url (см. getWebhookInfo),
+// лучше не полагаться на дефолт молча.
+async function registerBot(publicUrl: string) {
+  const [webhookRes, commandsRes, menuButtonRes] = await Promise.all([
+    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/setWebhook`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        url: publicUrl,
+        secret_token: WEBHOOK_SECRET,
+        allowed_updates: ["message", "inline_query"],
+      }),
+    }).then((r) => r.json()),
+    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/setMyCommands`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ commands: COMMANDS }),
+    }).then((r) => r.json()),
+    // Кнопка "OPEN" в списке чатов (как у Wallet) — это НЕ inline-кнопка
+    // под сообщением, а глобальная настройка бота: menu button типа
+    // web_app. Ставится один раз, без chat_id — как дефолт для всех.
+    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/setChatMenuButton`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        menu_button: { type: "web_app", text: "Играть", web_app: { url: APP_URL } },
+      }),
+    }).then((r) => r.json()),
+  ]);
+  return { webhookRes, commandsRes, menuButtonRes };
+}
+
 async function sendRating(chatId: number, tgId: number) {
   const { data, error } = await supabase.rpc("get_leaderboard", { p_tg_id: tgId, p_limit: 5 });
   if (error) {
@@ -144,9 +179,10 @@ async function sendRating(chatId: number, tgId: number) {
 }
 
 Deno.serve(async (req) => {
+  const url = new URL(req.url);
+
   // Бутстрап: сам регистрирует вебхук и меню команд в Telegram, не
   // выдавая BOT_TOKEN наружу. Дёргается вручную после деплоя/ротации.
-  const url = new URL(req.url);
   // Секрет можно передать заголовком (не попадёт в access-логи/прокси,
   // в отличие от query-параметра) — ?setup= остаётся для обратной
   // совместимости с уже сохранённой curl-командой.
@@ -155,29 +191,7 @@ Deno.serve(async (req) => {
     // req.url — внутренний адрес за прокси Supabase, а не публичный
     // HTTPS-хост, поэтому собираем его из SUPABASE_URL явно.
     const publicUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/tg-webhook`;
-    const [webhookRes, commandsRes, menuButtonRes] = await Promise.all([
-      fetch(`https://api.telegram.org/bot${BOT_TOKEN}/setWebhook`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: publicUrl, secret_token: WEBHOOK_SECRET }),
-      }).then((r) => r.json()),
-      fetch(`https://api.telegram.org/bot${BOT_TOKEN}/setMyCommands`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ commands: COMMANDS }),
-      }).then((r) => r.json()),
-      // Кнопка "OPEN" в списке чатов (как у Wallet) — это НЕ inline-кнопка
-      // под сообщением, а глобальная настройка бота: menu button типа
-      // web_app. Ставится один раз, без chat_id — как дефолт для всех.
-      fetch(`https://api.telegram.org/bot${BOT_TOKEN}/setChatMenuButton`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          menu_button: { type: "web_app", text: "Играть", web_app: { url: APP_URL } },
-        }),
-      }).then((r) => r.json()),
-    ]);
-    return new Response(JSON.stringify({ webhookRes, commandsRes, menuButtonRes }), {
+    return new Response(JSON.stringify(await registerBot(publicUrl)), {
       headers: { "Content-Type": "application/json" },
     });
   }
