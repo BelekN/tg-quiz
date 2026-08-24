@@ -3,6 +3,7 @@ import Screen from '../components/Screen'
 import Avatar from '../components/Avatar'
 import { fetchLeaderboard } from '../lib/api'
 import { getRank } from '../lib/ranks'
+import { formatNumber } from '../lib/format'
 import { Loader, ErrorView } from '../components/StateView'
 import { useBackButton } from '../hooks/useBackButton'
 
@@ -100,7 +101,7 @@ function Row({ player, isMe }) {
         )}
       </span>
       <span className="text-[15px] font-bold tabular-nums">
-        {player.total_score}
+        {formatNumber(player.total_score)}
       </span>
     </div>
   )

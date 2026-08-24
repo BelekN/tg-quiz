@@ -4,6 +4,7 @@ import Avatar from '../components/Avatar'
 import { Loader, ErrorView } from '../components/StateView'
 import { fetchHistory } from '../lib/api'
 import { categoryMeta } from '../lib/categories'
+import { formatNumber } from '../lib/format'
 import { useBackButton } from '../hooks/useBackButton'
 
 const OUTCOME_BADGE = {
@@ -112,8 +113,8 @@ function DuelRow({ item }) {
       subtitle={dateFormatter.format(new Date(item.happened_at))}
       score={
         item.opponent_score !== null && item.opponent_score !== undefined
-          ? `${item.my_score} : ${item.opponent_score}`
-          : item.my_score
+          ? `${formatNumber(item.my_score)} : ${formatNumber(item.opponent_score)}`
+          : formatNumber(item.my_score)
       }
       footer={<p className={`text-[11px] font-medium ${badge.className}`}>{badge.label}</p>}
     />
@@ -131,7 +132,7 @@ function SoloRow({ item }) {
       }
       title={`🧠 ${meta.label}`}
       subtitle={dateFormatter.format(new Date(item.happened_at))}
-      score={item.score}
+      score={formatNumber(item.score)}
       footer={
         <p className="text-[11px] text-tg-hint">
           {item.correct}/{item.total}
@@ -166,7 +167,7 @@ function SprintRow({ item }) {
       }
       title="Спринт"
       subtitle={dateFormatter.format(new Date(item.happened_at))}
-      score={item.score}
+      score={formatNumber(item.score)}
       footer={<p className="text-[11px] text-tg-hint">✓ {item.correct}</p>}
     />
   )

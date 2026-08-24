@@ -1,5 +1,6 @@
 import Screen from './Screen'
 import { useMainButton, useSecondaryButton } from '../hooks/useBottomButton'
+import { formatNumber } from '../lib/format'
 
 /**
  * Общий каркас экрана результата (дуэль/соло/спринт различаются
@@ -52,7 +53,7 @@ export default function ResultCard({
           <p className="text-[11px] uppercase tracking-wider text-tg-hint">
             {primaryStat.label}
           </p>
-          <p className="text-4xl font-bold tabular-nums">{primaryStat.value}</p>
+          <p className="text-4xl font-bold tabular-nums">{formatNumber(primaryStat.value)}</p>
         </div>
 
         {rows.map((row) => (
@@ -61,7 +62,7 @@ export default function ResultCard({
             className="mt-4 flex items-center justify-between border-t border-white/5 pt-4 text-sm"
           >
             <span className="text-tg-hint">{row.label}</span>
-            <span className="font-semibold tabular-nums">{row.value}</span>
+            <span className="font-semibold tabular-nums">{formatNumber(row.value)}</span>
           </div>
         ))}
 
@@ -69,7 +70,7 @@ export default function ResultCard({
           <div className="mt-3 flex items-center justify-between rounded-xl bg-quiz-gold/10 px-3 py-2.5">
             <span className="text-sm text-tg-hint">Начислено монет</span>
             <span className="font-bold text-quiz-gold tabular-nums">
-              +{coinsEarned}
+              +{formatNumber(coinsEarned)}
             </span>
           </div>
         )}

@@ -4,8 +4,10 @@ import Avatar from '../components/Avatar'
 import CoinBadge from '../components/CoinBadge'
 import ModeCard from '../components/ModeCard'
 import CityPrompt from '../components/CityPrompt'
+import RankListModal from '../components/RankListModal'
 import { haptic, getHomeScreenStatus, promptAddToHomeScreen } from '../lib/telegram'
 import { getRank } from '../lib/ranks'
+import { formatNumber } from '../lib/format'
 
 export default function HomeScreen({
   user,
@@ -24,6 +26,7 @@ export default function HomeScreen({
   const name = tgUser?.firstName || user?.first_name || user?.username || 'Игрок'
   const rank = getRank(user?.total_score)
   const [showHomeScreenPrompt, setShowHomeScreenPrompt] = useState(false)
+  const [showRanks, setShowRanks] = useState(false)
 
   useEffect(() => {
     let alive = true
@@ -124,10 +127,14 @@ export default function HomeScreen({
       <div className="mt-5 grid grid-cols-2 gap-3">
         <Stat
           label="Всего очков"
-          value={user?.total_score ?? 0}
+          value={formatNumber(user?.total_score)}
           caption={`${rank.icon} ${rank.name}`}
+          onClick={() => {
+            haptic.tap()
+            setShowRanks(true)
+          }}
         />
-        <Stat label="Монеты" value={user?.coins ?? 0} accent />
+        <Stat label="Монеты" value={formatNumber(user?.coins)} accent />
       </div>
 
       {rank.next && (
@@ -141,7 +148,7 @@ export default function HomeScreen({
             />
           </div>
           <p className="mt-1 text-[11px] text-tg-hint">
-            До ранга «{rank.next.name}» {rank.next.icon}: {rank.next.min - (user?.total_score ?? 0)} очков
+            До ранга «{rank.next.name}» {rank.next.icon}: {formatNumber(rank.next.min - (user?.total_score ?? 0))} очков
           </p>
         </div>
       )}
@@ -196,13 +203,24 @@ export default function HomeScreen({
           }}
         />
       </div>
+
+      {showRanks && (
+        <RankListModal totalScore={user?.total_score} onClose={() => setShowRanks(false)} />
+      )}
     </Screen>
   )
 }
 
-function Stat({ label, value, accent, caption }) {
+function Stat({ label, value, accent, caption, onClick }) {
+  const Tag = onClick ? 'button' : 'div'
   return (
-    <div className="rounded-2xl border border-white/5 bg-tg-section px-4 py-3">
+    <Tag
+      type={onClick ? 'button' : undefined}
+      onClick={onClick}
+      className={`rounded-2xl border border-white/5 bg-tg-section px-4 py-3 text-left ${
+        onClick ? 'active:scale-[0.98]' : ''
+      }`}
+    >
       <p className="text-[11px] text-tg-hint">{label}</p>
       <p
         className={`text-xl font-bold tabular-nums ${accent ? 'text-quiz-gold' : ''}`}
@@ -214,6 +232,6 @@ function Stat({ label, value, accent, caption }) {
           {caption}
         </p>
       )}
-    </div>
+    </Tag>
   )
 }
