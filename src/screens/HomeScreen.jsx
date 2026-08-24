@@ -170,11 +170,21 @@ export default function HomeScreen({
         5 вопросов · 10 секунд на ответ
       </p>
 
-      {/* ---- будущие режимы ---- */}
+      {/* ---- другие режимы: все играют в общий счёт и ранг ---- */}
       <p className="mt-8 mb-3 px-1 text-[11px] font-semibold uppercase tracking-wider text-tg-hint">
         Другие режимы
       </p>
       <div className="flex flex-col gap-2.5">
+        <ModeCard
+          icon="📅"
+          title="Ежедневный вызов"
+          subtitle="Одни и те же 5 вопросов для всех, раз в день"
+          disabled={busy}
+          onClick={() => {
+            haptic.tap()
+            onDaily()
+          }}
+        />
         <ModeCard
           icon="⚡"
           title="Спринт"
@@ -195,31 +205,36 @@ export default function HomeScreen({
           }}
         />
         <ModeCard
-          icon="🔮"
-          title="Узнай себя"
-          subtitle="Забавные тесты о тебе — 10 вопросов, 2 минуты"
-          onClick={() => {
-            haptic.tap()
-            onPersona()
-          }}
-        />
-        <ModeCard
-          icon="📅"
-          title="Ежедневный вызов"
-          subtitle="Одни и те же 5 вопросов для всех, раз в день"
-          disabled={busy}
-          onClick={() => {
-            haptic.tap()
-            onDaily()
-          }}
-        />
-        <ModeCard
           icon="♾️"
           title="Марафон"
           subtitle="Отвечай, пока не ошибёшься — рекорд идёт в профиль"
           soon
         />
       </div>
+
+      {/* ---- узнай себя: отдельно, тут нет очков и рейтинга ---- */}
+      <p className="mt-8 mb-3 px-1 text-[11px] font-semibold uppercase tracking-wider text-tg-hint">
+        Для удовольствия
+      </p>
+      <button
+        type="button"
+        onClick={() => {
+          haptic.tap()
+          onPersona()
+        }}
+        className="flex w-full items-center gap-3.5 rounded-2xl border border-tg-accent/20 bg-gradient-to-br from-tg-accent/15 to-tg-accent/5 px-4 py-4 text-left transition-transform active:scale-[0.98]"
+      >
+        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-tg-accent/20 text-2xl">
+          🔮
+        </span>
+        <span className="flex-1">
+          <span className="block text-[15px] font-semibold">Узнай себя</span>
+          <span className="block text-xs text-tg-hint">
+            20 тестов о тебе — без очков и рейтинга, просто для удовольствия
+          </span>
+        </span>
+        <span className="text-tg-hint">→</span>
+      </button>
 
       {showRanks && (
         <RankListModal totalScore={user?.total_score} onClose={() => setShowRanks(false)} />
