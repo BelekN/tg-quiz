@@ -12,6 +12,8 @@ import SoloQuizScreen from './screens/SoloQuizScreen'
 import SoloResultScreen from './screens/SoloResultScreen'
 import DailyQuizScreen from './screens/DailyQuizScreen'
 import DailyResultScreen from './screens/DailyResultScreen'
+import MarathonScreen from './screens/MarathonScreen'
+import MarathonResultScreen from './screens/MarathonResultScreen'
 import SprintScreen from './screens/SprintScreen'
 import SprintResultScreen from './screens/SprintResultScreen'
 import AvatarPickerScreen from './screens/AvatarPickerScreen'
@@ -33,6 +35,8 @@ import {
   finishSprint,
   startDaily,
   finishDaily,
+  startMarathon,
+  finishMarathon,
   startPersona,
   finishPersona,
 } from './lib/api'
@@ -94,6 +98,9 @@ export default function App() {
 
   const [daily, setDaily] = useState(null) // { session_id, play_date, questions }
   const [dailyResult, setDailyResult] = useState(null)
+
+  const [marathon, setMarathon] = useState(null) // { session_id, questions }
+  const [marathonResult, setMarathonResult] = useState(null)
 
   const [persona, setPersona] = useState(null) // { session_id, test_key, title, scoring, questions, results }
   const [personaResult, setPersonaResult] = useState(null)
@@ -368,6 +375,45 @@ export default function App() {
     }
   }, [daily, user, showError])
 
+  const startMarathonRun = useCallback(async () => {
+    setBusy(true)
+    try {
+      const started = await startMarathon()
+      setMarathon(started)
+      setScreen('marathon')
+    } catch (e) {
+      showError(e)
+    } finally {
+      setBusy(false)
+    }
+  }, [showError])
+
+  // серия оборвалась (или пул исчерпан) -> считаем итог
+  const completeMarathon = useCallback(async () => {
+    setScreen('finishing')
+    try {
+      const res = await finishMarathon(marathon.session_id)
+      setMarathonResult(res)
+      setScreen('marathon-result')
+      const totalBefore = user?.total_score ?? 0
+      const totalAfter = totalBefore + res.score
+      const rankAfter = getRank(totalAfter)
+      if (rankAfter.key !== getRank(totalBefore).key) setNewRank(rankAfter)
+      setUser((u) =>
+        u
+          ? {
+              ...u,
+              coins: res.coins_balance ?? u.coins + res.coins_earned,
+              total_score: totalAfter,
+            }
+          : u,
+      )
+      if (res.new_achievements?.length) setNewAchievements(res.new_achievements)
+    } catch (e) {
+      showError(e)
+    }
+  }, [marathon, user, showError])
+
   const pickPersonaTest = useCallback(async (testKey) => {
     try {
       const started = await startPersona(testKey)
@@ -402,6 +448,8 @@ export default function App() {
     setSprintResult(null)
     setDaily(null)
     setDailyResult(null)
+    setMarathon(null)
+    setMarathonResult(null)
     setPersona(null)
     setPersonaResult(null)
     setError(null)
@@ -541,6 +589,25 @@ export default function App() {
     case 'daily-result':
       return <DailyResultScreen result={dailyResult} onHome={goHome} />
 
+    case 'marathon':
+      return (
+        <MarathonScreen
+          sessionId={marathon.session_id}
+          questions={marathon.questions}
+          onComplete={completeMarathon}
+          onError={showError}
+        />
+      )
+
+    case 'marathon-result':
+      return (
+        <MarathonResultScreen
+          result={marathonResult}
+          onHome={goHome}
+          onPlayAgain={startMarathonRun}
+        />
+      )
+
     case 'persona-list':
       return (
         <PersonaListScreen onBack={() => setScreen('home')} onPick={pickPersonaTest} />
@@ -579,6 +646,7 @@ export default function App() {
           onQuizTests={() => setScreen('categories')}
           onSprint={startSprintRun}
           onDaily={startDailyRun}
+          onMarathon={startMarathonRun}
           onPersona={() => setScreen('persona-list')}
           onEditAvatar={() => setScreen('avatar-picker')}
         />

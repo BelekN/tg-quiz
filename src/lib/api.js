@@ -158,6 +158,16 @@ export const answerDaily = (sessionId, index, answer) =>
 /** Закрыть сегодняшний вызов. Очки суммирует сервер. */
 export const finishDaily = (sessionId) => call('finish_daily', { session_id: sessionId })
 
+/** Начать марафон: вопросы, пока не ошибёшься. */
+export const startMarathon = () => call('start_marathon')
+
+/** Ответ в марафоне. -> { correct_option_index, is_correct, points } */
+export const answerMarathon = (sessionId, index, answer) =>
+  call('answer_marathon', { session_id: sessionId, index, answer })
+
+/** Закрыть марафон (серия уже оборвалась или пул исчерпан). */
+export const finishMarathon = (sessionId) => call('finish_marathon', { session_id: sessionId })
+
 /** duel_<uuid> -> uuid */
 export function parseDuelStartParam(startParam) {
   const m = /^duel_([0-9a-fA-F-]{36})$/.exec(startParam ?? '')

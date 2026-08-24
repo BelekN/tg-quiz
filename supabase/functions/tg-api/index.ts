@@ -48,6 +48,8 @@ const FUNNEL_ACTIONS = new Set([
   "finish_persona",
   "start_daily",
   "finish_daily",
+  "start_marathon",
+  "finish_marathon",
   "leaderboard",
   "history",
   "set_city",
@@ -401,6 +403,39 @@ Deno.serve(async (req) => {
       // ---- финиш ежедневного вызова ----
       case "finish_daily": {
         const { data, error } = await supabase.rpc("finish_daily", {
+          p_tg_id: tgId,
+          p_session_id: payload.session_id,
+        });
+        if (error) throw error;
+        await attachNewAchievements(tgId, data);
+        return json(data);
+      }
+
+      // ---- старт марафона: вопросы, пока не ошибёшься ----
+      case "start_marathon": {
+        const { data, error } = await supabase.rpc("start_marathon", {
+          p_tg_id: tgId,
+        });
+        if (error) throw error;
+        return json(data);
+      }
+
+      // ---- ответ в марафоне ----
+      case "answer_marathon": {
+        const { data, error } = await supabase.rpc("answer_marathon", {
+          p_tg_id: tgId,
+          p_session_id: payload.session_id,
+          p_index: payload.index,
+          p_answer: payload.answer ?? null,
+        });
+        if (error) throw error;
+        return json(data);
+      }
+
+      // ---- финиш марафона: очки суммирует Postgres, отказывает,
+      // если серия ещё не оборвалась и пул вопросов не исчерпан ----
+      case "finish_marathon": {
+        const { data, error } = await supabase.rpc("finish_marathon", {
           p_tg_id: tgId,
           p_session_id: payload.session_id,
         });

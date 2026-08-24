@@ -20,6 +20,7 @@ export default function HomeScreen({
   onQuizTests,
   onSprint,
   onDaily,
+  onMarathon,
   onPersona,
   onEditAvatar,
   busy,
@@ -207,8 +208,16 @@ export default function HomeScreen({
         <ModeCard
           icon="♾️"
           title="Марафон"
-          subtitle="Отвечай, пока не ошибёшься — рекорд идёт в профиль"
-          soon
+          subtitle={
+            user?.longest_marathon_streak > 0
+              ? `Рекорд: ${user.longest_marathon_streak} подряд`
+              : 'Отвечай, пока не ошибёшься'
+          }
+          disabled={busy}
+          onClick={() => {
+            haptic.tap()
+            onMarathon()
+          }}
         />
       </div>
 

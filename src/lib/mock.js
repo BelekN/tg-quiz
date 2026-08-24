@@ -65,6 +65,7 @@ const poolFor = (category) =>
 const soloState = { score: 0, correct: 0, category: null }
 const sprintState = { score: 0, correct: 0, questions: [] }
 const dailyState = { score: 0, correct: 0, questions: QUESTIONS.slice(0, 5), played: false }
+const marathonState = { score: 0, correct: 0, questions: SPRINT_POOL }
 const state = { score: 0, correct: 0 }
 const meUser = {
   tg_id: 99281932,
@@ -77,6 +78,7 @@ const meUser = {
   coins: 85,
   current_streak: 4,
   longest_streak: 9,
+  longest_marathon_streak: 6,
 }
 const PERSONA_TESTS = {
   mock_categorical: {
@@ -405,6 +407,40 @@ export const mockApi = {
       score: dailyState.score,
       coins_earned: dailyState.correct * 5,
       coins_balance: 85 + dailyState.correct * 5,
+      new_achievements: [],
+    }
+  },
+
+  async start_marathon() {
+    await wait(250)
+    marathonState.score = 0
+    marathonState.correct = 0
+    return {
+      session_id: 'marathon-1',
+      questions: marathonState.questions.map(({ correct: _c, ...q }) => q),
+    }
+  },
+
+  async answer_marathon({ index, answer }) {
+    await wait(150)
+    const right = marathonState.questions[index].correct
+    const ok = answer === right
+    const points = ok ? 100 : 0
+    if (ok) {
+      marathonState.correct += 1
+      marathonState.score += points
+    }
+    return { correct_option_index: right, is_correct: ok, points }
+  },
+
+  async finish_marathon() {
+    await wait(300)
+    return {
+      correct: marathonState.correct,
+      score: marathonState.score,
+      coins_earned: marathonState.correct * 5,
+      coins_balance: 85 + marathonState.correct * 5,
+      best_streak: Math.max(6, marathonState.correct),
       new_achievements: [],
     }
   },

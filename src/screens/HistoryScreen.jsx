@@ -72,6 +72,8 @@ export default function HistoryScreen({ onBack }) {
             <PersonaRow key={item.id} item={item} />
           ) : item.kind === 'daily' ? (
             <DailyRow key={item.id} item={item} />
+          ) : item.kind === 'marathon' ? (
+            <MarathonRow key={item.id} item={item} />
           ) : (
             <SprintRow key={item.id} item={item} />
           ),
@@ -191,6 +193,22 @@ function DailyRow({ item }) {
           {item.correct}/{item.total}
         </p>
       }
+    />
+  )
+}
+
+function MarathonRow({ item }) {
+  return (
+    <Card
+      icon={
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-tg-accent/15 text-lg">
+          ♾️
+        </span>
+      }
+      title="Марафон"
+      subtitle={dateFormatter.format(new Date(item.happened_at))}
+      score={formatNumber(item.score)}
+      footer={<p className="text-[11px] text-tg-hint">🔥 {item.correct}</p>}
     />
   )
 }
