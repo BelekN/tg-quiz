@@ -8,6 +8,7 @@ import {
   hapticFeedback,
   shareURL,
   shareStory,
+  switchInlineQuery,
   mockTelegramEnv,
   retrieveRawInitData,
   backButton,
@@ -163,20 +164,36 @@ export const haptic = {
 }
 
 /**
- * Открывает нативный шэринг Telegram со ссылкой-приглашением.
+ * Приглашение на дуэль другу.
  *
  * ВАЖНО: для Mini App нужен именно ?startapp=, а не ?start=.
  * ?start=  -> открывает ЧАТ С БОТОМ и посылает /start duel_<id>,
  *             мини-апп при этом не открывается;
  * ?startapp=-> открывает саму мини-аппу, а значение попадает
  *             в initData.startParam.
+ *
+ * Основной путь — инлайн-режим бота (switchInlineQuery): друг видит
+ * готовую карточку с кнопкой "Играть", без единой ссылки в тексте.
+ * shareURL (обычный t.me/share/url) всегда показывает голую ссылку с
+ * UUID первой строкой — многие принимают такое за спам/фишинг, даже
+ * от знакомого. isAvailable() у switchInlineQuery проверяет, включён
+ * ли у бота инлайн-режим (BotFather) — если нет, откатываемся на
+ * старый способ, а не оставляем кнопку неработающей.
  */
 export function shareDuelLink(duelId, text) {
   const bot = import.meta.env.VITE_BOT_USERNAME
   const app = import.meta.env.VITE_APP_SHORT_NAME
+  const query = `duel_${duelId}`
   const url = app
-    ? `https://t.me/${bot}/${app}?startapp=duel_${duelId}`
-    : `https://t.me/${bot}?startapp=duel_${duelId}`
+    ? `https://t.me/${bot}/${app}?startapp=${query}`
+    : `https://t.me/${bot}?startapp=${query}`
+
+  if (switchInlineQuery.isAvailable()) {
+    // Текст карточки собирает сам бот (tg-webhook) по реальному счёту
+    // из базы — тут он ни на что не влияет, только для фолбэка ниже.
+    switchInlineQuery(query, ['users'])
+    return url
+  }
 
   try {
     shareURL(url, text)

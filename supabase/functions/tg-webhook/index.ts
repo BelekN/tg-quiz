@@ -59,6 +59,49 @@ function openAppButton(startParam?: string) {
     : { text: "🎮 Играть", url: APP_URL, webApp: true };
 }
 
+// Инвайт на дуэль через инлайн-режим: пользователь жмёт "Вызвать
+// друга", Telegram открывает выбор чата и присылает нам query вида
+// "duel_<uuid>" — отвечаем ОДНОЙ карточкой с кнопкой на приглашение.
+// Без этого (через shareURL/t.me/share/url) друг видел бы сырую
+// ссылку с UUID первой строкой — то, что все привыкли считать спамом.
+async function answerDuelInviteQuery(inlineQueryId: string, query: string) {
+  const m = /^duel_([0-9a-fA-F-]{36})$/.exec(query.trim());
+  let text = "⚔️ Зову тебя на дуэль в КвизДуэль — 5 вопросов, кто быстрее и точнее!";
+  let startParam: string | undefined;
+
+  if (m) {
+    startParam = `duel_${m[1]}`;
+    const { data: score, error } = await supabase.rpc("get_duel_host_score", { p_duel_id: m[1] });
+    if (error) console.error("get_duel_host_score failed", error.message);
+    if (typeof score === "number") {
+      text = `⚔️ Я набрал ${score} очков в дуэли КвизДуэль. Побьёшь?`;
+    }
+  }
+
+  const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/answerInlineQuery`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      inline_query_id: inlineQueryId,
+      cache_time: 0,
+      results: [{
+        type: "article",
+        id: m ? m[1] : "duel_invite_generic",
+        title: "Пригласить на дуэль",
+        description: "5 вопросов, 10 секунд на каждый — кто быстрее и точнее",
+        input_message_content: { message_text: text },
+        // url, никогда web_app: это сообщение уйдёт в чат, который
+        // выберет пользователь, а web_app-кнопки Telegram разрешает
+        // только в приватном чате с самим ботом.
+        reply_markup: {
+          inline_keyboard: [[{ text: "🎮 Играть", url: appDeepLink(BOT_USERNAME, APP_SHORT_NAME, startParam) }]],
+        },
+      }],
+    }),
+  });
+  if (!res.ok) console.error("answerInlineQuery failed", await res.text().catch(() => ""));
+}
+
 async function sendRating(chatId: number, tgId: number) {
   const { data, error } = await supabase.rpc("get_leaderboard", { p_tg_id: tgId, p_limit: 5 });
   if (error) {
@@ -144,6 +187,17 @@ Deno.serve(async (req) => {
   }
 
   const update = await req.json().catch(() => null);
+
+  const inlineQuery = update?.inline_query;
+  if (inlineQuery?.id) {
+    try {
+      await answerDuelInviteQuery(inlineQuery.id, inlineQuery.query ?? "");
+    } catch (e) {
+      console.error("inline query handling failed", e);
+    }
+    return new Response("ok");
+  }
+
   const message = update?.message;
   const text: string | undefined = message?.text;
   const chatId = message?.chat?.id;
