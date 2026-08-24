@@ -81,6 +81,7 @@ const PERSONA_TESTS = {
     title: 'Мок-тест (категории)',
     description: 'Заглушка для вёрстки — categorical scoring',
     icon: '🔮',
+    category: 'Мок-категория',
     scoring: 'categorical',
     questions: [
       {
@@ -110,6 +111,7 @@ const PERSONA_TESTS = {
     title: 'Мок-тест (шкала)',
     description: 'Заглушка для вёрстки — scale scoring',
     icon: '🔥',
+    category: 'Мок-категория',
     scoring: 'scale',
     questions: [
       {

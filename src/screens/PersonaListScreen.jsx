@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Screen from '../components/Screen'
 import { Loader, ErrorView } from '../components/StateView'
 import { fetchPersonaTests } from '../lib/api'
@@ -38,6 +38,22 @@ export default function PersonaListScreen({ onBack, onPick }) {
     }
   }, [])
 
+  // Группируем по категории, сохраняя порядок первого появления — как
+  // и в AchievementsScreen, категорию и порядок внутри неё задаёт
+  // сервер через ord, здесь просто разбиваем на секции.
+  const groups = useMemo(() => {
+    const list = []
+    for (const t of state.tests) {
+      let g = list.find((x) => x.category === t.category)
+      if (!g) {
+        g = { category: t.category, tests: [] }
+        list.push(g)
+      }
+      g.tests.push(t)
+    }
+    return list
+  }, [state.tests])
+
   if (state.status === 'loading') return <Loader label="Загружаем тесты…" />
   if (state.status === 'error') return <ErrorView code={state.code} onRetry={onBack} />
 
@@ -57,26 +73,33 @@ export default function PersonaListScreen({ onBack, onPick }) {
         10 вопросов, 2 минуты — и неожиданный результат про тебя
       </p>
 
-      <div className="animate-rise mt-5 flex flex-col gap-2.5">
-        {state.tests.map((t) => (
-          <button
-            key={t.key}
-            type="button"
-            disabled={picking}
-            onClick={() => handlePick(t.key)}
-            className="flex w-full items-center gap-3.5 rounded-2xl border border-white/5 bg-tg-section px-4 py-4 text-left transition-transform active:scale-[0.98] disabled:opacity-60"
-          >
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-tg-accent/15 text-xl">
-              {t.icon}
-            </span>
-            <span className="flex-1">
-              <span className="block text-[15px] font-semibold">{t.title}</span>
-              <span className="block text-xs text-tg-hint">{t.description}</span>
-            </span>
-            <span className="text-tg-hint">›</span>
-          </button>
-        ))}
-      </div>
+      {groups.map((g) => (
+        <section key={g.category} className="animate-rise mt-6">
+          <p className="mb-2.5 px-1 text-[11px] font-semibold uppercase tracking-wider text-tg-hint">
+            {g.category}
+          </p>
+          <div className="flex flex-col gap-2.5">
+            {g.tests.map((t) => (
+              <button
+                key={t.key}
+                type="button"
+                disabled={picking}
+                onClick={() => handlePick(t.key)}
+                className="flex w-full items-center gap-3.5 rounded-2xl border border-white/5 bg-tg-section px-4 py-4 text-left transition-transform active:scale-[0.98] disabled:opacity-60"
+              >
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-tg-accent/15 text-xl">
+                  {t.icon}
+                </span>
+                <span className="flex-1">
+                  <span className="block text-[15px] font-semibold">{t.title}</span>
+                  <span className="block text-xs text-tg-hint">{t.description}</span>
+                </span>
+                <span className="text-tg-hint">›</span>
+              </button>
+            ))}
+          </div>
+        </section>
+      ))}
     </Screen>
   )
 }
