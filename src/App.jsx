@@ -6,6 +6,7 @@ import LeaderboardScreen from './screens/LeaderboardScreen'
 import HistoryScreen from './screens/HistoryScreen'
 import AchievementsScreen from './screens/AchievementsScreen'
 import AchievementToast from './components/AchievementToast'
+import RankUpToast from './components/RankUpToast'
 import CategoryScreen from './screens/CategoryScreen'
 import SoloQuizScreen from './screens/SoloQuizScreen'
 import SoloResultScreen from './screens/SoloResultScreen'
@@ -32,6 +33,7 @@ import {
   finishPersona,
 } from './lib/api'
 import { computePersonaResult } from './lib/persona'
+import { getRank } from './lib/ranks'
 import { initTelegram, getTgUser, getStartParam } from './lib/telegram'
 
 initTelegram()
@@ -90,6 +92,7 @@ export default function App() {
   const [personaResult, setPersonaResult] = useState(null)
 
   const [newAchievements, setNewAchievements] = useState(null)
+  const [newRank, setNewRank] = useState(null)
 
   const tgUser = getTgUser()
 
@@ -172,12 +175,16 @@ export default function App() {
       setResult(res)
       setScreen('result')
       // локальный баланс монет держим в актуальном виде
+      const totalBefore = user?.total_score ?? 0
+      const totalAfter = totalBefore + res.score
+      const rankAfter = getRank(totalAfter)
+      if (rankAfter.key !== getRank(totalBefore).key) setNewRank(rankAfter)
       setUser((u) =>
         u
           ? {
               ...u,
               coins: res.coins_balance ?? u.coins + res.coins_earned,
-              total_score: u.total_score + res.score,
+              total_score: totalAfter,
             }
           : u,
       )
@@ -185,7 +192,7 @@ export default function App() {
     } catch (e) {
       showError(e)
     }
-  }, [duel, showError])
+  }, [duel, user, showError])
 
   // Соперник доиграл ПОЗЖЕ нас — пока мы сидели на "Ждём соперника",
   // ResultScreen сам поллит get_duel_progress и вызывает это, когда
@@ -257,12 +264,16 @@ export default function App() {
       const res = await finishSolo(solo.session_id)
       setSoloResult(res)
       setScreen('solo-result')
+      const totalBefore = user?.total_score ?? 0
+      const totalAfter = totalBefore + res.score
+      const rankAfter = getRank(totalAfter)
+      if (rankAfter.key !== getRank(totalBefore).key) setNewRank(rankAfter)
       setUser((u) =>
         u
           ? {
               ...u,
               coins: res.coins_balance ?? u.coins + res.coins_earned,
-              total_score: u.total_score + res.score,
+              total_score: totalAfter,
             }
           : u,
       )
@@ -270,7 +281,7 @@ export default function App() {
     } catch (e) {
       showError(e)
     }
-  }, [solo, showError])
+  }, [solo, user, showError])
 
   const startSprintRun = useCallback(async () => {
     setBusy(true)
@@ -292,12 +303,16 @@ export default function App() {
       const res = await finishSprint(sprint.session_id)
       setSprintResult(res)
       setScreen('sprint-result')
+      const totalBefore = user?.total_score ?? 0
+      const totalAfter = totalBefore + res.score
+      const rankAfter = getRank(totalAfter)
+      if (rankAfter.key !== getRank(totalBefore).key) setNewRank(rankAfter)
       setUser((u) =>
         u
           ? {
               ...u,
               coins: res.coins_balance ?? u.coins + res.coins_earned,
-              total_score: u.total_score + res.score,
+              total_score: totalAfter,
             }
           : u,
       )
@@ -305,7 +320,7 @@ export default function App() {
     } catch (e) {
       showError(e)
     }
-  }, [sprint, showError])
+  }, [sprint, user, showError])
 
   const pickPersonaTest = useCallback(async (testKey) => {
     try {
@@ -511,7 +526,10 @@ export default function App() {
 
   return (
     <>
-      <AchievementToast achievements={newAchievements} />
+      <div className="safe-top pointer-events-none fixed inset-x-0 top-0 z-50 mt-2 flex flex-col items-center gap-2 px-4">
+        <RankUpToast rank={newRank} />
+        <AchievementToast achievements={newAchievements} />
+      </div>
       {content}
     </>
   )

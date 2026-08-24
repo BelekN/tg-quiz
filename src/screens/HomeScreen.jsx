@@ -5,6 +5,7 @@ import CoinBadge from '../components/CoinBadge'
 import ModeCard from '../components/ModeCard'
 import CityPrompt from '../components/CityPrompt'
 import { haptic, getHomeScreenStatus, promptAddToHomeScreen } from '../lib/telegram'
+import { getRank } from '../lib/ranks'
 
 export default function HomeScreen({
   user,
@@ -21,6 +22,7 @@ export default function HomeScreen({
   busy,
 }) {
   const name = tgUser?.firstName || user?.first_name || user?.username || 'Игрок'
+  const rank = getRank(user?.total_score)
   const [showHomeScreenPrompt, setShowHomeScreenPrompt] = useState(false)
 
   useEffect(() => {
@@ -120,9 +122,29 @@ export default function HomeScreen({
 
       {/* ---- статистика ---- */}
       <div className="mt-5 grid grid-cols-2 gap-3">
-        <Stat label="Всего очков" value={user?.total_score ?? 0} />
+        <Stat
+          label="Всего очков"
+          value={user?.total_score ?? 0}
+          caption={`${rank.icon} ${rank.name}`}
+        />
         <Stat label="Монеты" value={user?.coins ?? 0} accent />
       </div>
+
+      {rank.next && (
+        <div className="mt-2 px-1">
+          <div className="h-1 overflow-hidden rounded-full bg-white/8">
+            <div
+              className="h-full rounded-full bg-tg-accent"
+              style={{
+                width: `${Math.min(100, (rank.progress.current / rank.progress.target) * 100)}%`,
+              }}
+            />
+          </div>
+          <p className="mt-1 text-[11px] text-tg-hint">
+            До ранга «{rank.next.name}» {rank.next.icon}: {rank.next.min - (user?.total_score ?? 0)} очков
+          </p>
+        </div>
+      )}
 
       {/* ---- главное действие ---- */}
       <button
@@ -178,7 +200,7 @@ export default function HomeScreen({
   )
 }
 
-function Stat({ label, value, accent }) {
+function Stat({ label, value, accent, caption }) {
   return (
     <div className="rounded-2xl border border-white/5 bg-tg-section px-4 py-3">
       <p className="text-[11px] text-tg-hint">{label}</p>
@@ -187,6 +209,11 @@ function Stat({ label, value, accent }) {
       >
         {value}
       </p>
+      {caption && (
+        <p className="mt-0.5 truncate text-[11px] font-medium text-tg-accent">
+          {caption}
+        </p>
+      )}
     </div>
   )
 }

@@ -20,15 +20,13 @@ export default function AchievementToast({ achievements }) {
   const a = achievements[index]
 
   return (
-    <div className="safe-top pointer-events-none fixed inset-x-0 top-0 z-50 flex justify-center px-4">
-      <div className="animate-rise mt-2 flex items-center gap-3 rounded-2xl border border-quiz-gold/30 bg-tg-section/95 px-4 py-3 shadow-xl backdrop-blur">
-        <span className="text-2xl">{a.icon}</span>
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-quiz-gold">
-            Новое достижение
-          </p>
-          <p className="text-[14px] font-semibold">{a.title}</p>
-        </div>
+    <div className="animate-rise flex items-center gap-3 rounded-2xl border border-quiz-gold/30 bg-tg-section/95 px-4 py-3 shadow-xl backdrop-blur">
+      <span className="text-2xl">{a.icon}</span>
+      <div>
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-quiz-gold">
+          Новое достижение
+        </p>
+        <p className="text-[14px] font-semibold">{a.title}</p>
       </div>
     </div>
   )
