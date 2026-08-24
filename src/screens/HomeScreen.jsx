@@ -202,6 +202,18 @@ export default function HomeScreen({
             onPersona()
           }}
         />
+        <ModeCard
+          icon="📅"
+          title="Ежедневный вызов"
+          subtitle="Одни и те же 5 вопросов для всех, раз в день"
+          soon
+        />
+        <ModeCard
+          icon="♾️"
+          title="Марафон"
+          subtitle="Отвечай, пока не ошибёшься — рекорд идёт в профиль"
+          soon
+        />
       </div>
 
       {showRanks && (
