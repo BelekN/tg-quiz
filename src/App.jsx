@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import HomeScreen from './screens/HomeScreen'
+import DuelIntroScreen from './screens/DuelIntroScreen'
 import QuizScreen from './screens/QuizScreen'
 import ResultScreen from './screens/ResultScreen'
 import LeaderboardScreen from './screens/LeaderboardScreen'
@@ -128,7 +129,9 @@ export default function App() {
             const joined = await startDuel(duelId)
             if (!alive) return
             setDuel(joined)
-            setScreen('quiz')
+            // Уже отвечал раньше (перезаход после сетевого сбоя) —
+            // продолжаем сразу, вступление тут неуместно.
+            setScreen(joined.answered > 0 ? 'quiz' : 'duel-intro')
           } catch (e) {
             // Все вопросы отвечены, но итог не зафиксирован
             // (приложение закрыли перед финишем) — доводим до конца.
@@ -158,7 +161,7 @@ export default function App() {
     try {
       const created = await startDuel(null)
       setDuel(created)
-      setScreen('quiz')
+      setScreen('duel-intro')
     } catch (e) {
       showError(e)
     } finally {
@@ -489,6 +492,11 @@ export default function App() {
               : null
           }
         />
+      )
+
+    case 'duel-intro':
+      return (
+        <DuelIntroScreen role={duel?.role} onStart={() => setScreen('quiz')} />
       )
 
     case 'quiz':
