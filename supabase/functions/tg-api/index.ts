@@ -392,6 +392,7 @@ Deno.serve(async (req) => {
           p_result_key: payload.result_key,
         });
         if (error) throw error;
+        await attachNewAchievements(tgId, data);
         return json(data);
       }
 

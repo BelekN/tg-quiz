@@ -378,6 +378,11 @@ export const mockApi = {
         { key: 'sprint_ace', title: 'Скорострел', description: '20+ правильных ответов в Спринте', icon: '⚡', unlocked_at: null },
         { key: 'all_categories', title: 'Эрудит', description: 'Сыграйте квиз-тест во всех категориях', icon: '🧠', unlocked_at: null },
         { key: 'score_5000', title: 'Профи', description: 'Наберите 5000 очков всего', icon: '🏆', unlocked_at: null },
+        { key: 'all_personas', title: 'Исследователь личности', description: 'Пройди все тесты «Кто ты из...»', icon: '🔮', unlocked_at: null },
+        { key: 'rematch_5', title: 'Заядлый реваншист', description: 'Сыграй 5 реваншей', icon: '🔁', unlocked_at: null },
+        { key: 'all_modes', title: 'Универсал', description: 'Сыграй в дуэль, квиз-тест и спринт хотя бы раз', icon: '🎯', unlocked_at: null },
+        { key: 'real_duel', title: 'Настоящий соперник', description: 'Заверши дуэль, в которой реально участвовали два игрока', icon: '🤝', unlocked_at: null },
+        { key: 'night_owl', title: 'Полуночник', description: 'Сыграй что-нибудь между полуночью и 5 утра', icon: '🦉', unlocked_at: null },
       ],
     }
   },
@@ -408,7 +413,7 @@ export const mockApi = {
     await wait(300)
     const test = PERSONA_TESTS[personaState.test_key]
     const result = test.results.find((r) => r.key === result_key)
-    return { test_key: test.key, key: result.key, title: result.title, description: result.description, icon: result.icon }
+    return { test_key: test.key, key: result.key, title: result.title, description: result.description, icon: result.icon, new_achievements: [] }
   },
 
   async duel_progress() {

@@ -325,6 +325,7 @@ export default function App() {
       const res = await finishPersona(persona.session_id, resultKey)
       setPersonaResult(res)
       setScreen('persona-result')
+      if (res.new_achievements?.length) setNewAchievements(res.new_achievements)
     } catch (e) {
       showError(e)
     }
