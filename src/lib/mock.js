@@ -74,6 +74,8 @@ const meUser = {
   city: null,
   total_score: 1240,
   coins: 85,
+  current_streak: 4,
+  longest_streak: 9,
 }
 const PERSONA_TESTS = {
   mock_categorical: {
@@ -135,7 +137,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms))
 export const mockApi = {
   async me() {
     await wait(300)
-    return { user: meUser, start_param: null }
+    return { user: meUser, start_param: null, new_achievements: [] }
   },
 
   async set_city({ city }) {

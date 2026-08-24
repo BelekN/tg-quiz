@@ -166,7 +166,15 @@ Deno.serve(async (req) => {
         } catch {
           /* воронка — best-effort */
         }
-        return json({ user: data, start_param: tg.startParam });
+        // Дневные стрики (streak_7/streak_30) разблокируются только
+        // логином — finish_duel/finish_solo/finish_sprint/finish_persona
+        // сюда не заходят, поэтому это ЕДИНСТВЕННОЕ место, где они могут
+        // разблокироваться. attachNewAchievements кладёт new_achievements
+        // прямо в переданный объект — отдаём его как обычно, верхним
+        // уровнем, а не внутри "user".
+        const out: Record<string, unknown> = { user: data, start_param: tg.startParam };
+        await attachNewAchievements(tgId, out);
+        return json(out);
       }
 
       // ---- старт дуэли: создать или войти по ссылке ----

@@ -56,6 +56,12 @@ export default function HomeScreen({
           <p className="text-xs text-tg-hint">Привет,</p>
           <p className="truncate text-[17px] font-semibold leading-tight">
             {name}
+            {/* День 1 не показываем — только когда серия реально копится */}
+            {user?.current_streak > 1 && (
+              <span className="ml-1.5 text-xs font-normal text-tg-hint">
+                🔥{user.current_streak}
+              </span>
+            )}
           </p>
         </div>
         <button

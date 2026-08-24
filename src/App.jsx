@@ -102,6 +102,7 @@ export default function App() {
         const me = await fetchMeWithRetry()
         if (!alive) return
         setUser(me.user)
+        if (me.new_achievements?.length) setNewAchievements(me.new_achievements)
 
         // ?startapp=duel_<uuid> -> гость сразу попадает в дуэль
         const duelId = parseDuelStartParam(me.start_param ?? getStartParam())
