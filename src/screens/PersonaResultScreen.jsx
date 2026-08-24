@@ -3,7 +3,7 @@ import { useMainButton, useSecondaryButton } from '../hooks/useBottomButton'
 import { haptic, shareResultToStory } from '../lib/telegram'
 
 /**
- * Нет ни очков, ни монет — карточка результата теста "Кто ты из...",
+ * Нет ни очков, ни монет — карточка результата теста из раздела "Узнай себя",
  * заточенная под шеринг в Stories, а не под игровую статистику.
  */
 export default function PersonaResultScreen({ testTitle, result, onHome, onPlayAgain }) {

@@ -383,7 +383,7 @@ export const mockApi = {
         { key: 'perfect_solo', title: 'Идеально', description: '100% правильных ответов в квиз-тесте', icon: '💯', category: 'Соло и спринт', unlocked_at: null, progress: null },
         { key: 'sprint_ace', title: 'Скорострел', description: '20+ правильных ответов в Спринте', icon: '⚡', category: 'Соло и спринт', unlocked_at: null, progress: { current: 8, target: 20 } },
         { key: 'all_categories', title: 'Эрудит', description: 'Сыграйте квиз-тест во всех категориях', icon: '🧠', category: 'Соло и спринт', unlocked_at: null, progress: { current: 2, target: 10 } },
-        { key: 'all_personas', title: 'Исследователь личности', description: 'Пройди все тесты «Кто ты из...»', icon: '🔮', category: 'Кто ты из...', unlocked_at: null, progress: { current: 1, target: 12 } },
+        { key: 'all_personas', title: 'Исследователь личности', description: 'Пройди все тесты в разделе «Узнай себя»', icon: '🔮', category: 'Узнай себя', unlocked_at: null, progress: { current: 1, target: 12 } },
         { key: 'score_5000', title: 'Профи', description: 'Наберите 5000 очков всего', icon: '🏆', category: 'Особые', unlocked_at: null, progress: { current: 1240, target: 5000 } },
         { key: 'all_modes', title: 'Универсал', description: 'Сыграй в дуэль, квиз-тест и спринт хотя бы раз', icon: '🎯', category: 'Особые', unlocked_at: null, progress: { current: 1, target: 3 } },
         { key: 'night_owl', title: 'Полуночник', description: 'Сыграй что-нибудь между полуночью и 5 утра', icon: '🦉', category: 'Особые', unlocked_at: null, progress: null },

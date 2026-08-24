@@ -67,7 +67,7 @@ export default function PersonaListScreen({ onBack, onPick }) {
         >
           ←
         </button>
-        <h1 className="text-lg font-bold">🔮 Кто ты из...</h1>
+        <h1 className="text-lg font-bold">🔮 Узнай себя</h1>
       </header>
       <p className="mt-1 text-sm text-tg-hint">
         10 вопросов, 2 минуты — и неожиданный результат про тебя

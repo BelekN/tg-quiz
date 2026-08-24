@@ -138,7 +138,7 @@ export const answerSprint = (sessionId, index, answer) =>
 export const finishSprint = (sessionId) =>
   call('finish_sprint', { session_id: sessionId })
 
-/** Каталог тестов "Кто ты из...". -> { items: [{key, title, description, icon}] } */
+/** Каталог тестов раздела "Узнай себя". -> { items: [{key, title, description, icon}] } */
 export const fetchPersonaTests = () => call('persona_tests')
 
 /** Начать тест: все вопросы целиком (нет ни таймера, ни скрытых полей). */

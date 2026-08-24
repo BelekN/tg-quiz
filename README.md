@@ -50,7 +50,7 @@ supabase/
   migrations/002+          схема и RPC-логика (не вопросы — см. ниже)
   questions/bank.sql        ЕДИНСТВЕННЫЙ актуальный срез базы вопросов
                             (500 вопросов, 10 категорий по 50). Идемпотентен.
-  questions/personas.sql   контент режима "Кто ты из..." (см. 022_*.sql)
+  questions/personas.sql   контент раздела "Узнай себя" (см. 022_*.sql)
   functions/tg-api/        Edge Function + проверка подписи initData
 ```
 
@@ -58,11 +58,11 @@ supabase/
 
 **1. База.** Открыть Supabase SQL Editor → по очереди:
 `supabase/migrations/001_init.sql` → Run, затем все `002_*.sql` …
-`031_*.sql` по номерам (это схема, RPC и расписание pg_cron, не
+`032_*.sql` по номерам (это схема, RPC и расписание pg_cron, не
 вопросы; в `011_cron_schedule.sql` перед запуском подставь свой
 `CRON_SECRET` вместо `<CRON_SECRET>`), затем `supabase/questions/bank.sql`
 (вопросы дуэли/соло/спринта) и `supabase/questions/personas.sql`
-(контент режима "Кто ты из..."). Все скрипты идемпотентны, можно
+(контент раздела "Узнай себя"). Все скрипты идемпотентны, можно
 прогонять повторно.
 
 **2. Edge Function.**

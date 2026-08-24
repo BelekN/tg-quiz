@@ -166,7 +166,7 @@ export default function HomeScreen({
         />
         <ModeCard
           icon="🔮"
-          title="Кто ты из..."
+          title="Узнай себя"
           subtitle="Забавные тесты о тебе — 10 вопросов, 2 минуты"
           onClick={() => {
             haptic.tap()
