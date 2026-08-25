@@ -51,11 +51,12 @@ export default function HomeScreen({
   return (
     <Screen>
       {/* ---- шапка: кто вошёл + баланс ---- */}
-      <header className="flex items-center gap-3">
+      <header className="flex items-center gap-2">
         <Avatar
           src={tgUser?.photoUrl || user?.photo_url}
           avatarKey={user?.avatar_key}
           name={name}
+          size={40}
           onClick={() => {
             haptic.tap()
             onEditAvatar()
@@ -73,39 +74,44 @@ export default function HomeScreen({
             )}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            haptic.tap()
-            onHistory()
-          }}
-          className="grid h-9 w-9 place-items-center rounded-full bg-tg-surface text-lg active:scale-95"
-          aria-label="История"
-        >
-          📜
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            haptic.tap()
-            onAchievements()
-          }}
-          className="grid h-9 w-9 place-items-center rounded-full bg-tg-surface text-lg active:scale-95"
-          aria-label="Достижения"
-        >
-          🏅
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            haptic.tap()
-            onLeaderboard()
-          }}
-          className="grid h-9 w-9 place-items-center rounded-full bg-tg-surface text-lg active:scale-95"
-          aria-label="Рейтинг"
-        >
-          🏆
-        </button>
+
+        {/* Плотная группа — иначе 3 иконки + монеты + шестерёнка на
+            gap-3 съедают почти всю ширину, и имени не остаётся места. */}
+        <div className="flex shrink-0 items-center gap-1">
+          <button
+            type="button"
+            onClick={() => {
+              haptic.tap()
+              onHistory()
+            }}
+            className="grid h-8 w-8 place-items-center rounded-full bg-tg-surface text-base active:scale-95"
+            aria-label="История"
+          >
+            📜
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              haptic.tap()
+              onAchievements()
+            }}
+            className="grid h-8 w-8 place-items-center rounded-full bg-tg-surface text-base active:scale-95"
+            aria-label="Достижения"
+          >
+            🏅
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              haptic.tap()
+              onLeaderboard()
+            }}
+            className="grid h-8 w-8 place-items-center rounded-full bg-tg-surface text-base active:scale-95"
+            aria-label="Рейтинг"
+          >
+            🏆
+          </button>
+        </div>
         <CoinBadge value={user?.coins ?? 0} />
         <button
           type="button"
@@ -113,7 +119,7 @@ export default function HomeScreen({
             haptic.tap()
             onSettings()
           }}
-          className="grid h-9 w-9 place-items-center rounded-full bg-tg-surface text-lg active:scale-95"
+          className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-tg-surface text-base active:scale-95"
           aria-label="Настройки"
         >
           ⚙️
