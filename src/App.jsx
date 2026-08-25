@@ -27,6 +27,10 @@ import AvatarPickerScreen from './screens/AvatarPickerScreen'
 import PersonaListScreen from './screens/PersonaListScreen'
 import PersonaQuizScreen from './screens/PersonaQuizScreen'
 import PersonaResultScreen from './screens/PersonaResultScreen'
+import CompatListScreen from './screens/CompatListScreen'
+import CompatIntroScreen from './screens/CompatIntroScreen'
+import CompatQuizScreen from './screens/CompatQuizScreen'
+import CompatResultScreen from './screens/CompatResultScreen'
 import { Loader, ErrorView } from './components/StateView'
 import ReportIssueScreen from './screens/ReportIssueScreen'
 import SettingsScreen from './screens/SettingsScreen'
@@ -52,6 +56,8 @@ import {
   finishMarathon,
   startPersona,
   finishPersona,
+  startCompat,
+  parseCompatStartParam,
 } from './lib/api'
 import { computePersonaResult } from './lib/persona'
 import { getRank } from './lib/ranks'
@@ -118,6 +124,9 @@ export default function App() {
   const [persona, setPersona] = useState(null) // { session_id, test_key, title, scoring, questions, results }
   const [personaResult, setPersonaResult] = useState(null)
 
+  const [compat, setCompat] = useState(null) // { session_id, role, test_key, title, description, icon, questions }
+  const [compatResult, setCompatResult] = useState(null)
+
   const [newAchievements, setNewAchievements] = useState(null)
   const [newRank, setNewRank] = useState(null)
   const [reportContext, setReportContext] = useState(null)
@@ -167,6 +176,16 @@ export default function App() {
             setResult(res)
             setScreen('result')
           }
+          return
+        }
+
+        // ?startapp=compat_<uuid> -> гость сразу присоединяется к тесту
+        const compatId = parseCompatStartParam(me.start_param ?? getStartParam())
+        if (compatId) {
+          const joined = await startCompat(null, compatId)
+          if (!alive) return
+          setCompat(joined)
+          setScreen('compat-intro')
           return
         }
 
@@ -467,6 +486,24 @@ export default function App() {
     }
   }, [persona, showError])
 
+  const pickCompatTest = useCallback(async (testKey) => {
+    try {
+      const started = await startCompat(testKey, null)
+      setCompat(started)
+      setScreen('compat-intro')
+    } catch (e) {
+      showError(e)
+    }
+  }, [showError])
+
+  // Пришёл сюда уже с посчитанным на сервере результатом последнего
+  // ответа (answer_compat) — доп. запроса не нужно, в отличие от
+  // duel/solo/sprint, где финальный счёт считает отдельный finish_*.
+  const completeCompat = useCallback((res) => {
+    setCompatResult(res)
+    setScreen('compat-result')
+  }, [])
+
   const goHome = useCallback(async () => {
     setDuel(null)
     setResult(null)
@@ -480,6 +517,8 @@ export default function App() {
     setMarathonResult(null)
     setPersona(null)
     setPersonaResult(null)
+    setCompat(null)
+    setCompatResult(null)
     setError(null)
     setScreen('home')
     // подтянуть баланс на случай, если соперник дозакрыл дуэль
@@ -708,7 +747,49 @@ export default function App() {
       )
 
     case 'fun-hub':
-      return <FunHubScreen onPersona={() => setScreen('persona-list')} />
+      return (
+        <FunHubScreen
+          onPersona={() => setScreen('persona-list')}
+          onCompat={() => setScreen('compat-list')}
+        />
+      )
+
+    case 'compat-list':
+      return <CompatListScreen onBack={() => setScreen('fun-hub')} onPick={pickCompatTest} />
+
+    case 'compat-intro':
+      return (
+        <CompatIntroScreen
+          role={compat?.role}
+          title={compat?.title}
+          description={compat?.description}
+          onStart={() => setScreen('compat-quiz')}
+          onBack={goHome}
+        />
+      )
+
+    case 'compat-quiz':
+      return (
+        <CompatQuizScreen
+          sessionId={compat.session_id}
+          title={compat.title}
+          questions={compat.questions}
+          onComplete={completeCompat}
+          onError={showError}
+        />
+      )
+
+    case 'compat-result':
+      return (
+        <CompatResultScreen
+          sessionId={compat.session_id}
+          role={compat.role}
+          title={compat.title}
+          initial={compatResult}
+          onHome={goHome}
+          onPlayAgain={() => setScreen('compat-list')}
+        />
+      )
 
     case 'persona-list':
       return (

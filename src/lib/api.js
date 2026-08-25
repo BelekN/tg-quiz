@@ -203,8 +203,32 @@ export const finishMarathon = (sessionId) => call('finish_marathon', { session_i
 export const reportIssue = (message, context = null) =>
   call('report_issue', { message, context })
 
+/** Каталог тестов на совместимость. -> { items: [{key, title, description, icon}] } */
+export const fetchCompatTests = () => call('compat_tests')
+
+/**
+ * testKey задан -> создать сессию как хост. sessionId задан ->
+ * присоединиться как гость (или резюме, если это тот же хост).
+ * -> { session_id, role, test_key, title, description, icon, questions }
+ */
+export const startCompat = (testKey = null, sessionId = null) =>
+  call('start_compat', { test_key: testKey, session_id: sessionId })
+
+/** Ответ на вопрос теста на совместимость. -> { my_answered, total, session_completed, match_percent } */
+export const answerCompat = (sessionId, questionId, optionIndex) =>
+  call('answer_compat', { session_id: sessionId, question_id: questionId, option_index: optionIndex })
+
+/** Поллинг для того, кто уже ответил и ждёт партнёра. -> { guest_joined, guest_answered, total, completed, match_percent } */
+export const fetchCompatProgress = (sessionId) => call('compat_progress', { session_id: sessionId })
+
 /** duel_<uuid> -> uuid */
 export function parseDuelStartParam(startParam) {
   const m = /^duel_([0-9a-fA-F-]{36})$/.exec(startParam ?? '')
+  return m ? m[1] : null
+}
+
+/** compat_<uuid> -> uuid */
+export function parseCompatStartParam(startParam) {
+  const m = /^compat_([0-9a-fA-F-]{36})$/.exec(startParam ?? '')
   return m ? m[1] : null
 }

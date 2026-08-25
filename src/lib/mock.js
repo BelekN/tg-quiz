@@ -165,6 +165,20 @@ const PERSONA_TESTS = {
   },
 }
 const personaState = { session_id: null, test_key: null }
+
+const COMPAT_TESTS = [
+  { key: 'compat_mock', title: 'Мок-тест на совместимость', description: 'Заглушка для вёрстки', icon: '💞' },
+]
+const COMPAT_QUESTIONS = [
+  { id: 'c1', question: 'Вопрос 1?', options: ['Вариант A', 'Вариант B'] },
+  { id: 'c2', question: 'Вопрос 2?', options: ['Вариант A', 'Вариант B'] },
+  { id: 'c3', question: 'Вопрос 3?', options: ['Вариант A', 'Вариант B'] },
+]
+// В моке нет настоящего второго участника — сессия "завершается" сама
+// собой, как только локальный игрок ответит на все вопросы, чтобы
+// можно было визуально проверить экран результата.
+const compatState = { session_id: null, answered: 0 }
+
 const wait = (ms) => new Promise((r) => setTimeout(r, ms))
 
 export const mockApi = {
@@ -567,6 +581,50 @@ export const mockApi = {
     await wait(200)
     return {
       items: Object.values(PERSONA_TESTS).map(({ questions: _q, results: _r, ...t }) => t),
+    }
+  },
+
+  async compat_tests() {
+    await wait(200)
+    return { items: COMPAT_TESTS }
+  },
+
+  async start_compat({ session_id }) {
+    await wait(250)
+    compatState.session_id = session_id ?? 'compat-mock-1'
+    compatState.answered = 0
+    return {
+      session_id: compatState.session_id,
+      role: session_id ? 'guest' : 'host',
+      test_key: 'compat_mock',
+      title: 'Мок-тест на совместимость',
+      description: 'Заглушка для вёрстки',
+      icon: '💞',
+      questions: COMPAT_QUESTIONS,
+    }
+  },
+
+  async answer_compat() {
+    await wait(200)
+    compatState.answered += 1
+    const total = COMPAT_QUESTIONS.length
+    const done = compatState.answered >= total
+    return {
+      my_answered: compatState.answered,
+      total,
+      session_completed: done,
+      match_percent: done ? 72 : null,
+    }
+  },
+
+  async compat_progress() {
+    await wait(200)
+    return {
+      guest_joined: true,
+      guest_answered: COMPAT_QUESTIONS.length,
+      total: COMPAT_QUESTIONS.length,
+      completed: true,
+      match_percent: 72,
     }
   },
 

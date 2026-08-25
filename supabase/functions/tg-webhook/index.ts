@@ -63,19 +63,42 @@ function openAppButton(startParam?: string) {
     : { text: "🎮 Играть", url: APP_URL, webApp: true };
 }
 
-// Инвайт на дуэль через инлайн-режим: пользователь жмёт "Вызвать
-// друга", Telegram открывает выбор чата и присылает нам query вида
-// "duel_<uuid>" — отвечаем ОДНОЙ карточкой с кнопкой на приглашение.
+// Инвайт (на дуэль ИЛИ на тест совместимости) через инлайн-режим:
+// пользователь жмёт "Вызвать друга"/"Позвать пройти тест", Telegram
+// открывает выбор чата и присылает нам query вида "duel_<uuid>" или
+// "compat_<uuid>" — отвечаем ОДНОЙ карточкой с кнопкой на приглашение.
 // Без этого (через shareURL/t.me/share/url) друг видел бы сырую
 // ссылку с UUID первой строкой — то, что все привыкли считать спамом.
-async function answerDuelInviteQuery(inlineQueryId: string, query: string) {
-  const m = /^duel_([0-9a-fA-F-]{36})$/.exec(query.trim());
+async function answerInviteQuery(inlineQueryId: string, query: string) {
+  const trimmed = query.trim();
+  const duelMatch = /^duel_([0-9a-fA-F-]{36})$/.exec(trimmed);
+  const compatMatch = /^compat_([0-9a-fA-F-]{36})$/.exec(trimmed);
+
   let text = "⚔️ Зову тебя на дуэль в КвизДуэль — 5 вопросов, кто быстрее и точнее!";
   let startParam: string | undefined;
+  let title = "Пригласить на дуэль";
+  let description = "5 вопросов, 10 секунд на каждый — кто быстрее и точнее";
+  let resultId = "duel_invite_generic";
 
-  if (m) {
-    startParam = `duel_${m[1]}`;
-    const { data: score, error } = await supabase.rpc("get_duel_host_score", { p_duel_id: m[1] });
+  if (compatMatch) {
+    startParam = `compat_${compatMatch[1]}`;
+    resultId = compatMatch[1];
+    title = "Позвать пройти тест на совместимость";
+    description = "Отвечаем по отдельности — сравним ответы и узнаем % совпадения";
+    text = "💞 Пройди со мной тест на совместимость в КвизДуэль!";
+
+    const { data: testInfo, error } = await supabase.rpc("get_compat_session_test", {
+      p_session_id: compatMatch[1],
+    });
+    if (error) console.error("get_compat_session_test failed", error.message);
+    if (testInfo?.title) {
+      text = `${testInfo.icon ?? "💞"} Пройди со мной тест «${testInfo.title}» в КвизДуэль — узнаем, насколько совпадаем!`;
+    }
+  } else if (duelMatch) {
+    startParam = `duel_${duelMatch[1]}`;
+    resultId = duelMatch[1];
+
+    const { data: score, error } = await supabase.rpc("get_duel_host_score", { p_duel_id: duelMatch[1] });
     if (error) console.error("get_duel_host_score failed", error.message);
     if (typeof score === "number") {
       text = `⚔️ Я набрал ${score} очков в дуэли КвизДуэль. Побьёшь?`;
@@ -90,9 +113,9 @@ async function answerDuelInviteQuery(inlineQueryId: string, query: string) {
       cache_time: 0,
       results: [{
         type: "article",
-        id: m ? m[1] : "duel_invite_generic",
-        title: "Пригласить на дуэль",
-        description: "5 вопросов, 10 секунд на каждый — кто быстрее и точнее",
+        id: resultId,
+        title,
+        description,
         input_message_content: { message_text: text },
         // url, никогда web_app: это сообщение уйдёт в чат, который
         // выберет пользователь, а web_app-кнопки Telegram разрешает
@@ -209,7 +232,7 @@ Deno.serve(async (req) => {
   const inlineQuery = update?.inline_query;
   if (inlineQuery?.id) {
     try {
-      await answerDuelInviteQuery(inlineQuery.id, inlineQuery.query ?? "");
+      await answerInviteQuery(inlineQuery.id, inlineQuery.query ?? "");
     } catch (e) {
       console.error("inline query handling failed", e);
     }

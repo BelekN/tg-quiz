@@ -71,6 +71,7 @@ const FUNNEL_ACTIONS = new Set([
   "finish_sprint",
   "start_persona",
   "finish_persona",
+  "start_compat",
   "start_daily",
   "finish_daily",
   "start_marathon",
@@ -628,6 +629,46 @@ Deno.serve(async (req) => {
         });
         if (error) throw error;
         await attachNewAchievements(tgId, data);
+        return json(data);
+      }
+
+      // ---- совместимость: каталог тестов ----
+      case "compat_tests": {
+        const { data, error } = await supabase.rpc("get_compat_tests");
+        if (error) throw error;
+        return json({ items: data });
+      }
+
+      // ---- совместимость: p_test_key -> хост создаёт, p_session_id -> присоединение/резюме ----
+      case "start_compat": {
+        const { data, error } = await supabase.rpc("start_compat", {
+          p_tg_id: tgId,
+          p_test_key: payload.test_key ?? null,
+          p_session_id: payload.session_id ?? null,
+        });
+        if (error) throw error;
+        return json(data);
+      }
+
+      // ---- совместимость: ответ на вопрос ----
+      case "answer_compat": {
+        const { data, error } = await supabase.rpc("answer_compat", {
+          p_tg_id: tgId,
+          p_session_id: payload.session_id,
+          p_question_id: payload.question_id,
+          p_option_index: payload.option_index,
+        });
+        if (error) throw error;
+        return json(data);
+      }
+
+      // ---- совместимость: поллинг для того, кто ждёт партнёра ----
+      case "compat_progress": {
+        const { data, error } = await supabase.rpc("get_compat_progress", {
+          p_tg_id: tgId,
+          p_session_id: payload.session_id,
+        });
+        if (error) throw error;
         return json(data);
       }
 

@@ -3,11 +3,11 @@ import ModeCard from '../components/ModeCard'
 import { haptic } from '../lib/telegram'
 
 /**
- * Вкладка «Для удовольствия» — хаб без очков и рейтинга. Пока внутри
- * реально работает только «Узнай себя», остальное — плашки «Скоро»
+ * Вкладка «Для удовольствия» — хаб без очков и рейтинга. «Узнай себя»
+ * и «Совместимость» работают, Гороскоп/Нумерология — плашки «Скоро»
  * (тот же приём, что раньше был у Ежедневного вызова/Марафона).
  */
-export default function FunHubScreen({ onPersona }) {
+export default function FunHubScreen({ onPersona, onCompat }) {
   return (
     <Screen className="pb-40">
       <header>
@@ -22,6 +22,7 @@ export default function FunHubScreen({ onPersona }) {
           icon="🔮"
           title="Узнай себя"
           subtitle="20+ тестов о тебе"
+          iconBg="bg-fuchsia-500/20"
           onClick={() => {
             haptic.tap()
             onPersona()
@@ -31,7 +32,11 @@ export default function FunHubScreen({ onPersona }) {
           icon="💞"
           title="Совместимость"
           subtitle="Пройдите тест вместе с другом или партнёром"
-          soon
+          iconBg="bg-pink-500/20"
+          onClick={() => {
+            haptic.tap()
+            onCompat()
+          }}
         />
         <ModeCard icon="🌟" title="Гороскоп" subtitle="Что говорят звёзды сегодня" soon />
         <ModeCard icon="🔢" title="Нумерология" subtitle="Числа, которые о тебе говорят" soon />
