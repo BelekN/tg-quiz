@@ -203,6 +203,16 @@ export const finishMarathon = (sessionId) => call('finish_marathon', { session_i
 export const reportIssue = (message, context = null) =>
   call('report_issue', { message, context })
 
+/** Каталог тестов нумерологии. -> { items: [{key, title, description, icon, price_coins, unlocked}] } */
+export const fetchNumerologyTests = () => call('numerology_tests')
+
+/** Купить один тест нумерологии (не пакетом). -> { user, test_key } */
+export const buyNumerologyTest = (testKey) => call('buy_numerology_test', { test_key: testKey })
+
+/** Посчитать по дате рождения — ничего не сохраняется на сервере. -> { test_key, title, numbers: [{slot, number, title, description}] } */
+export const computeNumerology = (testKey, day, month, year) =>
+  call('compute_numerology', { test_key: testKey, day, month, year })
+
 /** Каталог тестов на совместимость. -> { items: [{key, title, description, icon}] } */
 export const fetchCompatTests = () => call('compat_tests')
 

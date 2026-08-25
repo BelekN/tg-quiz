@@ -179,6 +179,14 @@ const COMPAT_QUESTIONS = [
 // можно было визуально проверить экран результата.
 const compatState = { session_id: null, answered: 0 }
 
+const NUMEROLOGY_TESTS = [
+  { key: 'numerology_life_path', title: 'Число судьбы', description: 'Главное число всей твоей жизни', icon: '🌟', price_coins: 0, unlocked: true },
+  { key: 'numerology_birthday', title: 'Число дня рождения', description: 'Твой врождённый талант', icon: '🎂', price_coins: 500, unlocked: false },
+  { key: 'numerology_year', title: 'Число текущего года', description: 'Чего ждать от этого года', icon: '📅', price_coins: 500, unlocked: false },
+  { key: 'numerology_challenge', title: 'Число испытания', description: 'Твой главный урок в этой жизни', icon: '⚡', price_coins: 500, unlocked: false },
+  { key: 'numerology_cycles', title: 'Числа циклов жизни', description: 'Три периода твоей судьбы', icon: '🔄', price_coins: 500, unlocked: false },
+]
+
 const wait = (ms) => new Promise((r) => setTimeout(r, ms))
 
 export const mockApi = {
@@ -661,6 +669,42 @@ export const mockApi = {
     const test = PERSONA_TESTS[personaState.test_key]
     const result = test.results.find((r) => r.key === result_key)
     return { test_key: test.key, key: result.key, title: result.title, description: result.description, icon: result.icon, new_achievements: [] }
+  },
+
+  async numerology_tests() {
+    await wait(200)
+    return { items: NUMEROLOGY_TESTS }
+  },
+
+  async buy_numerology_test({ test_key }) {
+    await wait(300)
+    const test = NUMEROLOGY_TESTS.find((t) => t.key === test_key)
+    if (!test) throw new Error('TEST_NOT_FOUND')
+    if (!test.price_coins) throw new Error('NOT_PAID_TEST')
+    if (test.unlocked) throw new Error('ALREADY_UNLOCKED')
+    if (meUser.coins < test.price_coins) throw new Error('NOT_ENOUGH_COINS')
+    meUser.coins -= test.price_coins
+    test.unlocked = true
+    return { user: meUser, test_key }
+  },
+
+  async compute_numerology({ test_key }) {
+    await wait(300)
+    const test = NUMEROLOGY_TESTS.find((t) => t.key === test_key)
+    if (!test) throw new Error('TEST_NOT_FOUND')
+    if (!test.unlocked) throw new Error('NOT_UNLOCKED')
+    const numbersByTest = {
+      numerology_life_path: [{ slot: 'life_path', number: 4, title: 'Число судьбы: 4', description: 'Мок-описание для вёрстки — надёжность и труд.' }],
+      numerology_birthday: [{ slot: 'birthday', number: 6, title: 'Число дня рождения: 6', description: 'Мок-описание для вёрстки — забота и гармония.' }],
+      numerology_year: [{ slot: 'year', number: 4, title: 'Число года: 4', description: 'Мок-описание для вёрстки — год стабильности.' }],
+      numerology_challenge: [{ slot: 'challenge', number: 0, title: 'Число испытания: 0', description: 'Мок-описание для вёрстки — урок гибкости.' }],
+      numerology_cycles: [
+        { slot: 'formative', number: 6, title: 'Формирующий цикл: 6', description: 'Мок-описание — детство и юность.' },
+        { slot: 'productive', number: 6, title: 'Продуктивный цикл: 6', description: 'Мок-описание — зрелые годы.' },
+        { slot: 'harvest', number: 1, title: 'Цикл жатвы: 1', description: 'Мок-описание — поздний период.' },
+      ],
+    }
+    return { test_key, title: test.title, numbers: numbersByTest[test_key] ?? [] }
   },
 
   async duel_progress() {

@@ -84,6 +84,7 @@ const FUNNEL_ACTIONS = new Set([
   "buy_cosmetic",
   "create_stars_invoice",
   "buy_persona_category",
+  "buy_numerology_test",
 ]);
 
 const json = (body: unknown, status = 200) =>
@@ -667,6 +668,36 @@ Deno.serve(async (req) => {
         const { data, error } = await supabase.rpc("get_compat_progress", {
           p_tg_id: tgId,
           p_session_id: payload.session_id,
+        });
+        if (error) throw error;
+        return json(data);
+      }
+
+      // ---- нумерология: каталог ----
+      case "numerology_tests": {
+        const { data, error } = await supabase.rpc("get_numerology_tests", { p_tg_id: tgId });
+        if (error) throw error;
+        return json({ items: data });
+      }
+
+      // ---- нумерология: купить один тест (не пакетом) ----
+      case "buy_numerology_test": {
+        const { data, error } = await supabase.rpc("buy_numerology_test", {
+          p_tg_id: tgId,
+          p_test_key: payload.test_key,
+        });
+        if (error) throw error;
+        return json(data);
+      }
+
+      // ---- нумерология: посчитать по дате рождения, без сохранения ----
+      case "compute_numerology": {
+        const { data, error } = await supabase.rpc("compute_numerology", {
+          p_tg_id: tgId,
+          p_test_key: payload.test_key,
+          p_day: payload.day,
+          p_month: payload.month,
+          p_year: payload.year,
         });
         if (error) throw error;
         return json(data);

@@ -31,6 +31,9 @@ import CompatListScreen from './screens/CompatListScreen'
 import CompatIntroScreen from './screens/CompatIntroScreen'
 import CompatQuizScreen from './screens/CompatQuizScreen'
 import CompatResultScreen from './screens/CompatResultScreen'
+import NumerologyListScreen from './screens/NumerologyListScreen'
+import NumerologyInputScreen from './screens/NumerologyInputScreen'
+import NumerologyResultScreen from './screens/NumerologyResultScreen'
 import { Loader, ErrorView } from './components/StateView'
 import ReportIssueScreen from './screens/ReportIssueScreen'
 import SettingsScreen from './screens/SettingsScreen'
@@ -58,6 +61,7 @@ import {
   finishPersona,
   startCompat,
   parseCompatStartParam,
+  computeNumerology,
 } from './lib/api'
 import { computePersonaResult } from './lib/persona'
 import { getRank } from './lib/ranks'
@@ -126,6 +130,9 @@ export default function App() {
 
   const [compat, setCompat] = useState(null) // { session_id, role, test_key, title, description, icon, questions }
   const [compatResult, setCompatResult] = useState(null)
+
+  const [numerologyTest, setNumerologyTest] = useState(null) // { key, title, description, icon }
+  const [numerologyResult, setNumerologyResult] = useState(null)
 
   const [newAchievements, setNewAchievements] = useState(null)
   const [newRank, setNewRank] = useState(null)
@@ -504,6 +511,21 @@ export default function App() {
     setScreen('compat-result')
   }, [])
 
+  const pickNumerologyTest = useCallback((test) => {
+    setNumerologyTest(test)
+    setScreen('numerology-input')
+  }, [])
+
+  const submitNumerology = useCallback(async (testKey, day, month, year) => {
+    try {
+      const res = await computeNumerology(testKey, day, month, year)
+      setNumerologyResult(res)
+      setScreen('numerology-result')
+    } catch (e) {
+      showError(e)
+    }
+  }, [showError])
+
   const goHome = useCallback(async () => {
     setDuel(null)
     setResult(null)
@@ -519,6 +541,8 @@ export default function App() {
     setPersonaResult(null)
     setCompat(null)
     setCompatResult(null)
+    setNumerologyTest(null)
+    setNumerologyResult(null)
     setError(null)
     setScreen('home')
     // подтянуть баланс на случай, если соперник дозакрыл дуэль
@@ -751,6 +775,7 @@ export default function App() {
         <FunHubScreen
           onPersona={() => setScreen('persona-list')}
           onCompat={() => setScreen('compat-list')}
+          onNumerology={() => setScreen('numerology-list')}
         />
       )
 
@@ -817,6 +842,34 @@ export default function App() {
           result={personaResult}
           onHome={goHome}
           onPlayAgain={() => setScreen('persona-list')}
+        />
+      )
+
+    case 'numerology-list':
+      return (
+        <NumerologyListScreen
+          user={user}
+          onUpdateUser={setUser}
+          onBack={() => setScreen('fun-hub')}
+          onPick={pickNumerologyTest}
+        />
+      )
+
+    case 'numerology-input':
+      return (
+        <NumerologyInputScreen
+          test={numerologyTest}
+          onBack={() => setScreen('numerology-list')}
+          onSubmit={submitNumerology}
+        />
+      )
+
+    case 'numerology-result':
+      return (
+        <NumerologyResultScreen
+          result={numerologyResult}
+          onBack={() => setScreen('numerology-list')}
+          onHome={goHome}
         />
       )
 

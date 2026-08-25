@@ -4,11 +4,11 @@ import ModeCard from '../components/ModeCard'
 import { haptic } from '../lib/telegram'
 
 /**
- * Вкладка «Для удовольствия» — хаб без очков и рейтинга. «Узнай себя»
- * и «Совместимость» работают, Гороскоп/Нумерология — плашки «Скоро»
+ * Вкладка «Для удовольствия» — хаб без очков и рейтинга. «Узнай себя»,
+ * «Совместимость» и «Нумерология» работают, Гороскоп — плашка «Скоро»
  * (тот же приём, что раньше был у Ежедневного вызова/Марафона).
  */
-export default function FunHubScreen({ onPersona, onCompat }) {
+export default function FunHubScreen({ onPersona, onCompat, onNumerology }) {
   return (
     <Screen>
       <header>
@@ -40,7 +40,16 @@ export default function FunHubScreen({ onPersona, onCompat }) {
           }}
         />
         <ModeCard icon="🌟" title="Гороскоп" subtitle="Что говорят звёзды сегодня" soon />
-        <ModeCard icon="🔢" title="Нумерология" subtitle="Числа, которые о тебе говорят" soon />
+        <ModeCard
+          icon="🔢"
+          title="Нумерология"
+          subtitle="Числа, которые о тебе говорят"
+          iconBg="bg-teal-500/20"
+          onClick={() => {
+            haptic.tap()
+            onNumerology()
+          }}
+        />
       </div>
 
       <TabBarSpacer />
