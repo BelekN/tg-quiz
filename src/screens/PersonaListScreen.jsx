@@ -2,23 +2,47 @@ import { useEffect, useMemo, useState } from 'react'
 import Screen from '../components/Screen'
 import BackButton from '../components/BackButton'
 import { Loader, ErrorView } from '../components/StateView'
-import { fetchPersonaTests } from '../lib/api'
+import { fetchPersonaTests, buyPersonaCategory } from '../lib/api'
 import { haptic } from '../lib/telegram'
+import { formatNumber } from '../lib/format'
 
-export default function PersonaListScreen({ onBack, onPick }) {
+export default function PersonaListScreen({ user, onUpdateUser, onBack, onPick }) {
   const [state, setState] = useState({ status: 'loading', tests: [] })
   // Та же защита от дабл-тапа, что в CategoryScreen — иначе второй тап
   // по другому тесту может прилететь сюда уже после перехода на квиз.
   const [picking, setPicking] = useState(false)
+  const [buyingCategory, setBuyingCategory] = useState(null)
+  const [notice, setNotice] = useState(null)
 
-  const handlePick = async (testKey) => {
-    if (picking) return
+  const handlePick = async (test) => {
+    if (picking || !test.unlocked) return
     setPicking(true)
     haptic.tap()
     try {
-      await onPick(testKey)
+      await onPick(test.key)
     } finally {
       setPicking(false)
+    }
+  }
+
+  const buyCategory = async (category) => {
+    if (buyingCategory) return
+    haptic.tap()
+    setBuyingCategory(category)
+    setNotice(null)
+    try {
+      const res = await buyPersonaCategory(category)
+      onUpdateUser(res.user)
+      setState((s) => ({
+        ...s,
+        tests: s.tests.map((t) => (t.category === category ? { ...t, unlocked: true } : t)),
+      }))
+      haptic.success()
+    } catch (e) {
+      haptic.error()
+      setNotice(e.message === 'NOT_ENOUGH_COINS' ? 'Не хватает монет.' : 'Не получилось купить, попробуйте снова.')
+    } finally {
+      setBuyingCategory(null)
     }
   }
 
@@ -65,33 +89,56 @@ export default function PersonaListScreen({ onBack, onPick }) {
         10 вопросов, 2 минуты — и неожиданный результат про тебя
       </p>
 
-      {groups.map((g) => (
-        <section key={g.category} className="animate-rise mt-6">
-          <p className="mb-2.5 px-1 text-[11px] font-semibold uppercase tracking-wider text-tg-hint">
-            {g.category}
-          </p>
-          <div className="flex flex-col gap-2.5">
-            {g.tests.map((t) => (
-              <button
-                key={t.key}
-                type="button"
-                disabled={picking}
-                onClick={() => handlePick(t.key)}
-                className="flex w-full items-center gap-3.5 rounded-2xl border border-white/5 bg-tg-section px-4 py-4 text-left transition-transform active:scale-[0.98] disabled:opacity-60"
-              >
-                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-tg-accent/15 text-xl">
-                  {t.icon}
-                </span>
-                <span className="flex-1">
-                  <span className="block text-[15px] font-semibold">{t.title}</span>
-                  <span className="block text-xs text-tg-hint">{t.description}</span>
-                </span>
-                <span className="text-tg-hint">›</span>
-              </button>
-            ))}
-          </div>
-        </section>
-      ))}
+      {notice && (
+        <p className="animate-rise mt-3 rounded-xl bg-tg-section px-3.5 py-2.5 text-center text-[13px] text-tg-text">
+          {notice}
+        </p>
+      )}
+
+      {groups.map((g) => {
+        const price = g.tests[0]?.price_coins ?? 0
+        const categoryLocked = price > 0 && !g.tests.every((t) => t.unlocked)
+
+        return (
+          <section key={g.category} className="animate-rise mt-6">
+            <div className="mb-2.5 flex items-center justify-between px-1">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-tg-hint">
+                {g.category}
+              </p>
+              {categoryLocked && (
+                <button
+                  type="button"
+                  disabled={buyingCategory === g.category || (user?.coins ?? 0) < price}
+                  onClick={() => buyCategory(g.category)}
+                  className="shrink-0 rounded-lg bg-tg-accent px-2.5 py-1 text-[11px] font-semibold text-tg-accent-text active:scale-95 disabled:opacity-40"
+                >
+                  🔒 Открыть за {formatNumber(price)}
+                </button>
+              )}
+            </div>
+            <div className="flex flex-col gap-2.5">
+              {g.tests.map((t) => (
+                <button
+                  key={t.key}
+                  type="button"
+                  disabled={picking || !t.unlocked}
+                  onClick={() => handlePick(t)}
+                  className="flex w-full items-center gap-3.5 rounded-2xl border border-white/5 bg-tg-section px-4 py-4 text-left transition-transform active:scale-[0.98] disabled:opacity-60"
+                >
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-tg-accent/15 text-xl">
+                    {t.unlocked ? t.icon : '🔒'}
+                  </span>
+                  <span className="flex-1">
+                    <span className="block text-[15px] font-semibold">{t.title}</span>
+                    <span className="block text-xs text-tg-hint">{t.description}</span>
+                  </span>
+                  <span className="text-tg-hint">›</span>
+                </button>
+              ))}
+            </div>
+          </section>
+        )
+      })}
     </Screen>
   )
 }

@@ -82,6 +82,7 @@ const FUNNEL_ACTIONS = new Set([
   "set_avatar",
   "buy_cosmetic",
   "create_stars_invoice",
+  "buy_persona_category",
 ]);
 
 const json = (body: unknown, status = 200) =>
@@ -593,9 +594,19 @@ Deno.serve(async (req) => {
 
       // ---- "Кто ты из...": каталог тестов ----
       case "persona_tests": {
-        const { data, error } = await supabase.rpc("get_persona_tests");
+        const { data, error } = await supabase.rpc("get_persona_tests", { p_tg_id: tgId });
         if (error) throw error;
         return json({ items: data });
+      }
+
+      // ---- купить платный раздел "Узнай себя" целиком ----
+      case "buy_persona_category": {
+        const { data, error } = await supabase.rpc("buy_persona_category", {
+          p_tg_id: tgId,
+          p_category: payload.category,
+        });
+        if (error) throw error;
+        return json(data);
       }
 
       // ---- старт теста: вопросы целиком, без скрытых полей ----

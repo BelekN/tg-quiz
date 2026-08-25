@@ -705,7 +705,12 @@ export default function App() {
 
     case 'persona-list':
       return (
-        <PersonaListScreen onBack={() => setScreen('home')} onPick={pickPersonaTest} />
+        <PersonaListScreen
+          user={user}
+          onUpdateUser={setUser}
+          onBack={() => setScreen('home')}
+          onPick={pickPersonaTest}
+        />
       )
 
     case 'persona-quiz':

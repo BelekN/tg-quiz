@@ -166,8 +166,11 @@ export const answerSprint = (sessionId, index, answer) =>
 export const finishSprint = (sessionId) =>
   call('finish_sprint', { session_id: sessionId })
 
-/** Каталог тестов раздела "Узнай себя". -> { items: [{key, title, description, icon}] } */
+/** Каталог тестов раздела "Узнай себя". -> { items: [{key, title, description, icon, category, price_coins, unlocked}] } */
 export const fetchPersonaTests = () => call('persona_tests')
+
+/** Купить платный раздел "Узнай себя" целиком (все тесты категории). -> { user, category } */
+export const buyPersonaCategory = (category) => call('buy_persona_category', { category })
 
 /** Начать тест: все вопросы целиком (нет ни таймера, ни скрытых полей). */
 export const startPersona = (testKey) => call('start_persona', { test_key: testKey })

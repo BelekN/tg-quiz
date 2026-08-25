@@ -113,6 +113,8 @@ const PERSONA_TESTS = {
     description: 'Заглушка для вёрстки — categorical scoring',
     icon: '🔮',
     category: 'Мок-категория',
+    price_coins: 0,
+    unlocked: true,
     scoring: 'categorical',
     questions: [
       {
@@ -142,7 +144,9 @@ const PERSONA_TESTS = {
     title: 'Мок-тест (шкала)',
     description: 'Заглушка для вёрстки — scale scoring',
     icon: '🔥',
-    category: 'Мок-категория',
+    category: 'Мок-категория (платная)',
+    price_coins: 300,
+    unlocked: false,
     scoring: 'scale',
     questions: [
       {
@@ -566,9 +570,22 @@ export const mockApi = {
     }
   },
 
+  async buy_persona_category({ category }) {
+    await wait(300)
+    const tests = Object.values(PERSONA_TESTS).filter((t) => t.category === category)
+    const price = tests[0]?.price_coins ?? 0
+    if (!price) throw new Error('NOT_PAID_CATEGORY')
+    if (tests.every((t) => t.unlocked)) throw new Error('ALREADY_UNLOCKED')
+    if (meUser.coins < price) throw new Error('NOT_ENOUGH_COINS')
+    meUser.coins -= price
+    tests.forEach((t) => (t.unlocked = true))
+    return { user: meUser, category }
+  },
+
   async start_persona({ test_key }) {
     await wait(250)
     const test = PERSONA_TESTS[test_key]
+    if (!test.unlocked) throw new Error('NOT_UNLOCKED')
     personaState.session_id = `persona-${test_key}`
     personaState.test_key = test_key
     return {
