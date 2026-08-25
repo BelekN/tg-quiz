@@ -1,18 +1,18 @@
 import { useEffect, useMemo, useState } from 'react'
 import Screen from '../components/Screen'
 import AchievementDetail from '../components/AchievementDetail'
+import BackButton from '../components/BackButton'
 import { Loader, ErrorView } from '../components/StateView'
 import { fetchAchievements } from '../lib/api'
 import { haptic } from '../lib/telegram'
-import { useBackButton } from '../hooks/useBackButton'
 
 export default function AchievementsScreen({ onBack }) {
   const [state, setState] = useState({ status: 'loading', items: [] })
   const [selected, setSelected] = useState(null)
 
-  // Открытая карточка награды закрывается нативной BackButton, а не
+  // Открытая карточка награды закрывается назад-навигацией, а не
   // уводит сразу на главную — как и сам экран, только на уровень выше.
-  useBackButton(selected ? () => setSelected(null) : onBack)
+  const back = selected ? () => setSelected(null) : onBack
 
   useEffect(() => {
     let alive = true
@@ -57,13 +57,7 @@ export default function AchievementsScreen({ onBack }) {
   return (
     <Screen>
       <header className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={onBack}
-          className="grid h-9 w-9 place-items-center rounded-xl bg-tg-surface text-lg"
-        >
-          ←
-        </button>
+        <BackButton onBack={back} />
       </header>
 
       <div className="mt-1 text-center">

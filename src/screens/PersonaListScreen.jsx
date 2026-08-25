@@ -1,17 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import Screen from '../components/Screen'
+import BackButton from '../components/BackButton'
 import { Loader, ErrorView } from '../components/StateView'
 import { fetchPersonaTests } from '../lib/api'
 import { haptic } from '../lib/telegram'
-import { useBackButton } from '../hooks/useBackButton'
 
 export default function PersonaListScreen({ onBack, onPick }) {
   const [state, setState] = useState({ status: 'loading', tests: [] })
   // Та же защита от дабл-тапа, что в CategoryScreen — иначе второй тап
   // по другому тесту может прилететь сюда уже после перехода на квиз.
   const [picking, setPicking] = useState(false)
-
-  useBackButton(onBack)
 
   const handlePick = async (testKey) => {
     if (picking) return
@@ -60,13 +58,7 @@ export default function PersonaListScreen({ onBack, onPick }) {
   return (
     <Screen>
       <header className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={onBack}
-          className="grid h-9 w-9 place-items-center rounded-xl bg-tg-surface text-lg"
-        >
-          ←
-        </button>
+        <BackButton onBack={onBack} />
         <h1 className="text-lg font-bold">🔮 Узнай себя</h1>
       </header>
       <p className="mt-1 text-sm text-tg-hint">

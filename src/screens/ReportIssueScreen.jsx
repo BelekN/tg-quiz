@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import Screen from '../components/Screen'
+import BackButton from '../components/BackButton'
 import { haptic } from '../lib/telegram'
 import { reportIssue } from '../lib/api'
-import { useBackButton } from '../hooks/useBackButton'
 
 /**
  * "Сообщить о проблеме" — с ErrorView сюда приходят с уже заполненным
@@ -12,8 +12,6 @@ import { useBackButton } from '../hooks/useBackButton'
 export default function ReportIssueScreen({ context, onBack }) {
   const [message, setMessage] = useState('')
   const [status, setStatus] = useState('idle') // idle -> sending -> sent -> error
-
-  useBackButton(onBack)
 
   const submit = async () => {
     if (!message.trim() || status === 'sending') return
@@ -51,13 +49,7 @@ export default function ReportIssueScreen({ context, onBack }) {
   return (
     <Screen>
       <header className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={onBack}
-          className="grid h-9 w-9 place-items-center rounded-xl bg-tg-surface text-lg"
-        >
-          ←
-        </button>
+        <BackButton onBack={onBack} />
         <h1 className="text-lg font-bold">✉️ Сообщить о проблеме</h1>
       </header>
 

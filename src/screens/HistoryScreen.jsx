@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import Screen from '../components/Screen'
 import Avatar from '../components/Avatar'
+import BackButton from '../components/BackButton'
 import { Loader, ErrorView } from '../components/StateView'
 import { fetchHistory } from '../lib/api'
 import { categoryMeta } from '../lib/categories'
 import { formatNumber } from '../lib/format'
-import { useBackButton } from '../hooks/useBackButton'
 
 const OUTCOME_BADGE = {
   win: { label: 'Победа', className: 'text-quiz-right' },
@@ -23,8 +23,6 @@ const dateFormatter = new Intl.DateTimeFormat('ru', {
 
 export default function HistoryScreen({ onBack }) {
   const [state, setState] = useState({ status: 'loading', items: [] })
-
-  useBackButton(onBack)
 
   useEffect(() => {
     let alive = true
@@ -46,13 +44,7 @@ export default function HistoryScreen({ onBack }) {
   return (
     <Screen>
       <header className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={onBack}
-          className="grid h-9 w-9 place-items-center rounded-xl bg-tg-surface text-lg"
-        >
-          ←
-        </button>
+        <BackButton onBack={onBack} />
         <h1 className="text-lg font-bold">📜 История игр</h1>
       </header>
 

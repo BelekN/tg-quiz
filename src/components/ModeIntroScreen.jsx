@@ -1,6 +1,6 @@
 import Screen from './Screen'
+import BackButton from './BackButton'
 import { haptic } from '../lib/telegram'
-import { useBackButton } from '../hooks/useBackButton'
 
 /**
  * Общий экран-приглашение перед стартом режима — показывается ДО
@@ -8,8 +8,6 @@ import { useBackButton } from '../hooks/useBackButton'
  * сессии (Спринт) не начинал тикать, пока человек ещё читает правила.
  */
 export default function ModeIntroScreen({ icon, title, description, onStart, busy, onBack }) {
-  useBackButton(onBack)
-
   const start = () => {
     haptic.tap()
     onStart()
@@ -17,15 +15,7 @@ export default function ModeIntroScreen({ icon, title, description, onStart, bus
 
   return (
     <Screen className="relative items-center justify-center text-center">
-      {onBack && (
-        <button
-          type="button"
-          onClick={onBack}
-          className="absolute left-4 top-4 grid h-9 w-9 place-items-center rounded-xl bg-tg-surface text-lg"
-        >
-          ←
-        </button>
-      )}
+      <BackButton onBack={onBack} className="absolute left-4 top-4" />
       <div className="text-6xl">{icon}</div>
       <h1 className="animate-rise mt-4 text-2xl font-bold">{title}</h1>
       <p className="mt-3 max-w-xs text-sm text-tg-hint">{description}</p>

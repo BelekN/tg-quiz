@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import Screen from '../components/Screen'
+import BackButton from '../components/BackButton'
 import { Loader, ErrorView } from '../components/StateView'
 import { fetchCategories } from '../lib/api'
 import { categoryMeta } from '../lib/categories'
 import { haptic } from '../lib/telegram'
-import { useBackButton } from '../hooks/useBackButton'
 
 const DIFFICULTIES = [
   { key: null, label: 'Любая' },
@@ -21,8 +21,6 @@ export default function CategoryScreen({ onBack, onPick }) {
   // экран и рассинхронизировать questions/session_id на нём.
   const [picking, setPicking] = useState(false)
   const [difficulty, setDifficulty] = useState(null)
-
-  useBackButton(onBack)
 
   const handlePick = async (category) => {
     if (picking) return
@@ -55,13 +53,7 @@ export default function CategoryScreen({ onBack, onPick }) {
   return (
     <Screen>
       <header className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={onBack}
-          className="grid h-9 w-9 place-items-center rounded-xl bg-tg-surface text-lg"
-        >
-          ←
-        </button>
+        <BackButton onBack={onBack} />
         <h1 className="text-lg font-bold">🧠 Квиз-тесты</h1>
       </header>
       <p className="mt-1 text-sm text-tg-hint">

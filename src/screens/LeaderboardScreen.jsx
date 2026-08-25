@@ -1,18 +1,16 @@
 import { useEffect, useState } from 'react'
 import Screen from '../components/Screen'
 import Avatar from '../components/Avatar'
+import BackButton from '../components/BackButton'
 import { fetchLeaderboard } from '../lib/api'
 import { getRank } from '../lib/ranks'
 import { formatNumber } from '../lib/format'
 import { Loader, ErrorView } from '../components/StateView'
-import { useBackButton } from '../hooks/useBackButton'
 
 const MEDAL = { 1: '🥇', 2: '🥈', 3: '🥉' }
 
 export default function LeaderboardScreen({ onBack }) {
   const [state, setState] = useState({ status: 'loading', top: [], me: null })
-
-  useBackButton(onBack)
 
   useEffect(() => {
     let alive = true
@@ -37,13 +35,7 @@ export default function LeaderboardScreen({ onBack }) {
   return (
     <Screen>
       <header className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={onBack}
-          className="grid h-9 w-9 place-items-center rounded-xl bg-tg-surface text-lg"
-        >
-          ←
-        </button>
+        <BackButton onBack={onBack} />
         <h1 className="text-lg font-bold">🏆 Рейтинг</h1>
       </header>
 
