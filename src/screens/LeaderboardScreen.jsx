@@ -3,7 +3,6 @@ import Screen from '../components/Screen'
 import Avatar from '../components/Avatar'
 import BackButton from '../components/BackButton'
 import { fetchLeaderboard } from '../lib/api'
-import { getRank } from '../lib/ranks'
 import { formatNumber } from '../lib/format'
 import { badgeLabel } from '../lib/badges'
 import { Loader, ErrorView } from '../components/StateView'
@@ -67,7 +66,6 @@ export default function LeaderboardScreen({ onBack }) {
 function Row({ player, isMe }) {
   const name = player.first_name || player.username || 'Игрок'
   const medal = MEDAL[player.rank]
-  const rank = getRank(player.total_score)
 
   return (
     <div
@@ -89,7 +87,6 @@ function Row({ player, isMe }) {
       />
       <span className="min-w-0 flex-1">
         <span className="block truncate text-[15px] font-medium">
-          <span className="mr-1">{rank.icon}</span>
           {name}
           {isMe && <span className="ml-1.5 text-xs text-tg-hint">(вы)</span>}
         </span>

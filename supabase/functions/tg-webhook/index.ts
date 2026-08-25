@@ -24,6 +24,9 @@ const BOT_USERNAME = Deno.env.get("BOT_USERNAME") ?? "";
 const APP_SHORT_NAME = Deno.env.get("APP_SHORT_NAME") ?? "";
 const APP_URL = Deno.env.get("APP_URL") ?? "";
 const WEBHOOK_SECRET = Deno.env.get("WEBHOOK_SECRET")!;
+// Тот же личный chat_id, что принимает "Сообщить о проблеме" (см.
+// tg-api) — единственный, кому доступна команда /credit ниже.
+const SUPPORT_TG_ID = Deno.env.get("SUPPORT_TG_ID") ?? "";
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -307,6 +310,54 @@ Deno.serve(async (req) => {
         case "/help":
           await sendTelegramMessage(BOT_TOKEN, chatId, HELP_TEXT, openAppButton());
           break;
+
+        // Скрытая команда: не в /help и не в setMyCommands — доступна
+        // только тому, чей tg_id совпадает с SUPPORT_TG_ID. Нужна для
+        // ручной правки баланса (жалоба "оплатил Stars, монеты не
+        // пришли") и самопроверки без похода в SQL.
+        case "/credit": {
+          if (!SUPPORT_TG_ID || fromId !== Number(SUPPORT_TG_ID)) {
+            await sendTelegramMessage(BOT_TOKEN, chatId, "Не знаю такой команды. Наберите /help.");
+            break;
+          }
+
+          const [rawTgId, rawAmount, ...reasonParts] = (payload ?? "").split(/\s+/);
+          const targetTgId = Number(rawTgId);
+          const amount = Number(rawAmount);
+          if (!rawTgId || !rawAmount || !Number.isFinite(targetTgId) || !Number.isInteger(amount)) {
+            await sendTelegramMessage(
+              BOT_TOKEN,
+              chatId,
+              "Формат: /credit <tg_id> <монеты> [причина]\nПример: /credit 185762393 500 stars не пришли",
+            );
+            break;
+          }
+
+          const { data, error } = await supabase.rpc("admin_credit_coins", {
+            p_tg_id: targetTgId,
+            p_amount: amount,
+            p_reason: reasonParts.join(" ") || null,
+          });
+
+          if (error) {
+            const notFound = error.message?.includes("USER_NOT_FOUND");
+            await sendTelegramMessage(
+              BOT_TOKEN,
+              chatId,
+              notFound
+                ? `⚠️ Пользователь ${targetTgId} не найден.`
+                : "⚠️ Не получилось начислить, попробуйте снова.",
+            );
+            break;
+          }
+
+          await sendTelegramMessage(
+            BOT_TOKEN,
+            chatId,
+            `✅ ${amount >= 0 ? "Начислено" : "Списано"} ${Math.abs(amount)} монет пользователю ${targetTgId}.\nНовый баланс: ${data.coins}.`,
+          );
+          break;
+        }
 
         default:
           await sendTelegramMessage(BOT_TOKEN, chatId, "Не знаю такой команды. Наберите /help.");
