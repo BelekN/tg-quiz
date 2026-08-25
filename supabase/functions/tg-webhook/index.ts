@@ -105,28 +105,34 @@ async function answerInviteQuery(inlineQueryId: string, query: string) {
     }
   }
 
-  const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/answerInlineQuery`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      inline_query_id: inlineQueryId,
-      cache_time: 0,
-      results: [{
-        type: "article",
-        id: resultId,
-        title,
-        description,
-        input_message_content: { message_text: text },
-        // url, никогда web_app: это сообщение уйдёт в чат, который
-        // выберет пользователь, а web_app-кнопки Telegram разрешает
-        // только в приватном чате с самим ботом.
-        reply_markup: {
-          inline_keyboard: [[{ text: "🎮 Играть", url: appDeepLink(BOT_USERNAME, APP_SHORT_NAME, startParam) }]],
-        },
-      }],
-    }),
-  });
-  if (!res.ok) console.error("answerInlineQuery failed", await res.text().catch(() => ""));
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/answerInlineQuery`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        inline_query_id: inlineQueryId,
+        cache_time: 0,
+        results: [{
+          type: "article",
+          id: resultId,
+          title,
+          description,
+          input_message_content: { message_text: text },
+          // url, никогда web_app: это сообщение уйдёт в чат, который
+          // выберет пользователь, а web_app-кнопки Telegram разрешает
+          // только в приватном чате с самим ботом.
+          reply_markup: {
+            inline_keyboard: [[{ text: "🎮 Играть", url: appDeepLink(BOT_USERNAME, APP_SHORT_NAME, startParam) }]],
+          },
+        }],
+      }),
+    });
+    if (!res.ok) console.error("answerInlineQuery failed", await res.text().catch(() => ""));
+  } catch {
+    // .message от сетевой ошибки fetch() часто содержит сам запрошенный
+    // URL — а в нём BOT_TOKEN. Логируем без деталей (см. telegramNotify.ts).
+    console.error("answerInlineQuery network error");
+  }
 }
 
 // Регистрирует вебхук + меню команд + menu button. Явно перечисляем
@@ -135,6 +141,17 @@ async function answerInviteQuery(inlineQueryId: string, query: string) {
 // оказался вообще без зарегистрированного url (см. getWebhookInfo),
 // лучше не полагаться на дефолт молча.
 async function registerBot(publicUrl: string) {
+  try {
+    return await registerBotUnsafe(publicUrl);
+  } catch {
+    // Как и везде здесь: .message сетевой ошибки часто включает
+    // запрошенный URL, а в нём BOT_TOKEN — не даём ему попасть в лог.
+    console.error("registerBot network error");
+    return { error: "REGISTER_FAILED" };
+  }
+}
+
+async function registerBotUnsafe(publicUrl: string) {
   const [webhookRes, commandsRes, menuButtonRes] = await Promise.all([
     fetch(`https://api.telegram.org/bot${BOT_TOKEN}/setWebhook`, {
       method: "POST",
@@ -214,7 +231,7 @@ Deno.serve(async (req) => {
   // в отличие от query-параметра) — ?setup= остаётся для обратной
   // совместимости с уже сохранённой curl-командой.
   const setupSecret = req.headers.get("x-setup-secret") ?? url.searchParams.get("setup") ?? "";
-  if (req.method === "GET" && timingSafeEqual(setupSecret, WEBHOOK_SECRET)) {
+  if (req.method === "GET" && WEBHOOK_SECRET && timingSafeEqual(setupSecret, WEBHOOK_SECRET)) {
     // req.url — внутренний адрес за прокси Supabase, а не публичный
     // HTTPS-хост, поэтому собираем его из SUPABASE_URL явно.
     const publicUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/tg-webhook`;
@@ -223,7 +240,14 @@ Deno.serve(async (req) => {
     });
   }
 
-  if (!timingSafeEqual(req.headers.get("X-Telegram-Bot-Api-Secret-Token") ?? "", WEBHOOK_SECRET)) {
+  // WEBHOOK_SECRET пустой/не задан -> timingSafeEqual("", "") дал бы
+  // true и пропустил бы кого угодно без секрета вовсе. Явно требуем
+  // непустой секрет с обеих сторон (тот же принцип, что у SUPPORT_TG_ID
+  // ниже в /credit).
+  if (
+    !WEBHOOK_SECRET ||
+    !timingSafeEqual(req.headers.get("X-Telegram-Bot-Api-Secret-Token") ?? "", WEBHOOK_SECRET)
+  ) {
     return new Response("UNAUTHORIZED", { status: 401 });
   }
 
@@ -260,8 +284,10 @@ Deno.serve(async (req) => {
             },
         ),
       });
-    } catch (e) {
-      console.error("answerPreCheckoutQuery failed", e);
+    } catch {
+      // Сетевая ошибка fetch() может нести URL с BOT_TOKEN в .message —
+      // не логируем её как есть (см. тот же приём в answerInviteQuery).
+      console.error("answerPreCheckoutQuery network error");
     }
     return new Response("ok");
   }
@@ -269,17 +295,28 @@ Deno.serve(async (req) => {
   const message = update?.message;
   const text: string | undefined = message?.text;
   const chatId = message?.chat?.id;
-  const fromId = message?.from?.id;
+  const fromId: number | undefined =
+    typeof message?.from?.id === "number" ? message.from.id : undefined;
 
   // Успешная оплата Stars — источник истины для начисления монет.
   // Клиентский invoice.open() тоже узнаёт статус "paid", но это только
   // для UX (показать "готово" побыстрее); реальное начисление —
   // только здесь, по факту реального вебхука от Telegram.
   const payment = message?.successful_payment;
-  if (payment && fromId) {
+  if (payment && fromId !== undefined) {
     const pack = findCoinPack(payment.invoice_payload ?? "");
     if (!pack) {
       console.error("successful_payment: unknown pack", payment.invoice_payload);
+    } else if (payment.total_amount !== pack.stars) {
+      // Реальная сумма списания не совпала с ценой пачки по её ключу —
+      // не начисляем молча, это либо баг в создании инвойса, либо
+      // подмена. Монеты не летят, деньги не трогаем — разбираемся вручную.
+      console.error(
+        "successful_payment: amount mismatch",
+        payment.invoice_payload,
+        payment.total_amount,
+        pack.stars,
+      );
     } else {
       try {
         const { error } = await supabase.rpc("credit_star_purchase", {
@@ -347,7 +384,7 @@ Deno.serve(async (req) => {
           const [rawTgId, rawAmount, ...reasonParts] = (payload ?? "").split(/\s+/);
           const targetTgId = Number(rawTgId);
           const amount = Number(rawAmount);
-          if (!rawTgId || !rawAmount || !Number.isFinite(targetTgId) || !Number.isInteger(amount)) {
+          if (!rawTgId || !rawAmount || !Number.isInteger(targetTgId) || !Number.isInteger(amount)) {
             await sendTelegramMessage(
               BOT_TOKEN,
               chatId,

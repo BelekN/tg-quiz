@@ -400,17 +400,27 @@ Deno.serve(async (req) => {
         const pack = findCoinPack(String(payload.pack_key ?? ""));
         if (!pack) return json({ error: "UNKNOWN_PACK" }, 400);
 
-        const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/createInvoiceLink`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            title: `КвизДуэль — ${pack.title}`,
-            description: "Пополнение баланса монет в КвизДуэль",
-            payload: pack.key,
-            currency: "XTR",
-            prices: [{ label: pack.title, amount: pack.stars }],
-          }),
-        });
+        let res: Response;
+        try {
+          res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/createInvoiceLink`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              title: `КвизДуэль — ${pack.title}`,
+              description: "Пополнение баланса монет в КвизДуэль",
+              payload: pack.key,
+              currency: "XTR",
+              prices: [{ label: pack.title, amount: pack.stars }],
+            }),
+          });
+        } catch {
+          // fetch() сам может бросить (обрыв сети/DNS) с Error, чей
+          // .message часто включает полный URL запроса — а в нём
+          // BOT_TOKEN. Ловим здесь же и логируем без деталей ошибки,
+          // чтобы токен не утёк в логи (см. telegramNotify.ts).
+          console.error("createInvoiceLink network error");
+          return json({ error: "INVOICE_FAILED" }, 500);
+        }
         const body = await res.json().catch(() => ({}));
         if (!res.ok || !body.ok) {
           console.error("createInvoiceLink failed", JSON.stringify(body));

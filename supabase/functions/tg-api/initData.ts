@@ -79,7 +79,12 @@ export async function verifyInitData(
 
   const rawUser = params.get("user");
   if (!rawUser) throw new Error("INIT_DATA_NO_USER");
-  const user = JSON.parse(rawUser) as TelegramUser;
+  let user: TelegramUser;
+  try {
+    user = JSON.parse(rawUser) as TelegramUser;
+  } catch {
+    throw new Error("INIT_DATA_NO_USER");
+  }
   if (typeof user.id !== "number") throw new Error("INIT_DATA_NO_USER");
 
   return { user, startParam: params.get("start_param"), authDate };

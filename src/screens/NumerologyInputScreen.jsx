@@ -3,13 +3,19 @@ import Screen from '../components/Screen'
 import BackButton from '../components/BackButton'
 import { haptic } from '../lib/telegram'
 
-const DAYS_IN_MONTH = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+const CURRENT_YEAR = new Date().getFullYear()
+const isLeapYear = (y) => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0
+
+function daysInMonth(month, year) {
+  if (month === 2) return isLeapYear(year) ? 29 : 28
+  return [31, null, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1]
+}
 
 function isValidDate(day, month, year) {
   if (!day || !month || !year) return false
   if (month < 1 || month > 12) return false
-  if (year < 1900 || year > 2026) return false
-  if (day < 1 || day > DAYS_IN_MONTH[month - 1]) return false
+  if (year < 1900 || year > CURRENT_YEAR) return false
+  if (day < 1 || day > daysInMonth(month, year)) return false
   return true
 }
 

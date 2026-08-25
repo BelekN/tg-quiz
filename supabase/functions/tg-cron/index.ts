@@ -61,7 +61,12 @@ async function logPushSent(tgId: number, pushType: string, variant: number) {
 }
 
 Deno.serve(async (req) => {
-  if (!timingSafeEqual(req.headers.get("x-cron-secret") ?? "", CRON_SECRET)) {
+  // CRON_SECRET пустой/не задан -> timingSafeEqual("", "") дал бы true
+  // и пропустил бы запрос без секрета вовсе (см. тот же фикс в tg-webhook).
+  if (
+    !CRON_SECRET ||
+    !timingSafeEqual(req.headers.get("x-cron-secret") ?? "", CRON_SECRET)
+  ) {
     return new Response("UNAUTHORIZED", { status: 401 });
   }
 
