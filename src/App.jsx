@@ -15,6 +15,7 @@ import SprintIntroScreen from './screens/SprintIntroScreen'
 import DailyIntroScreen from './screens/DailyIntroScreen'
 import DailyQuizScreen from './screens/DailyQuizScreen'
 import DailyResultScreen from './screens/DailyResultScreen'
+import MarathonIntroScreen from './screens/MarathonIntroScreen'
 import MarathonScreen from './screens/MarathonScreen'
 import MarathonResultScreen from './screens/MarathonResultScreen'
 import SprintScreen from './screens/SprintScreen'
@@ -577,7 +578,13 @@ export default function App() {
       )
 
     case 'sprint-intro':
-      return <SprintIntroScreen onStart={startSprintRun} busy={busy} />
+      return (
+        <SprintIntroScreen
+          onStart={startSprintRun}
+          busy={busy}
+          onBack={() => setScreen('home')}
+        />
+      )
 
     case 'sprint':
       return (
@@ -599,7 +606,13 @@ export default function App() {
       )
 
     case 'daily-intro':
-      return <DailyIntroScreen onStart={startDailyRun} busy={busy} />
+      return (
+        <DailyIntroScreen
+          onStart={startDailyRun}
+          busy={busy}
+          onBack={() => setScreen('home')}
+        />
+      )
 
     case 'daily-quiz':
       return (
@@ -613,6 +626,15 @@ export default function App() {
 
     case 'daily-result':
       return <DailyResultScreen result={dailyResult} onHome={goHome} />
+
+    case 'marathon-intro':
+      return (
+        <MarathonIntroScreen
+          onStart={startMarathonRun}
+          busy={busy}
+          onBack={() => setScreen('home')}
+        />
+      )
 
     case 'marathon':
       return (
@@ -671,7 +693,7 @@ export default function App() {
           onQuizTests={() => setScreen('categories')}
           onSprint={() => setScreen('sprint-intro')}
           onDaily={() => setScreen('daily-intro')}
-          onMarathon={startMarathonRun}
+          onMarathon={() => setScreen('marathon-intro')}
           onPersona={() => setScreen('persona-list')}
           onEditAvatar={() => setScreen('avatar-picker')}
           onReportIssue={() => {

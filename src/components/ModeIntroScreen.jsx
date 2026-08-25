@@ -1,19 +1,31 @@
 import Screen from './Screen'
 import { haptic } from '../lib/telegram'
+import { useBackButton } from '../hooks/useBackButton'
 
 /**
  * Общий экран-приглашение перед стартом режима — показывается ДО
  * вызова стартового запроса (а не после, как в дуэли), чтобы таймер
  * сессии (Спринт) не начинал тикать, пока человек ещё читает правила.
  */
-export default function ModeIntroScreen({ icon, title, description, onStart, busy }) {
+export default function ModeIntroScreen({ icon, title, description, onStart, busy, onBack }) {
+  useBackButton(onBack)
+
   const start = () => {
     haptic.tap()
     onStart()
   }
 
   return (
-    <Screen className="items-center justify-center text-center">
+    <Screen className="relative items-center justify-center text-center">
+      {onBack && (
+        <button
+          type="button"
+          onClick={onBack}
+          className="absolute left-4 top-4 grid h-9 w-9 place-items-center rounded-xl bg-tg-surface text-lg"
+        >
+          ←
+        </button>
+      )}
       <div className="text-6xl">{icon}</div>
       <h1 className="animate-rise mt-4 text-2xl font-bold">{title}</h1>
       <p className="mt-3 max-w-xs text-sm text-tg-hint">{description}</p>
