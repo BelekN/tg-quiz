@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import HomeScreen from './screens/HomeScreen'
+import FunHubScreen from './screens/FunHubScreen'
+import ProfileScreen from './screens/ProfileScreen'
+import TabBar from './components/TabBar'
 import DuelIntroScreen from './screens/DuelIntroScreen'
 import QuizScreen from './screens/QuizScreen'
 import ResultScreen from './screens/ResultScreen'
@@ -277,7 +280,7 @@ export default function App() {
     try {
       const res = await setAvatar(avatarKey)
       setUser(res.user)
-      setScreen('home')
+      setScreen('profile')
     } catch (e) {
       showError(e)
     }
@@ -528,7 +531,7 @@ export default function App() {
         <SettingsScreen
           user={user}
           tgUser={tgUser}
-          onBack={() => setScreen('home')}
+          onBack={() => setScreen('profile')}
           onUpdateUser={setUser}
           onOpenPrivacy={() => setScreen('privacy')}
           onOpenTerms={() => setScreen('terms')}
@@ -540,9 +543,7 @@ export default function App() {
       )
 
     case 'shop':
-      return (
-        <ShopScreen user={user} onBack={() => setScreen('home')} onUpdateUser={setUser} />
-      )
+      return <ShopScreen user={user} onUpdateUser={setUser} />
 
     case 'privacy':
       return <PrivacyPolicyScreen onBack={() => setScreen('settings')} />
@@ -583,19 +584,19 @@ export default function App() {
       )
 
     case 'leaderboard':
-      return <LeaderboardScreen onBack={() => setScreen('home')} />
+      return <LeaderboardScreen onBack={() => setScreen('profile')} />
 
     case 'history':
-      return <HistoryScreen onBack={() => setScreen('home')} />
+      return <HistoryScreen onBack={() => setScreen('profile')} />
 
     case 'achievements':
-      return <AchievementsScreen onBack={() => setScreen('home')} />
+      return <AchievementsScreen onBack={() => setScreen('profile')} />
 
     case 'avatar-picker':
       return (
         <AvatarPickerScreen
           currentAvatarKey={user?.avatar_key}
-          onBack={() => setScreen('home')}
+          onBack={() => setScreen('profile')}
           onPick={pickAvatar}
         />
       )
@@ -703,12 +704,15 @@ export default function App() {
         />
       )
 
+    case 'fun-hub':
+      return <FunHubScreen onPersona={() => setScreen('persona-list')} />
+
     case 'persona-list':
       return (
         <PersonaListScreen
           user={user}
           onUpdateUser={setUser}
-          onBack={() => setScreen('home')}
+          onBack={() => setScreen('fun-hub')}
           onPick={pickPersonaTest}
         />
       )
@@ -732,6 +736,21 @@ export default function App() {
         />
       )
 
+    case 'profile':
+      return (
+        <ProfileScreen
+          user={user}
+          tgUser={tgUser}
+          onSaveCity={saveCity}
+          onEditAvatar={() => setScreen('avatar-picker')}
+          onLeaderboard={() => setScreen('leaderboard')}
+          onAchievements={() => setScreen('achievements')}
+          onHistory={() => setScreen('history')}
+          onSettings={() => setScreen('settings')}
+          onShop={() => setScreen('shop')}
+        />
+      )
+
     default:
       return (
         <HomeScreen
@@ -739,22 +758,19 @@ export default function App() {
           tgUser={tgUser}
           busy={busy}
           onCreateDuel={createDuel}
-          onLeaderboard={() => setScreen('leaderboard')}
-          onHistory={() => setScreen('history')}
-          onAchievements={() => setScreen('achievements')}
-          onSaveCity={saveCity}
           onQuizTests={() => setScreen('categories')}
           onSprint={() => setScreen('sprint-intro')}
           onDaily={() => setScreen('daily-intro')}
           onMarathon={() => setScreen('marathon-intro')}
-          onPersona={() => setScreen('persona-list')}
-          onEditAvatar={() => setScreen('avatar-picker')}
-          onSettings={() => setScreen('settings')}
-          onShop={() => setScreen('shop')}
         />
       )
   }
   })()
+
+  // Таббар — только на 4 корневых экранах; во время игры/подэкранов
+  // (даже внутри своей вкладки, например Настройки под Профилем) не
+  // рендерится вовсе, а не просто прячется стилями.
+  const ROOT_TABS = ['home', 'fun-hub', 'shop', 'profile']
 
   return (
     <>
@@ -763,6 +779,7 @@ export default function App() {
         <AchievementToast achievements={newAchievements} />
       </div>
       {content}
+      {ROOT_TABS.includes(screen) && <TabBar active={screen} onChange={setScreen} />}
     </>
   )
 }

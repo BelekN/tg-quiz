@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import Screen from '../components/Screen'
-import BackButton from '../components/BackButton'
 import Avatar from '../components/Avatar'
 import { Loader, ErrorView } from '../components/StateView'
 import {
@@ -26,14 +25,16 @@ const SECTION_TITLES = {
 }
 const SECTION_ORDER = ['avatar_frame', 'badge', 'streak_freeze']
 
-export default function ShopScreen({ user, onBack, onUpdateUser }) {
+export default function ShopScreen({ user, onUpdateUser }) {
   const [state, setState] = useState({ status: 'loading', cosmetics: [] })
   const [busyKey, setBusyKey] = useState(null)
   const [notice, setNotice] = useState(null)
   const [coinPacks, setCoinPacks] = useState([])
+  const [reloadToken, setReloadToken] = useState(0)
 
   useEffect(() => {
     let alive = true
+    setState((s) => ({ ...s, status: 'loading' }))
     fetchShopCatalog()
       .then(({ cosmetics, coin_packs }) => {
         if (alive) {
@@ -47,7 +48,7 @@ export default function ShopScreen({ user, onBack, onUpdateUser }) {
     return () => {
       alive = false
     }
-  }, [])
+  }, [reloadToken])
 
   const updateItem = (key, patch) =>
     setState((s) => ({
@@ -138,7 +139,9 @@ export default function ShopScreen({ user, onBack, onUpdateUser }) {
   }
 
   if (state.status === 'loading') return <Loader label="Открываем магазин…" />
-  if (state.status === 'error') return <ErrorView code={state.code} onRetry={onBack} />
+  if (state.status === 'error') {
+    return <ErrorView code={state.code} onRetry={() => setReloadToken((t) => t + 1)} />
+  }
 
   const bySection = SECTION_ORDER.map((type) => ({
     type,
@@ -146,9 +149,8 @@ export default function ShopScreen({ user, onBack, onUpdateUser }) {
   })).filter((s) => s.items.length > 0)
 
   return (
-    <Screen>
-      <header className="flex items-center gap-3">
-        <BackButton onBack={onBack} />
+    <Screen className="pb-24">
+      <header>
         <h1 className="text-lg font-bold">🛍 Магазин</h1>
       </header>
       <p className="mt-1 text-sm text-tg-hint">
