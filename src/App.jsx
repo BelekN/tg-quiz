@@ -508,7 +508,11 @@ export default function App() {
 
     case 'duel-intro':
       return (
-        <DuelIntroScreen role={duel?.role} onStart={() => setScreen('quiz')} />
+        <DuelIntroScreen
+          role={duel?.role}
+          onStart={() => setScreen('quiz')}
+          onBack={goHome}
+        />
       )
 
     case 'quiz':
