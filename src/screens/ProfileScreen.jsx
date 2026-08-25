@@ -47,7 +47,7 @@ export default function ProfileScreen({
   }
 
   return (
-    <Screen className="pb-24">
+    <Screen className="pb-32">
       <header className="flex items-center gap-3">
         <Avatar
           src={tgUser?.photoUrl || user?.photo_url}

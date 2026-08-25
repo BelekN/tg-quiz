@@ -20,7 +20,7 @@ export default function HomeScreen({
   const name = tgUser?.firstName || user?.first_name || user?.username || 'Игрок'
 
   return (
-    <Screen className="pb-24">
+    <Screen className="pb-32">
       <header>
         <p className="text-xs text-tg-hint">Привет,</p>
         <p className="text-[20px] font-bold leading-tight">
