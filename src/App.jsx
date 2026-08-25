@@ -738,10 +738,6 @@ export default function App() {
           onMarathon={() => setScreen('marathon-intro')}
           onPersona={() => setScreen('persona-list')}
           onEditAvatar={() => setScreen('avatar-picker')}
-          onReportIssue={() => {
-            setReportContext({ screen: 'home' })
-            setScreen('report-issue')
-          }}
           onSettings={() => setScreen('settings')}
         />
       )

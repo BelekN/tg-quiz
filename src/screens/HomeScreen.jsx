@@ -23,7 +23,6 @@ export default function HomeScreen({
   onMarathon,
   onPersona,
   onEditAvatar,
-  onReportIssue,
   onSettings,
   busy,
 }) {
@@ -262,17 +261,6 @@ export default function HomeScreen({
           </span>
         </span>
         <span className="text-tg-hint">→</span>
-      </button>
-
-      <button
-        type="button"
-        onClick={() => {
-          haptic.tap()
-          onReportIssue()
-        }}
-        className="mt-6 text-center text-xs text-tg-hint active:opacity-70"
-      >
-        ✉️ Нашли ошибку? Напишите нам
       </button>
 
       {showRanks && (

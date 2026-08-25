@@ -340,7 +340,7 @@ Deno.serve(async (req) => {
       case "set_reminders_enabled": {
         const { data, error } = await supabase.rpc("set_reminders_enabled", {
           p_tg_id: tgId,
-          p_enabled: Boolean(payload.enabled),
+          p_enabled: payload.enabled === true,
         });
         if (error) throw error;
         return json({ user: data });
@@ -355,10 +355,17 @@ Deno.serve(async (req) => {
         });
         if (error) throw error;
 
-        if (SUPPORT_TG_ID) {
+        // notify=false раз в сутки набегает 200+ отчётов по ВСЕМ
+        // пользователям — строка всё равно сохранена в bug_reports,
+        // просто живой пуш пропускаем, чтобы личку не затопило при
+        // открытой для всех аудитории (см. лимит в самой RPC).
+        const notify = data.notify;
+        delete data.notify;
+
+        if (SUPPORT_TG_ID && notify) {
           const who = escapeHtml(tg.user.username ? `@${tg.user.username}` : tg.user.first_name ?? String(tgId));
           const contextLine = payload.context
-            ? `\n<code>${escapeHtml(JSON.stringify(payload.context))}</code>`
+            ? `\n<code>${escapeHtml(JSON.stringify(payload.context)).slice(0, 3000)}</code>`
             : "";
           // Крэши рендера (ErrorBoundary) шлют сюда же, но с
           // context.kind === "crash" — помечаем иначе, чтобы сразу
@@ -368,7 +375,7 @@ Deno.serve(async (req) => {
           await sendTelegramMessage(
             BOT_TOKEN,
             Number(SUPPORT_TG_ID),
-            `${label} от ${who} (${tgId}):\n\n${escapeHtml(String(payload.message))}${contextLine}`,
+            `${label} от ${who} (${tgId}):\n\n${escapeHtml(String(payload.message)).slice(0, 3000)}${contextLine}`,
           ).catch(() => {});
         }
 
