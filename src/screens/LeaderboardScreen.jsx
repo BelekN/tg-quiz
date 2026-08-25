@@ -5,6 +5,7 @@ import BackButton from '../components/BackButton'
 import { fetchLeaderboard } from '../lib/api'
 import { getRank } from '../lib/ranks'
 import { formatNumber } from '../lib/format'
+import { badgeLabel } from '../lib/badges'
 import { Loader, ErrorView } from '../components/StateView'
 
 const MEDAL = { 1: '🥇', 2: '🥈', 3: '🥉' }
@@ -92,6 +93,11 @@ function Row({ player, isMe }) {
           {name}
           {isMe && <span className="ml-1.5 text-xs text-tg-hint">(вы)</span>}
         </span>
+        {badgeLabel(player.equipped_badge) && (
+          <span className="block truncate text-xs font-medium text-tg-accent">
+            {badgeLabel(player.equipped_badge)}
+          </span>
+        )}
         {player.city && (
           <span className="block truncate text-xs text-tg-hint">
             {player.city}

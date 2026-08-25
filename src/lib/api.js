@@ -134,6 +134,9 @@ export const buyCosmetic = (itemKey) => call('buy_cosmetic', { item_key: itemKey
 /** Надеть/снять (null) купленную рамку аватарки. -> { user } */
 export const equipFrame = (itemKey) => call('equip_frame', { item_key: itemKey })
 
+/** Надеть/снять (null) купленный титул у имени. -> { user } */
+export const equipBadge = (itemKey) => call('equip_badge', { item_key: itemKey })
+
 /** Инвойс на пачку монет за Stars — открывать через invoice.open(url, 'url'). -> { invoice_url } */
 export const createStarsInvoice = (packKey) => call('create_stars_invoice', { pack_key: packKey })
 

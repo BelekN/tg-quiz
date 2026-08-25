@@ -9,6 +9,9 @@ export const FRAME_META = {
   frame_gold: { background: 'linear-gradient(135deg, #ffe08a, #b8860b)' },
   frame_neon_blue: { background: 'linear-gradient(135deg, #8be9ff, #1f7fff)' },
   frame_neon_pink: { background: 'linear-gradient(135deg, #ff9ad5, #ff2d9e)' },
+  frame_silver: { background: 'linear-gradient(135deg, #e8e8e8, #9ca3af)' },
+  frame_fire: { background: 'linear-gradient(135deg, #ffb703, #fb5607, #d00000)' },
+  frame_ice: { background: 'linear-gradient(135deg, #caf0f8, #48cae4, #0077b6)' },
   frame_rainbow: {
     background: 'linear-gradient(135deg, #ff5e5e, #ffd166, #4ade80, #38bdf8, #a78bfa)',
   },

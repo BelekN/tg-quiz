@@ -59,7 +59,7 @@ supabase/
 
 **1. База.** Открыть Supabase SQL Editor → по очереди:
 `supabase/migrations/001_init.sql` → Run, затем все `002_*.sql` …
-`042_*.sql` по номерам (это схема, RPC и расписание pg_cron, не
+`043_*.sql` по номерам (это схема, RPC и расписание pg_cron, не
 вопросы; в `011_cron_schedule.sql` перед запуском подставь свой
 `CRON_SECRET` вместо `<CRON_SECRET>`), затем `supabase/questions/bank.sql`
 (вопросы дуэли/соло/спринта) и `supabase/questions/personas.sql`
@@ -145,13 +145,27 @@ https://t.me/<bot>/<app>?startapp=duel_<uuid>
 косметика никогда не продаётся напрямую за Stars, у бесплатных
 игроков всегда есть путь к тому же самому.
 
-- **Косметика v1** — только рамки аватарки (`cosmetic_items`,
-  `user_cosmetics`, `users.equipped_frame`): чистый CSS-градиент,
-  без новых картинок. Цена/ключ/владение — в БД (`get_shop_cosmetics`,
-  `buy_cosmetic`, `equip_frame`), сам визуал — в `src/lib/frames.js`,
-  тот же принцип, что у `avatar_key`/`avatars.js`. Рамка видна и
-  другим игрокам в рейтинге (`get_leaderboard` отдаёт
-  `equipped_frame`) — смысл косметики в том, чтобы её показывали.
+- **Косметика** — три типа в одной таблице `cosmetic_items`
+  (`type`: `avatar_frame` / `badge` / `streak_freeze`):
+  - Рамки аватарки и титулы у имени — покупаются один раз навсегда
+    (`user_cosmetics`), надеваются/снимаются (`users.equipped_frame`,
+    `users.equipped_badge`). Визуал — только на клиенте
+    (`src/lib/frames.js` / `src/lib/badges.js`, ключ дублируется, тот
+    же принцип, что у `avatar_key`/`avatars.js`); БД знает только
+    цену/владение. Видны и другим игрокам в рейтинге
+    (`get_leaderboard` отдаёт оба поля) — смысл косметики в том, чтобы
+    её показывали.
+  - Заморозка серии (`streak_freeze`, `cosmetic_items.stackable`) —
+    расходник про запас (`users.streak_freezes`), не через
+    `user_cosmetics`: `buy_cosmetic` для `stackable`-товаров просто
+    увеличивает счётчик, без проверки "уже куплено". Тратится
+    автоматически в `upsert_user`, если пропущен РОВНО один день (не
+    больше) и есть хотя бы одна в запасе — тогда `current_streak` не
+    сбрасывается.
+  - Цены пересчитаны 2026-08-25: реальный заработок за активный
+    заход (дуэль+квиз-тест+спринт+ежедневный) — 150-200 монет, старые
+    300/600 открывались за один такой заход. Сейчас рамки 700-900,
+    титулы 900-1800, заморозка 400/шт.
 - **Монеты за Stars** — `tg-api` создаёт инвойс
   (`createInvoiceLink`, currency `XTR`) по ключу пачки из
   `supabase/functions/_shared/coinPacks.ts` (единственный источник

@@ -379,6 +379,16 @@ Deno.serve(async (req) => {
         return json({ user: data });
       }
 
+      // ---- надеть/снять (null) купленный титул у имени ----
+      case "equip_badge": {
+        const { data, error } = await supabase.rpc("equip_badge", {
+          p_tg_id: tgId,
+          p_item_key: payload.item_key ?? null,
+        });
+        if (error) throw error;
+        return json({ user: data });
+      }
+
       // ---- создать инвойс на пачку монет за Stars: клиент открывает
       // ссылку через invoice.open(url, 'url') из @telegram-apps/sdk.
       // Цену берём ТОЛЬКО из COIN_PACKS по ключу — payload.stars от

@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
 import Screen from '../components/Screen'
 import Avatar from '../components/Avatar'
-import CoinBadge from '../components/CoinBadge'
 import ModeCard from '../components/ModeCard'
 import CityPrompt from '../components/CityPrompt'
 import RankListModal from '../components/RankListModal'
 import { haptic, getHomeScreenStatus, promptAddToHomeScreen } from '../lib/telegram'
 import { getRank } from '../lib/ranks'
 import { formatNumber } from '../lib/format'
+import { badgeLabel } from '../lib/badges'
 
 export default function HomeScreen({
   user,
@@ -74,6 +74,11 @@ export default function HomeScreen({
               </span>
             )}
           </p>
+          {badgeLabel(user?.equipped_badge) && (
+            <p className="truncate text-[11px] font-medium text-tg-accent">
+              {badgeLabel(user.equipped_badge)}
+            </p>
+          )}
         </div>
 
         {/* Плотная группа — иначе 3 иконки + монеты + шестерёнка на
@@ -113,7 +118,6 @@ export default function HomeScreen({
             🏆
           </button>
         </div>
-        <CoinBadge value={user?.coins ?? 0} />
         <button
           type="button"
           onClick={() => {

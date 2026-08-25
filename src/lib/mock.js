@@ -81,14 +81,24 @@ const meUser = {
   longest_marathon_streak: 6,
   reminders_enabled: true,
   equipped_frame: null,
+  equipped_badge: null,
+  streak_freezes: 0,
 }
 
 const shopState = {
   cosmetics: [
-    { key: 'frame_gold', title: 'Золотое кольцо', price_coins: 300, owned: false, equipped: false },
-    { key: 'frame_neon_blue', title: 'Неоновый синий', price_coins: 300, owned: false, equipped: false },
-    { key: 'frame_neon_pink', title: 'Неоновый розовый', price_coins: 300, owned: false, equipped: false },
-    { key: 'frame_rainbow', title: 'Радуга', price_coins: 600, owned: false, equipped: false },
+    { key: 'frame_gold', type: 'avatar_frame', title: 'Золотое кольцо', price_coins: 700, stackable: false, owned: false, equipped: false },
+    { key: 'frame_neon_blue', type: 'avatar_frame', title: 'Неоновый синий', price_coins: 700, stackable: false, owned: false, equipped: false },
+    { key: 'frame_neon_pink', type: 'avatar_frame', title: 'Неоновый розовый', price_coins: 700, stackable: false, owned: false, equipped: false },
+    { key: 'frame_silver', type: 'avatar_frame', title: 'Серебро', price_coins: 700, stackable: false, owned: false, equipped: false },
+    { key: 'frame_fire', type: 'avatar_frame', title: 'Огонь', price_coins: 900, stackable: false, owned: false, equipped: false },
+    { key: 'frame_ice', type: 'avatar_frame', title: 'Лёд', price_coins: 900, stackable: false, owned: false, equipped: false },
+    { key: 'frame_rainbow', type: 'avatar_frame', title: 'Радуга', price_coins: 1500, stackable: false, owned: false, equipped: false },
+    { key: 'badge_erudite', type: 'badge', title: '🧠 Эрудит', price_coins: 900, stackable: false, owned: false, equipped: false },
+    { key: 'badge_speedster', type: 'badge', title: '⚡ Скоростной', price_coins: 900, stackable: false, owned: false, equipped: false },
+    { key: 'badge_sharpshooter', type: 'badge', title: '🎯 Точный расчёт', price_coins: 900, stackable: false, owned: false, equipped: false },
+    { key: 'badge_legend', type: 'badge', title: '👑 Легенда викторин', price_coins: 1800, stackable: false, owned: false, equipped: false },
+    { key: 'streak_freeze', type: 'streak_freeze', title: '🧊 Заморозка серии', price_coins: 400, stackable: true, stock: 0 },
   ],
 }
 const COIN_PACKS = [
@@ -186,10 +196,15 @@ export const mockApi = {
     await wait(300)
     const item = shopState.cosmetics.find((c) => c.key === item_key)
     if (!item) throw new Error('ITEM_NOT_FOUND')
-    if (item.owned) throw new Error('ALREADY_OWNED')
     if (meUser.coins < item.price_coins) throw new Error('NOT_ENOUGH_COINS')
     meUser.coins -= item.price_coins
-    item.owned = true
+    if (item.stackable) {
+      item.stock += 1
+      meUser.streak_freezes = item.stock
+    } else {
+      if (item.owned) throw new Error('ALREADY_OWNED')
+      item.owned = true
+    }
     return { user: meUser, item_key }
   },
 
@@ -198,8 +213,22 @@ export const mockApi = {
     if (item_key && !shopState.cosmetics.find((c) => c.key === item_key)?.owned) {
       throw new Error('NOT_OWNED')
     }
-    shopState.cosmetics.forEach((c) => (c.equipped = c.key === item_key))
+    shopState.cosmetics
+      .filter((c) => c.type === 'avatar_frame')
+      .forEach((c) => (c.equipped = c.key === item_key))
     meUser.equipped_frame = item_key ?? null
+    return { user: meUser }
+  },
+
+  async equip_badge({ item_key }) {
+    await wait(200)
+    if (item_key && !shopState.cosmetics.find((c) => c.key === item_key)?.owned) {
+      throw new Error('NOT_OWNED')
+    }
+    shopState.cosmetics
+      .filter((c) => c.type === 'badge')
+      .forEach((c) => (c.equipped = c.key === item_key))
+    meUser.equipped_badge = item_key ?? null
     return { user: meUser }
   },
 
