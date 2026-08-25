@@ -348,6 +348,7 @@ Deno.serve(async (req) => {
           p_tg_id: tgId,
           p_category: payload.category,
           p_count: 10,
+          p_difficulty: payload.difficulty ?? null,
         });
         if (error) throw error;
         return json(data);

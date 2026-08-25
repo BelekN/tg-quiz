@@ -6,6 +6,13 @@ import { categoryMeta } from '../lib/categories'
 import { haptic } from '../lib/telegram'
 import { useBackButton } from '../hooks/useBackButton'
 
+const DIFFICULTIES = [
+  { key: null, label: 'Любая' },
+  { key: 'easy', label: 'Легко' },
+  { key: 'medium', label: 'Средне' },
+  { key: 'hard', label: 'Сложно' },
+]
+
 export default function CategoryScreen({ onBack, onPick }) {
   const [state, setState] = useState({ status: 'loading', categories: [] })
   // Блокируем повторный тап по любой карточке, пока предыдущий выбор
@@ -13,6 +20,7 @@ export default function CategoryScreen({ onBack, onPick }) {
   // может доставить сюда старт-сессию уже после перехода на другой
   // экран и рассинхронизировать questions/session_id на нём.
   const [picking, setPicking] = useState(false)
+  const [difficulty, setDifficulty] = useState(null)
 
   useBackButton(onBack)
 
@@ -21,7 +29,7 @@ export default function CategoryScreen({ onBack, onPick }) {
     setPicking(true)
     haptic.tap()
     try {
-      await onPick(category)
+      await onPick(category, difficulty)
     } finally {
       setPicking(false)
     }
@@ -59,6 +67,26 @@ export default function CategoryScreen({ onBack, onPick }) {
       <p className="mt-1 text-sm text-tg-hint">
         Выберите тему — 10 вопросов, без таймера, в своём темпе
       </p>
+
+      <div className="mt-4 flex gap-1.5">
+        {DIFFICULTIES.map((d) => (
+          <button
+            key={d.label}
+            type="button"
+            onClick={() => {
+              haptic.tap()
+              setDifficulty(d.key)
+            }}
+            className={`flex-1 rounded-xl px-2 py-2 text-[12px] font-semibold transition-colors ${
+              difficulty === d.key
+                ? 'bg-tg-accent text-tg-accent-text'
+                : 'bg-tg-section text-tg-hint'
+            }`}
+          >
+            {d.label}
+          </button>
+        ))}
+      </div>
 
       <div className="animate-rise mt-5 flex flex-col gap-2.5">
         <button

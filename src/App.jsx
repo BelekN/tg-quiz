@@ -11,6 +11,8 @@ import RankUpToast from './components/RankUpToast'
 import CategoryScreen from './screens/CategoryScreen'
 import SoloQuizScreen from './screens/SoloQuizScreen'
 import SoloResultScreen from './screens/SoloResultScreen'
+import SprintIntroScreen from './screens/SprintIntroScreen'
+import DailyIntroScreen from './screens/DailyIntroScreen'
 import DailyQuizScreen from './screens/DailyQuizScreen'
 import DailyResultScreen from './screens/DailyResultScreen'
 import MarathonScreen from './screens/MarathonScreen'
@@ -266,9 +268,9 @@ export default function App() {
     }
   }, [showError])
 
-  const pickCategory = useCallback(async (category) => {
+  const pickCategory = useCallback(async (category, difficulty) => {
     try {
-      const started = await startSolo(category)
+      const started = await startSolo(category, difficulty)
       setSolo(started)
       setScreen('solo-quiz')
     } catch (e) {
@@ -574,6 +576,9 @@ export default function App() {
         />
       )
 
+    case 'sprint-intro':
+      return <SprintIntroScreen onStart={startSprintRun} busy={busy} />
+
     case 'sprint':
       return (
         <SprintScreen
@@ -592,6 +597,9 @@ export default function App() {
           onPlayAgain={startSprintRun}
         />
       )
+
+    case 'daily-intro':
+      return <DailyIntroScreen onStart={startDailyRun} busy={busy} />
 
     case 'daily-quiz':
       return (
@@ -661,8 +669,8 @@ export default function App() {
           onAchievements={() => setScreen('achievements')}
           onSaveCity={saveCity}
           onQuizTests={() => setScreen('categories')}
-          onSprint={startSprintRun}
-          onDaily={startDailyRun}
+          onSprint={() => setScreen('sprint-intro')}
+          onDaily={() => setScreen('daily-intro')}
           onMarathon={startMarathonRun}
           onPersona={() => setScreen('persona-list')}
           onEditAvatar={() => setScreen('avatar-picker')}

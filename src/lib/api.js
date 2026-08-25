@@ -124,7 +124,8 @@ export const setAvatar = (avatarKey) => call('set_avatar', { avatar_key: avatarK
 export const fetchCategories = () => call('categories')
 
 /** Начать соло-сессию по категории. -> { session_id, category, questions } */
-export const startSolo = (category) => call('start_solo', { category })
+export const startSolo = (category, difficulty = null) =>
+  call('start_solo', { category, difficulty })
 
 /** Ответ в соло-режиме. -> { correct_option_index, is_correct, points } */
 export const answerSolo = (sessionId, index, answer) =>
