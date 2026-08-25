@@ -9,7 +9,7 @@ import { haptic } from '../lib/telegram'
  */
 export default function FunHubScreen({ onPersona }) {
   return (
-    <Screen className="pb-32">
+    <Screen className="pb-40">
       <header>
         <h1 className="text-lg font-bold">🔮 Для удовольствия</h1>
       </header>

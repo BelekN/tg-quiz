@@ -3,7 +3,15 @@
  * disabled=true -> временно некликабельна (например, пока запускается
  * другой режим) без бейджа — просто чуть притушена.
  */
-export default function ModeCard({ icon, title, subtitle, soon, disabled, onClick }) {
+export default function ModeCard({
+  icon,
+  title,
+  subtitle,
+  soon,
+  disabled,
+  onClick,
+  iconBg = 'bg-tg-accent/15',
+}) {
   return (
     <button
       type="button"
@@ -13,7 +21,7 @@ export default function ModeCard({ icon, title, subtitle, soon, disabled, onClic
         soon || disabled ? 'opacity-45' : 'active:scale-[0.98]'
       }`}
     >
-      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-tg-accent/15 text-xl">
+      <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl text-xl ${iconBg}`}>
         {icon}
       </span>
       <span className="flex-1">

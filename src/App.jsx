@@ -121,6 +121,9 @@ export default function App() {
   const [newAchievements, setNewAchievements] = useState(null)
   const [newRank, setNewRank] = useState(null)
   const [reportContext, setReportContext] = useState(null)
+  // Аватарку можно открыть и с "Играть", и с "Профиль" — запоминаем,
+  // куда вернуться после выбора, а не жёстко на одну вкладку.
+  const [avatarReturnTo, setAvatarReturnTo] = useState('profile')
 
   const tgUser = getTgUser()
 
@@ -280,11 +283,11 @@ export default function App() {
     try {
       const res = await setAvatar(avatarKey)
       setUser(res.user)
-      setScreen('profile')
+      setScreen(avatarReturnTo)
     } catch (e) {
       showError(e)
     }
-  }, [showError])
+  }, [showError, avatarReturnTo])
 
   const pickCategory = useCallback(async (category, difficulty) => {
     try {
@@ -596,7 +599,7 @@ export default function App() {
       return (
         <AvatarPickerScreen
           currentAvatarKey={user?.avatar_key}
-          onBack={() => setScreen('profile')}
+          onBack={() => setScreen(avatarReturnTo)}
           onPick={pickAvatar}
         />
       )
@@ -742,12 +745,14 @@ export default function App() {
           user={user}
           tgUser={tgUser}
           onSaveCity={saveCity}
-          onEditAvatar={() => setScreen('avatar-picker')}
+          onEditAvatar={() => {
+            setAvatarReturnTo('profile')
+            setScreen('avatar-picker')
+          }}
           onLeaderboard={() => setScreen('leaderboard')}
           onAchievements={() => setScreen('achievements')}
           onHistory={() => setScreen('history')}
           onSettings={() => setScreen('settings')}
-          onShop={() => setScreen('shop')}
         />
       )
 
@@ -762,6 +767,11 @@ export default function App() {
           onSprint={() => setScreen('sprint-intro')}
           onDaily={() => setScreen('daily-intro')}
           onMarathon={() => setScreen('marathon-intro')}
+          onEditAvatar={() => {
+            setAvatarReturnTo('home')
+            setScreen('avatar-picker')
+          }}
+          onShop={() => setScreen('shop')}
         />
       )
   }

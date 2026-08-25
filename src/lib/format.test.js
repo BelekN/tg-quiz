@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatNumber } from './format'
+import { formatNumber, pluralDays } from './format'
 
 describe('formatNumber', () => {
   it('inserts a thousands separator', () => {
@@ -24,5 +24,27 @@ describe('formatNumber', () => {
 
   it('does not choke on NaN', () => {
     expect(formatNumber(NaN)).toBe(0)
+  })
+})
+
+describe('pluralDays', () => {
+  it('picks "день" for 1, 21, 31...', () => {
+    expect(pluralDays(1)).toBe('день')
+    expect(pluralDays(21)).toBe('день')
+  })
+
+  it('picks "дня" for 2-4, 22-24...', () => {
+    expect(pluralDays(2)).toBe('дня')
+    expect(pluralDays(3)).toBe('дня')
+    expect(pluralDays(4)).toBe('дня')
+    expect(pluralDays(22)).toBe('дня')
+  })
+
+  it('picks "дней" for 0, 5-20, 25...', () => {
+    expect(pluralDays(0)).toBe('дней')
+    expect(pluralDays(5)).toBe('дней')
+    expect(pluralDays(11)).toBe('дней')
+    expect(pluralDays(12)).toBe('дней')
+    expect(pluralDays(25)).toBe('дней')
   })
 })

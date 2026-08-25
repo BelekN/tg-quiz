@@ -149,7 +149,7 @@ export default function ShopScreen({ user, onUpdateUser }) {
   })).filter((s) => s.items.length > 0)
 
   return (
-    <Screen className="pb-32">
+    <Screen className="pb-40">
       <header>
         <h1 className="text-lg font-bold">🛍 Магазин</h1>
       </header>
