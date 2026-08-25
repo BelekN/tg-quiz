@@ -24,6 +24,7 @@ export default function HomeScreen({
   onPersona,
   onEditAvatar,
   onReportIssue,
+  onSettings,
   busy,
 }) {
   const name = tgUser?.firstName || user?.first_name || user?.username || 'Игрок'
@@ -106,6 +107,17 @@ export default function HomeScreen({
           🏆
         </button>
         <CoinBadge value={user?.coins ?? 0} />
+        <button
+          type="button"
+          onClick={() => {
+            haptic.tap()
+            onSettings()
+          }}
+          className="grid h-9 w-9 place-items-center rounded-full bg-tg-surface text-lg active:scale-95"
+          aria-label="Настройки"
+        >
+          ⚙️
+        </button>
       </header>
 
       {user && !user.city && <CityPrompt onSave={onSaveCity} />}

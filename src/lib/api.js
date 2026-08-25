@@ -1,5 +1,6 @@
 import { getRawInitData } from './telegram'
 import { mockApi } from './mock'
+import { APP_VERSION } from './version'
 
 const ENDPOINT = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/tg-api`
 const USE_MOCK = import.meta.env.DEV && import.meta.env.VITE_DEV_MOCK === '1'
@@ -67,8 +68,8 @@ export class ApiError extends Error {
   }
 }
 
-/** Апсерт профиля + баланс. -> { user, start_param } */
-export const fetchMe = () => call('me')
+/** Апсерт профиля + баланс. -> { user, start_param, force_update } */
+export const fetchMe = () => call('me', { app_version: APP_VERSION })
 
 /** duelId=null -> создать дуэль; иначе войти как гость. */
 export const startDuel = (duelId = null) =>
@@ -116,6 +117,10 @@ export const fetchAchievements = () => call('achievements')
 
 /** Сохранить город (вводится пользователем один раз). -> { user } */
 export const setCity = (city) => call('set_city', { city })
+
+/** Настройки: включить/отключить retention-напоминания. -> { user } */
+export const setRemindersEnabled = (enabled) =>
+  call('set_reminders_enabled', { enabled })
 
 /** Сохранить выбранную аватарку. avatarKey=null -> вернуть фото Telegram. -> { user } */
 export const setAvatar = (avatarKey) => call('set_avatar', { avatar_key: avatarKey })

@@ -1,5 +1,6 @@
 import { Component } from 'react'
 import Screen from './Screen'
+import { reportIssue } from '../lib/api'
 
 /**
  * Последний рубеж: без неё падение рендера любого экрана (например,
@@ -16,6 +17,17 @@ export default class ErrorBoundary extends Component {
 
   componentDidCatch(error, info) {
     console.error('Render crash', error, info)
+    // Тот же канал, что и ручные "Сообщить о проблеме" — раньше крэш
+    // рендера был виден только в консоли браузера пользователя, то
+    // есть фактически никому. context.kind === 'crash' на сервере
+    // помечает пуш иначе (💥), чтобы не путать с ручными отчётами.
+    // Best-effort: если сама отправка не долетит (нет сети, initData
+    // истекла) — упавший экран всё равно должен показаться.
+    reportIssue(`Crash: ${error?.message ?? String(error)}`, {
+      kind: 'crash',
+      stack: String(error?.stack ?? '').slice(0, 1200),
+      componentStack: String(info?.componentStack ?? '').slice(0, 800),
+    }).catch(() => {})
   }
 
   render() {

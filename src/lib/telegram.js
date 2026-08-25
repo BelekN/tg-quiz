@@ -18,6 +18,7 @@ import {
   addToHomeScreen,
   checkHomeScreenStatus,
 } from '@telegram-apps/sdk'
+import { getHapticsEnabled } from './preferences'
 
 export { backButton, mainButton, secondaryButton }
 
@@ -157,10 +158,13 @@ export function getRawInitData() {
   }
 }
 
+// Переключатель "Хаптика" в Настройках — проверяем на каждый вызов, а
+// не один раз при монтировании, иначе тумблер не подействовал бы
+// без перезагрузки приложения.
 export const haptic = {
-  tap: () => safely(() => hapticFeedback.impactOccurred('light')),
-  success: () => safely(() => hapticFeedback.notificationOccurred('success')),
-  error: () => safely(() => hapticFeedback.notificationOccurred('error')),
+  tap: () => getHapticsEnabled() && safely(() => hapticFeedback.impactOccurred('light')),
+  success: () => getHapticsEnabled() && safely(() => hapticFeedback.notificationOccurred('success')),
+  error: () => getHapticsEnabled() && safely(() => hapticFeedback.notificationOccurred('error')),
 }
 
 /**

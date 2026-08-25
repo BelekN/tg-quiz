@@ -9,9 +9,16 @@ import { reportIssue } from '../lib/api'
  * context (код/detail ошибки, экран), с главного экрана — без него.
  * Сервер context не обрабатывает, просто хранит рядом с текстом.
  */
+const ERROR_MESSAGES = {
+  EMPTY_MESSAGE: 'Напишите хотя бы пару слов.',
+  MESSAGE_TOO_LONG: 'Слишком длинное сообщение — покороче, пожалуйста.',
+  RATE_LIMITED: 'Слишком много сообщений за последний час. Попробуйте написать позже.',
+}
+
 export default function ReportIssueScreen({ context, onBack }) {
   const [message, setMessage] = useState('')
   const [status, setStatus] = useState('idle') // idle -> sending -> sent -> error
+  const [errorCode, setErrorCode] = useState(null)
 
   const submit = async () => {
     if (!message.trim() || status === 'sending') return
@@ -21,8 +28,9 @@ export default function ReportIssueScreen({ context, onBack }) {
       await reportIssue(message.trim(), context ?? null)
       setStatus('sent')
       haptic.success()
-    } catch {
+    } catch (e) {
       setStatus('error')
+      setErrorCode(e.message)
       haptic.error()
     }
   }
@@ -68,7 +76,8 @@ export default function ReportIssueScreen({ context, onBack }) {
 
       {status === 'error' && (
         <p className="mt-2 text-xs text-quiz-wrong">
-          Не получилось отправить — проверьте интернет и попробуйте снова.
+          {ERROR_MESSAGES[errorCode] ??
+            'Не получилось отправить — проверьте интернет и попробуйте снова.'}
         </p>
       )}
 

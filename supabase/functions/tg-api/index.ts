@@ -27,6 +27,26 @@ const APP_URL = Deno.env.get("APP_URL") ?? "";
 // chat_id разработчика. Необязательный: без него отчёты всё равно
 // сохраняются в bug_reports, просто без мгновенного пуша.
 const SUPPORT_TG_ID = Deno.env.get("SUPPORT_TG_ID") ?? "";
+// Принудительное обновление фронта: если задан и клиент шлёт версию
+// ниже этой, "me" отвечает force_update: true — клиент показывает
+// блокирующий экран вместо приложения (см. ForceUpdateScreen.jsx).
+// Не задан по умолчанию — тогда force_update всегда false, старое
+// поведение без изменений.
+const MIN_APP_VERSION = Deno.env.get("MIN_APP_VERSION") ?? "";
+
+// Плоское сравнение строк здесь солгало бы: "1.10.0" < "1.2.0"
+// лексикографически (первый различающийся символ "1" < "2"), хотя
+// по семверу 1.10.0 новее. Сравниваем числовые компоненты по одному.
+function isVersionBelow(current: string, min: string): boolean {
+  const c = String(current).split(".").map((n) => parseInt(n, 10) || 0);
+  const m = String(min).split(".").map((n) => parseInt(n, 10) || 0);
+  for (let i = 0; i < Math.max(c.length, m.length); i++) {
+    const cv = c[i] ?? 0;
+    const mv = m[i] ?? 0;
+    if (cv !== mv) return cv < mv;
+  }
+  return false;
+}
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -181,7 +201,12 @@ Deno.serve(async (req) => {
         // разблокироваться. attachNewAchievements кладёт new_achievements
         // прямо в переданный объект — отдаём его как обычно, верхним
         // уровнем, а не внутри "user".
-        const out: Record<string, unknown> = { user: data, start_param: tg.startParam };
+        const out: Record<string, unknown> = {
+          user: data,
+          start_param: tg.startParam,
+          force_update: Boolean(MIN_APP_VERSION) &&
+            isVersionBelow(String(payload.app_version ?? "0.0.0"), MIN_APP_VERSION),
+        };
         await attachNewAchievements(tgId, out);
         return json(out);
       }
@@ -311,6 +336,16 @@ Deno.serve(async (req) => {
         return json({ user: data });
       }
 
+      // ---- Настройки: включить/отключить retention-напоминания ----
+      case "set_reminders_enabled": {
+        const { data, error } = await supabase.rpc("set_reminders_enabled", {
+          p_tg_id: tgId,
+          p_enabled: Boolean(payload.enabled),
+        });
+        if (error) throw error;
+        return json({ user: data });
+      }
+
       // ---- сообщить о проблеме: сохраняем + best-effort пуш в SUPPORT_TG_ID ----
       case "report_issue": {
         const { data, error } = await supabase.rpc("report_issue", {
@@ -325,10 +360,15 @@ Deno.serve(async (req) => {
           const contextLine = payload.context
             ? `\n<code>${escapeHtml(JSON.stringify(payload.context))}</code>`
             : "";
+          // Крэши рендера (ErrorBoundary) шлют сюда же, но с
+          // context.kind === "crash" — помечаем иначе, чтобы сразу
+          // отличать от ручных отчётов пользователей.
+          const isCrash = (payload.context as Record<string, unknown> | null)?.kind === "crash";
+          const label = isCrash ? "💥 Крэш" : "🐞 Отчёт";
           await sendTelegramMessage(
             BOT_TOKEN,
             Number(SUPPORT_TG_ID),
-            `🐞 Отчёт от ${who} (${tgId}):\n\n${escapeHtml(String(payload.message))}${contextLine}`,
+            `${label} от ${who} (${tgId}):\n\n${escapeHtml(String(payload.message))}${contextLine}`,
           ).catch(() => {});
         }
 

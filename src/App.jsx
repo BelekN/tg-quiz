@@ -26,6 +26,10 @@ import PersonaQuizScreen from './screens/PersonaQuizScreen'
 import PersonaResultScreen from './screens/PersonaResultScreen'
 import { Loader, ErrorView } from './components/StateView'
 import ReportIssueScreen from './screens/ReportIssueScreen'
+import SettingsScreen from './screens/SettingsScreen'
+import PrivacyPolicyScreen from './screens/PrivacyPolicyScreen'
+import TermsScreen from './screens/TermsScreen'
+import ForceUpdateScreen from './screens/ForceUpdateScreen'
 import {
   fetchMe,
   startDuel,
@@ -125,6 +129,15 @@ export default function App() {
         const me = await fetchMeWithRetry()
         if (!alive) return
         setUser(me.user)
+
+        // Сервер сравнил присланную версию с MIN_APP_VERSION (см.
+        // tg-api "me") — эта сборка устарела, дальше пускать нельзя:
+        // старый бандл может не совпадать со схемой RPC-ответов.
+        if (me.force_update) {
+          setScreen('force-update')
+          return
+        }
+
         if (me.new_achievements?.length) setNewAchievements(me.new_achievements)
 
         // ?startapp=duel_<uuid> -> гость сразу попадает в дуэль
@@ -506,6 +519,31 @@ export default function App() {
     case 'report-issue':
       return <ReportIssueScreen context={reportContext} onBack={goHome} />
 
+    case 'force-update':
+      return <ForceUpdateScreen />
+
+    case 'settings':
+      return (
+        <SettingsScreen
+          user={user}
+          tgUser={tgUser}
+          onBack={() => setScreen('home')}
+          onUpdateUser={setUser}
+          onOpenPrivacy={() => setScreen('privacy')}
+          onOpenTerms={() => setScreen('terms')}
+          onReportIssue={() => {
+            setReportContext({ screen: 'settings' })
+            setScreen('report-issue')
+          }}
+        />
+      )
+
+    case 'privacy':
+      return <PrivacyPolicyScreen onBack={() => setScreen('settings')} />
+
+    case 'terms':
+      return <TermsScreen onBack={() => setScreen('settings')} />
+
     case 'duel-intro':
       return (
         <DuelIntroScreen
@@ -704,6 +742,7 @@ export default function App() {
             setReportContext({ screen: 'home' })
             setScreen('report-issue')
           }}
+          onSettings={() => setScreen('settings')}
         />
       )
   }

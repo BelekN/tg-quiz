@@ -79,6 +79,7 @@ const meUser = {
   current_streak: 4,
   longest_streak: 9,
   longest_marathon_streak: 6,
+  reminders_enabled: true,
 }
 const PERSONA_TESTS = {
   mock_categorical: {
@@ -140,12 +141,18 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms))
 export const mockApi = {
   async me() {
     await wait(300)
-    return { user: meUser, start_param: null, new_achievements: [] }
+    return { user: meUser, start_param: null, new_achievements: [], force_update: false }
   },
 
   async set_city({ city }) {
     await wait(200)
     meUser.city = city
+    return { user: meUser }
+  },
+
+  async set_reminders_enabled({ enabled }) {
+    await wait(200)
+    meUser.reminders_enabled = enabled
     return { user: meUser }
   },
 
