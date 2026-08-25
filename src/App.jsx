@@ -27,6 +27,7 @@ import PersonaResultScreen from './screens/PersonaResultScreen'
 import { Loader, ErrorView } from './components/StateView'
 import ReportIssueScreen from './screens/ReportIssueScreen'
 import SettingsScreen from './screens/SettingsScreen'
+import ShopScreen from './screens/ShopScreen'
 import PrivacyPolicyScreen from './screens/PrivacyPolicyScreen'
 import TermsScreen from './screens/TermsScreen'
 import ForceUpdateScreen from './screens/ForceUpdateScreen'
@@ -538,6 +539,11 @@ export default function App() {
         />
       )
 
+    case 'shop':
+      return (
+        <ShopScreen user={user} onBack={() => setScreen('home')} onUpdateUser={setUser} />
+      )
+
     case 'privacy':
       return <PrivacyPolicyScreen onBack={() => setScreen('settings')} />
 
@@ -739,6 +745,7 @@ export default function App() {
           onPersona={() => setScreen('persona-list')}
           onEditAvatar={() => setScreen('avatar-picker')}
           onSettings={() => setScreen('settings')}
+          onShop={() => setScreen('shop')}
         />
       )
   }

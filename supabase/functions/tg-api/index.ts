@@ -18,6 +18,7 @@ import {
   escapeHtml,
   sendTelegramMessage,
 } from "../_shared/telegramNotify.ts";
+import { COIN_PACKS, findCoinPack } from "../_shared/coinPacks.ts";
 
 const BOT_TOKEN = Deno.env.get("BOT_TOKEN")!;
 const BOT_USERNAME = Deno.env.get("BOT_USERNAME") ?? "";
@@ -79,6 +80,8 @@ const FUNNEL_ACTIONS = new Set([
   "history",
   "set_city",
   "set_avatar",
+  "buy_cosmetic",
+  "create_stars_invoice",
 ]);
 
 const json = (body: unknown, status = 200) =>
@@ -344,6 +347,63 @@ Deno.serve(async (req) => {
         });
         if (error) throw error;
         return json({ user: data });
+      }
+
+      // ---- магазин: каталог косметики + доступные пачки монет ----
+      case "shop_catalog": {
+        const { data, error } = await supabase.rpc("get_shop_cosmetics", { p_tg_id: tgId });
+        if (error) throw error;
+        return json({
+          cosmetics: data,
+          coin_packs: COIN_PACKS.map(({ key, title, stars, coins }) => ({ key, title, stars, coins })),
+        });
+      }
+
+      // ---- купить косметику за монеты ----
+      case "buy_cosmetic": {
+        const { data, error } = await supabase.rpc("buy_cosmetic", {
+          p_tg_id: tgId,
+          p_item_key: payload.item_key,
+        });
+        if (error) throw error;
+        return json(data);
+      }
+
+      // ---- надеть/снять (null) купленную рамку ----
+      case "equip_frame": {
+        const { data, error } = await supabase.rpc("equip_frame", {
+          p_tg_id: tgId,
+          p_item_key: payload.item_key ?? null,
+        });
+        if (error) throw error;
+        return json({ user: data });
+      }
+
+      // ---- создать инвойс на пачку монет за Stars: клиент открывает
+      // ссылку через invoice.open(url, 'url') из @telegram-apps/sdk.
+      // Цену берём ТОЛЬКО из COIN_PACKS по ключу — payload.stars от
+      // клиента, если бы он был, никогда не использовался бы напрямую. ----
+      case "create_stars_invoice": {
+        const pack = findCoinPack(String(payload.pack_key ?? ""));
+        if (!pack) return json({ error: "UNKNOWN_PACK" }, 400);
+
+        const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/createInvoiceLink`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: `КвизДуэль — ${pack.title}`,
+            description: "Пополнение баланса монет в КвизДуэль",
+            payload: pack.key,
+            currency: "XTR",
+            prices: [{ label: pack.title, amount: pack.stars }],
+          }),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok || !body.ok) {
+          console.error("createInvoiceLink failed", JSON.stringify(body));
+          return json({ error: "INVOICE_FAILED" }, 500);
+        }
+        return json({ invoice_url: body.result });
       }
 
       // ---- сообщить о проблеме: сохраняем + best-effort пуш в SUPPORT_TG_ID ----

@@ -24,6 +24,7 @@ export default function HomeScreen({
   onPersona,
   onEditAvatar,
   onSettings,
+  onShop,
   busy,
 }) {
   const name = tgUser?.firstName || user?.first_name || user?.username || 'Игрок'
@@ -54,6 +55,7 @@ export default function HomeScreen({
         <Avatar
           src={tgUser?.photoUrl || user?.photo_url}
           avatarKey={user?.avatar_key}
+          frameKey={user?.equipped_frame}
           name={name}
           size={40}
           onClick={() => {
@@ -154,7 +156,16 @@ export default function HomeScreen({
             setShowRanks(true)
           }}
         />
-        <Stat label="Монеты" value={formatNumber(user?.coins)} accent />
+        <Stat
+          label="Монеты"
+          value={formatNumber(user?.coins)}
+          accent
+          caption="🛍 Магазин"
+          onClick={() => {
+            haptic.tap()
+            onShop()
+          }}
+        />
       </div>
 
       {rank.next && (

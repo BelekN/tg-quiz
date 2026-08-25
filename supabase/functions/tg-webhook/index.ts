@@ -17,6 +17,7 @@ import {
   sendTelegramMessage,
   timingSafeEqual,
 } from "../_shared/telegramNotify.ts";
+import { findCoinPack } from "../_shared/coinPacks.ts";
 
 const BOT_TOKEN = Deno.env.get("BOT_TOKEN")!;
 const BOT_USERNAME = Deno.env.get("BOT_USERNAME") ?? "";
@@ -115,7 +116,7 @@ async function registerBot(publicUrl: string) {
       body: JSON.stringify({
         url: publicUrl,
         secret_token: WEBHOOK_SECRET,
-        allowed_updates: ["message", "inline_query"],
+        allowed_updates: ["message", "inline_query", "pre_checkout_query"],
       }),
     }).then((r) => r.json()),
     fetch(`https://api.telegram.org/bot${BOT_TOKEN}/setMyCommands`, {
@@ -212,10 +213,69 @@ Deno.serve(async (req) => {
     return new Response("ok");
   }
 
+  // Telegram ждёт ответ в течение 10 секунд — сверяем payload с
+  // известной пачкой монет ДО того, как деньги реально списались.
+  // Цену для сверки/начисления всегда берём из COIN_PACKS по ключу,
+  // никогда из того, что прислали в самом апдейте.
+  const preCheckout = update?.pre_checkout_query;
+  if (preCheckout?.id) {
+    const ok = Boolean(findCoinPack(preCheckout.invoice_payload ?? ""));
+    try {
+      await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/answerPreCheckoutQuery`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(
+          ok
+            ? { pre_checkout_query_id: preCheckout.id, ok: true }
+            : {
+              pre_checkout_query_id: preCheckout.id,
+              ok: false,
+              error_message: "Этот набор монет больше недоступен, откройте магазин заново.",
+            },
+        ),
+      });
+    } catch (e) {
+      console.error("answerPreCheckoutQuery failed", e);
+    }
+    return new Response("ok");
+  }
+
   const message = update?.message;
   const text: string | undefined = message?.text;
   const chatId = message?.chat?.id;
   const fromId = message?.from?.id;
+
+  // Успешная оплата Stars — источник истины для начисления монет.
+  // Клиентский invoice.open() тоже узнаёт статус "paid", но это только
+  // для UX (показать "готово" побыстрее); реальное начисление —
+  // только здесь, по факту реального вебхука от Telegram.
+  const payment = message?.successful_payment;
+  if (payment && fromId) {
+    const pack = findCoinPack(payment.invoice_payload ?? "");
+    if (!pack) {
+      console.error("successful_payment: unknown pack", payment.invoice_payload);
+    } else {
+      try {
+        const { error } = await supabase.rpc("credit_star_purchase", {
+          p_tg_id: fromId,
+          p_telegram_charge_id: payment.telegram_payment_charge_id,
+          p_pack_key: pack.key,
+          p_stars_amount: payment.total_amount,
+          p_coins_to_credit: pack.coins,
+        });
+        if (error) throw error;
+        await sendTelegramMessage(
+          BOT_TOKEN,
+          chatId,
+          `✅ Начислено ${pack.coins} монет — спасибо за поддержку КвизДуэль!`,
+          openAppButton(),
+        );
+      } catch (e) {
+        console.error("credit_star_purchase failed", e);
+      }
+    }
+    return new Response("ok");
+  }
 
   if (chatId && text?.startsWith("/")) {
     // "/start@BNQuiz_bot duel_xxx" -> команда "/start", аргумент "duel_xxx"

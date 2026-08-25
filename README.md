@@ -59,7 +59,7 @@ supabase/
 
 **1. База.** Открыть Supabase SQL Editor → по очереди:
 `supabase/migrations/001_init.sql` → Run, затем все `002_*.sql` …
-`041_*.sql` по номерам (это схема, RPC и расписание pg_cron, не
+`042_*.sql` по номерам (это схема, RPC и расписание pg_cron, не
 вопросы; в `011_cron_schedule.sql` перед запуском подставь свой
 `CRON_SECRET` вместо `<CRON_SECRET>`), затем `supabase/questions/bank.sql`
 (вопросы дуэли/соло/спринта) и `supabase/questions/personas.sql`
@@ -137,6 +137,35 @@ https://t.me/<bot>/<app>?startapp=duel_<uuid>
 | Правильный ответ       | 100 + до 100 за скорость | +5 |
 | Победа в дуэли         | —               | +20    |
 | Ничья                  | —               | +10    |
+
+## Магазин
+
+Единая мягкая валюта — монеты (как и раньше, за игру). Их можно
+потратить на косметику ИЛИ докупить пачками за Telegram Stars —
+косметика никогда не продаётся напрямую за Stars, у бесплатных
+игроков всегда есть путь к тому же самому.
+
+- **Косметика v1** — только рамки аватарки (`cosmetic_items`,
+  `user_cosmetics`, `users.equipped_frame`): чистый CSS-градиент,
+  без новых картинок. Цена/ключ/владение — в БД (`get_shop_cosmetics`,
+  `buy_cosmetic`, `equip_frame`), сам визуал — в `src/lib/frames.js`,
+  тот же принцип, что у `avatar_key`/`avatars.js`. Рамка видна и
+  другим игрокам в рейтинге (`get_leaderboard` отдаёт
+  `equipped_frame`) — смысл косметики в том, чтобы её показывали.
+- **Монеты за Stars** — `tg-api` создаёт инвойс
+  (`createInvoiceLink`, currency `XTR`) по ключу пачки из
+  `supabase/functions/_shared/coinPacks.ts` (единственный источник
+  цен, клиентской цене никогда не доверяем); клиент открывает его
+  через `invoice.open(url, 'url')` из `@telegram-apps/sdk`.
+  Начисление — **только** по факту реального
+  `successful_payment`-вебхука в `tg-webhook`, никогда по запросу
+  клиента; идемпотентно по `telegram_payment_charge_id`
+  (`star_purchases`, `credit_star_purchase`) — повторный вебхук не
+  начислит монеты дважды.
+- После этой миграции нужно один раз переслать вебхук с новым
+  `pre_checkout_query` в `allowed_updates` — дёрнуть `tg-webhook`
+  так же, как при первой настройке (см. секцию Edge Function выше),
+  секретом `WEBHOOK_SECRET`.
 
 ## Настройки, крэши, лимиты
 

@@ -80,7 +80,22 @@ const meUser = {
   longest_streak: 9,
   longest_marathon_streak: 6,
   reminders_enabled: true,
+  equipped_frame: null,
 }
+
+const shopState = {
+  cosmetics: [
+    { key: 'frame_gold', title: 'Золотое кольцо', price_coins: 300, owned: false, equipped: false },
+    { key: 'frame_neon_blue', title: 'Неоновый синий', price_coins: 300, owned: false, equipped: false },
+    { key: 'frame_neon_pink', title: 'Неоновый розовый', price_coins: 300, owned: false, equipped: false },
+    { key: 'frame_rainbow', title: 'Радуга', price_coins: 600, owned: false, equipped: false },
+  ],
+}
+const COIN_PACKS = [
+  { key: 'coins_small', title: '500 монет', stars: 50, coins: 500 },
+  { key: 'coins_medium', title: '1 800 монет', stars: 150, coins: 1800 },
+  { key: 'coins_large', title: '5 500 монет', stars: 400, coins: 5500 },
+]
 const PERSONA_TESTS = {
   mock_categorical: {
     key: 'mock_categorical',
@@ -162,6 +177,42 @@ export const mockApi = {
     return { user: meUser }
   },
 
+  async shop_catalog() {
+    await wait(250)
+    return { cosmetics: shopState.cosmetics, coin_packs: COIN_PACKS }
+  },
+
+  async buy_cosmetic({ item_key }) {
+    await wait(300)
+    const item = shopState.cosmetics.find((c) => c.key === item_key)
+    if (!item) throw new Error('ITEM_NOT_FOUND')
+    if (item.owned) throw new Error('ALREADY_OWNED')
+    if (meUser.coins < item.price_coins) throw new Error('NOT_ENOUGH_COINS')
+    meUser.coins -= item.price_coins
+    item.owned = true
+    return { user: meUser, item_key }
+  },
+
+  async equip_frame({ item_key }) {
+    await wait(200)
+    if (item_key && !shopState.cosmetics.find((c) => c.key === item_key)?.owned) {
+      throw new Error('NOT_OWNED')
+    }
+    shopState.cosmetics.forEach((c) => (c.equipped = c.key === item_key))
+    meUser.equipped_frame = item_key ?? null
+    return { user: meUser }
+  },
+
+  async create_stars_invoice({ pack_key }) {
+    await wait(250)
+    const pack = COIN_PACKS.find((p) => p.key === pack_key)
+    if (!pack) throw new Error('UNKNOWN_PACK')
+    // В моке нет настоящей оплаты — сразу "начисляем", чтобы можно
+    // было визуально проверить экран без реального Telegram-клиента.
+    meUser.coins += pack.coins
+    return { invoice_url: null, mock_credited: pack.coins }
+  },
+
   async report_issue({ message }) {
     await wait(300)
     if (!message?.trim()) throw new Error('EMPTY_MESSAGE')
@@ -234,13 +285,14 @@ export const mockApi = {
       first_name: 'Dev',
       photo_url: null,
       avatar_key: meUser.avatar_key,
+      equipped_frame: meUser.equipped_frame,
       city: meUser.city,
       total_score: 1240,
       coins: 85,
     }
     const top = [
-      { rank: 1, tg_id: 1, username: 'quiz_master', first_name: 'Алина', photo_url: null, avatar_key: 'fox', city: 'Бишкек', total_score: 4820, coins: 210 },
-      { rank: 2, tg_id: 2, username: 'nikita', first_name: 'Никита', photo_url: null, avatar_key: 'robot', city: 'Алматы', total_score: 3390, coins: 150 },
+      { rank: 1, tg_id: 1, username: 'quiz_master', first_name: 'Алина', photo_url: null, avatar_key: 'fox', equipped_frame: 'frame_rainbow', city: 'Бишкек', total_score: 4820, coins: 210 },
+      { rank: 2, tg_id: 2, username: 'nikita', first_name: 'Никита', photo_url: null, avatar_key: 'robot', equipped_frame: 'frame_neon_blue', city: 'Алматы', total_score: 3390, coins: 150 },
       { rank: 3, tg_id: 3, username: null, first_name: 'Асель', photo_url: null, avatar_key: 'owl', city: null, total_score: 2005, coins: 90 },
       me,
       { rank: 5, tg_id: 5, username: 'bob', first_name: 'Боб', photo_url: null, city: 'Москва', total_score: 980, coins: 40 },

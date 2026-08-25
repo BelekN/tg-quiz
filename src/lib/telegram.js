@@ -17,7 +17,11 @@ import {
   requestFullscreen,
   addToHomeScreen,
   checkHomeScreenStatus,
+  openInvoice,
+  isInvoiceSupported,
 } from '@telegram-apps/sdk'
+
+export { openInvoice, isInvoiceSupported }
 import { getHapticsEnabled } from './preferences'
 
 export { backButton, mainButton, secondaryButton }

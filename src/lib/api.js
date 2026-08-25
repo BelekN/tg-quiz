@@ -125,6 +125,18 @@ export const setRemindersEnabled = (enabled) =>
 /** Сохранить выбранную аватарку. avatarKey=null -> вернуть фото Telegram. -> { user } */
 export const setAvatar = (avatarKey) => call('set_avatar', { avatar_key: avatarKey })
 
+/** Каталог магазина: косметика (за монеты) + пачки монет (за Stars). -> { cosmetics, coin_packs } */
+export const fetchShopCatalog = () => call('shop_catalog')
+
+/** Купить косметику за монеты. -> { user, item_key } */
+export const buyCosmetic = (itemKey) => call('buy_cosmetic', { item_key: itemKey })
+
+/** Надеть/снять (null) купленную рамку аватарки. -> { user } */
+export const equipFrame = (itemKey) => call('equip_frame', { item_key: itemKey })
+
+/** Инвойс на пачку монет за Stars — открывать через invoice.open(url, 'url'). -> { invoice_url } */
+export const createStarsInvoice = (packKey) => call('create_stars_invoice', { pack_key: packKey })
+
 /** Категории соло-режима с числом вопросов. -> { categories: [{category, count}] } */
 export const fetchCategories = () => call('categories')
 
