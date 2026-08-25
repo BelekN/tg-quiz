@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import Screen from '../components/Screen'
+import TabBarSpacer from '../components/TabBarSpacer'
 import Avatar from '../components/Avatar'
 import CityPrompt from '../components/CityPrompt'
 import { haptic, getHomeScreenStatus, promptAddToHomeScreen } from '../lib/telegram'
@@ -40,7 +41,7 @@ export default function ProfileScreen({
   }
 
   return (
-    <Screen className="pb-40">
+    <Screen>
       <header className="flex items-center gap-3">
         <Avatar
           src={tgUser?.photoUrl || user?.photo_url}
@@ -88,6 +89,8 @@ export default function ProfileScreen({
         <ProfileRow icon="📜" label="История игр" onClick={onHistory} />
         <ProfileRow icon="⚙️" label="Настройки" onClick={onSettings} />
       </div>
+
+      <TabBarSpacer />
     </Screen>
   )
 }

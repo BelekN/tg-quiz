@@ -1,4 +1,5 @@
 import Screen from '../components/Screen'
+import TabBarSpacer from '../components/TabBarSpacer'
 import ModeCard from '../components/ModeCard'
 import { haptic } from '../lib/telegram'
 
@@ -9,7 +10,7 @@ import { haptic } from '../lib/telegram'
  */
 export default function FunHubScreen({ onPersona, onCompat }) {
   return (
-    <Screen className="pb-40">
+    <Screen>
       <header>
         <h1 className="text-lg font-bold">🔮 Для удовольствия</h1>
       </header>
@@ -41,6 +42,8 @@ export default function FunHubScreen({ onPersona, onCompat }) {
         <ModeCard icon="🌟" title="Гороскоп" subtitle="Что говорят звёзды сегодня" soon />
         <ModeCard icon="🔢" title="Нумерология" subtitle="Числа, которые о тебе говорят" soon />
       </div>
+
+      <TabBarSpacer />
     </Screen>
   )
 }

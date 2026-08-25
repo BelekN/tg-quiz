@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import Screen from '../components/Screen'
+import TabBarSpacer from '../components/TabBarSpacer'
 import Avatar from '../components/Avatar'
 import { Loader, ErrorView } from '../components/StateView'
 import {
@@ -149,7 +150,7 @@ export default function ShopScreen({ user, onUpdateUser }) {
   })).filter((s) => s.items.length > 0)
 
   return (
-    <Screen className="pb-40">
+    <Screen>
       <header>
         <h1 className="text-lg font-bold">🛍 Магазин</h1>
       </header>
@@ -215,6 +216,8 @@ export default function ShopScreen({ user, onUpdateUser }) {
           </div>
         ))}
       </div>
+
+      <TabBarSpacer />
     </Screen>
   )
 }

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Screen from '../components/Screen'
+import TabBarSpacer from '../components/TabBarSpacer'
 import Avatar from '../components/Avatar'
 import ModeCard from '../components/ModeCard'
 import RankListModal from '../components/RankListModal'
@@ -30,7 +31,7 @@ export default function HomeScreen({
   const [showRanks, setShowRanks] = useState(false)
 
   return (
-    <Screen className="pb-40">
+    <Screen>
       <header className="flex items-center gap-3">
         <Avatar
           src={tgUser?.photoUrl || user?.photo_url}
@@ -175,6 +176,8 @@ export default function HomeScreen({
       {showRanks && (
         <RankListModal totalScore={user?.total_score} onClose={() => setShowRanks(false)} />
       )}
+
+      <TabBarSpacer />
     </Screen>
   )
 }
