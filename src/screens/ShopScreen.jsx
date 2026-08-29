@@ -114,6 +114,28 @@ export default function ShopScreen({ user, onUpdateUser }) {
     }
   }
 
+  // Вернуть фото из Telegram — раньше жило на отдельном экране выбора
+  // аватарки, но с тех пор как все аватарки стали платными, менять их
+  // можно только тут же, в Магазине.
+  const RESET_AVATAR_KEY = '__reset_avatar__'
+  const resetAvatar = async () => {
+    if (busyKey) return
+    haptic.tap()
+    setBusyKey(RESET_AVATAR_KEY)
+    try {
+      const res = await setAvatar(null)
+      onUpdateUser(res.user)
+      setState((s) => ({
+        ...s,
+        cosmetics: s.cosmetics.map((c) => (c.type === 'avatar_image' ? { ...c, equipped: false } : c)),
+      }))
+    } catch {
+      haptic.error()
+    } finally {
+      setBusyKey(null)
+    }
+  }
+
   // Настоящее начисление монет приходит через вебхук Telegram, не
   // отсюда — invoice.open() тут только про UX: если статус "paid",
   // недолго опрашиваем me(), чтобы показать обновившийся баланс,
@@ -212,18 +234,34 @@ export default function ShopScreen({ user, onUpdateUser }) {
             <p className="mt-6 mb-3 px-1 text-[11px] font-semibold uppercase tracking-wider text-tg-hint">
               {SECTION_TITLES[section.type]}
             </p>
-            <div className="grid grid-cols-3 gap-2.5">
-              {section.items.map((item) => (
-                <CosmeticCell
-                  key={item.key}
-                  item={item}
-                  user={user}
-                  busy={busyKey === item.key}
-                  onBuy={() => buy(item)}
-                  onEquip={() => equip(item)}
-                />
-              ))}
+            {/* Одна общая карточка на секцию — как ряды бонусов в Wallet,
+                а не отдельный квадрат с рамкой на каждый лот: так секция
+                из 10+ позиций не растягивает экран визуальным "весом"
+                каждой отдельной рамки/тени. */}
+            <div className="animate-rise rounded-3xl bg-tg-section p-3">
+              <div className="grid grid-cols-4 gap-x-1 gap-y-4">
+                {section.items.map((item) => (
+                  <CosmeticCell
+                    key={item.key}
+                    item={item}
+                    user={user}
+                    busy={busyKey === item.key}
+                    onBuy={() => buy(item)}
+                    onEquip={() => equip(item)}
+                  />
+                ))}
+              </div>
             </div>
+            {section.type === 'avatar_image' && user?.avatar_key && (
+              <button
+                type="button"
+                disabled={busyKey !== null}
+                onClick={resetAvatar}
+                className="mt-2 px-1 text-[12.5px] font-medium text-tg-hint underline decoration-tg-hint/40 underline-offset-2 disabled:opacity-40"
+              >
+                {busyKey === RESET_AVATAR_KEY ? 'Возвращаем…' : 'Вернуть фото из Telegram'}
+              </button>
+            )}
           </div>
         ))
       ) : (
@@ -233,22 +271,24 @@ export default function ShopScreen({ user, onUpdateUser }) {
               Оплата доступна только внутри Telegram.
             </p>
           )}
-          <div className="grid grid-cols-3 gap-2.5">
-            {coinPacks.map((pack) => (
-              <button
-                key={pack.key}
-                type="button"
-                disabled={busyKey === pack.key || !isInvoiceSupported()}
-                onClick={() => buyStars(pack)}
-                className="flex flex-col items-center gap-2 rounded-2xl border border-white/5 bg-tg-section px-2 py-4 text-center active:scale-95 disabled:opacity-40"
-              >
-                <span className="grid h-12 w-12 place-items-center rounded-2xl bg-quiz-gold/15 text-2xl">
-                  🪙
-                </span>
-                <span className="line-clamp-2 text-[12.5px] font-bold leading-tight">{pack.title}</span>
-                <span className="text-[11px] font-semibold text-tg-hint">⭐ {formatNumber(pack.stars)}</span>
-              </button>
-            ))}
+          <div className="animate-rise rounded-3xl bg-tg-section p-3">
+            <div className="grid grid-cols-4 gap-x-1 gap-y-4">
+              {coinPacks.map((pack) => (
+                <button
+                  key={pack.key}
+                  type="button"
+                  disabled={busyKey === pack.key || !isInvoiceSupported()}
+                  onClick={() => buyStars(pack)}
+                  className="flex flex-col items-center gap-1.5 text-center transition-transform active:scale-95 disabled:opacity-40"
+                >
+                  <span className="grid h-11 w-11 place-items-center rounded-full bg-quiz-gold/15 text-xl">
+                    🪙
+                  </span>
+                  <span className="line-clamp-2 text-[11.5px] font-bold leading-tight">{pack.title}</span>
+                  <span className="text-[10.5px] font-semibold text-tg-hint">⭐ {formatNumber(pack.stars)}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}
@@ -274,38 +314,47 @@ function CosmeticCell({ item, user, busy, onBuy, onEquip }) {
       type="button"
       disabled={disabled}
       onClick={tap}
-      className={`flex flex-col items-center gap-2 rounded-2xl border px-2 py-4 text-center transition-colors active:scale-95 disabled:opacity-40 ${
-        item.equipped ? 'border-tg-accent bg-tg-accent/10' : 'border-white/5 bg-tg-section'
-      }`}
+      className="flex flex-col items-center gap-1.5 text-center transition-transform active:scale-95 disabled:opacity-40"
     >
-      {item.type === 'avatar_image' ? (
-        <Avatar avatarKey={item.key} name={item.title} size={48} />
-      ) : item.type === 'avatar_frame' ? (
-        <Avatar
-          avatarKey={user?.avatar_key}
-          src={user?.photo_url}
-          frameKey={item.key}
-          name={user?.first_name}
-          size={48}
-        />
-      ) : (
-        <span className="grid h-12 w-12 place-items-center rounded-2xl bg-tg-accent/15 text-2xl">
-          {item.type === 'badge' ? '🏷️' : '🧊'}
-        </span>
-      )}
+      <span className="relative">
+        {item.type === 'avatar_image' ? (
+          <Avatar avatarKey={item.key} name={item.title} size={44} />
+        ) : item.type === 'avatar_frame' ? (
+          <Avatar
+            avatarKey={user?.avatar_key}
+            src={user?.photo_url}
+            frameKey={item.key}
+            name={user?.first_name}
+            size={44}
+          />
+        ) : (
+          <span className="grid h-11 w-11 place-items-center rounded-full bg-tg-accent/15 text-xl">
+            {item.type === 'badge' ? '🏷️' : '🧊'}
+          </span>
+        )}
+        {/* Отметка "надето" — прямо на кружке, а не рамкой вокруг всей
+            ячейки: у рамок аватарки своё собственное кольцо/свечение по
+            тиру (см. frames.js), и внешняя рамка-выделение путалась бы с
+            превью самого товара. */}
+        {item.equipped && (
+          <span className="absolute -bottom-0.5 -right-0.5 grid h-4 w-4 place-items-center rounded-full bg-tg-accent text-[9px] text-tg-accent-text ring-2 ring-tg-section">
+            ✓
+          </span>
+        )}
+      </span>
 
-      <span className="line-clamp-2 text-[12.5px] font-bold leading-tight">{item.title}</span>
+      <span className="line-clamp-2 text-[11.5px] font-bold leading-tight">{item.title}</span>
 
       {item.stackable ? (
-        <span className="text-[11px] font-semibold text-tg-hint">
+        <span className="text-[10.5px] font-semibold text-tg-hint">
           ×{formatNumber(item.stock)} · {formatNumber(item.price_coins)}
         </span>
       ) : item.owned ? (
-        <span className={`text-[11px] font-bold ${item.equipped ? 'text-tg-accent' : 'text-quiz-right'}`}>
+        <span className={`text-[10.5px] font-bold ${item.equipped ? 'text-tg-accent' : 'text-quiz-right'}`}>
           {item.equipped ? 'Надето' : 'Куплено'}
         </span>
       ) : (
-        <span className="text-[11px] font-bold text-quiz-gold">{formatNumber(item.price_coins)}</span>
+        <span className="text-[10.5px] font-bold text-quiz-gold">{formatNumber(item.price_coins)}</span>
       )}
     </button>
   )

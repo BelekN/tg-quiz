@@ -23,7 +23,6 @@ import MarathonScreen from './screens/MarathonScreen'
 import MarathonResultScreen from './screens/MarathonResultScreen'
 import SprintScreen from './screens/SprintScreen'
 import SprintResultScreen from './screens/SprintResultScreen'
-import AvatarPickerScreen from './screens/AvatarPickerScreen'
 import PersonaListScreen from './screens/PersonaListScreen'
 import PersonaQuizScreen from './screens/PersonaQuizScreen'
 import PersonaResultScreen from './screens/PersonaResultScreen'
@@ -48,7 +47,6 @@ import {
   rematchDuel,
   parseDuelStartParam,
   setCity,
-  setAvatar,
   startSolo,
   finishSolo,
   startSprint,
@@ -139,7 +137,6 @@ export default function App() {
   const [reportContext, setReportContext] = useState(null)
   // Аватарку можно открыть и с "Играть", и с "Профиль" — запоминаем,
   // куда вернуться после выбора, а не жёстко на одну вкладку.
-  const [avatarReturnTo, setAvatarReturnTo] = useState('profile')
 
   const tgUser = getTgUser()
 
@@ -313,17 +310,7 @@ export default function App() {
     setUser(res.user)
   }, [])
 
-  const pickAvatar = useCallback(async (avatarKey) => {
-    try {
-      const res = await setAvatar(avatarKey)
-      setUser(res.user)
-      setScreen(avatarReturnTo)
-    } catch (e) {
-      showError(e)
-    }
-  }, [showError, avatarReturnTo])
-
-  const pickCategory = useCallback(async (category, difficulty) => {
+const pickCategory = useCallback(async (category, difficulty) => {
     try {
       const started = await startSolo(category, difficulty)
       setSolo(started)
@@ -666,15 +653,6 @@ export default function App() {
     case 'achievements':
       return <AchievementsScreen onBack={() => setScreen('profile')} />
 
-    case 'avatar-picker':
-      return (
-        <AvatarPickerScreen
-          currentAvatarKey={user?.avatar_key}
-          onBack={() => setScreen(avatarReturnTo)}
-          onPick={pickAvatar}
-        />
-      )
-
     case 'categories':
       return (
         <CategoryScreen onBack={() => setScreen('home')} onPick={pickCategory} />
@@ -887,10 +865,7 @@ export default function App() {
           user={user}
           tgUser={tgUser}
           onSaveCity={saveCity}
-          onEditAvatar={() => {
-            setAvatarReturnTo('profile')
-            setScreen('avatar-picker')
-          }}
+          onEditAvatar={() => setScreen('shop')}
           onLeaderboard={() => setScreen('leaderboard')}
           onAchievements={() => setScreen('achievements')}
           onHistory={() => setScreen('history')}
@@ -909,10 +884,7 @@ export default function App() {
           onSprint={() => setScreen('sprint-intro')}
           onDaily={() => setScreen('daily-intro')}
           onMarathon={() => setScreen('marathon-intro')}
-          onEditAvatar={() => {
-            setAvatarReturnTo('home')
-            setScreen('avatar-picker')
-          }}
+          onEditAvatar={() => setScreen('shop')}
           onShop={() => setScreen('shop')}
         />
       )

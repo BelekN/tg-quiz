@@ -87,6 +87,7 @@ const meUser = {
 
 const shopState = {
   cosmetics: [
+    { key: 'avatar_frog', type: 'avatar_image', title: 'Лягушка', price_coins: 200, stackable: false, owned: false, equipped: false },
     { key: 'avatar_sloth', type: 'avatar_image', title: 'Ленивец', price_coins: 200, stackable: false, owned: false, equipped: false },
     { key: 'avatar_cat', type: 'avatar_image', title: 'Кот', price_coins: 200, stackable: false, owned: false, equipped: false },
     { key: 'avatar_deer', type: 'avatar_image', title: 'Оленёнок', price_coins: 200, stackable: false, owned: false, equipped: false },
@@ -98,7 +99,6 @@ const shopState = {
     { key: 'avatar_crocodile', type: 'avatar_image', title: 'Крокодил', price_coins: 320, stackable: false, owned: false, equipped: false },
     { key: 'avatar_lion', type: 'avatar_image', title: 'Лев', price_coins: 380, stackable: false, owned: false, equipped: false },
     { key: 'avatar_tiger', type: 'avatar_image', title: 'Тигр', price_coins: 380, stackable: false, owned: false, equipped: false },
-    { key: 'avatar_frog', type: 'avatar_image', title: 'Лягушка', price_coins: 200, stackable: false, owned: false, equipped: false },
     { key: 'frame_gold', type: 'avatar_frame', title: 'Золотое кольцо', price_coins: 140, stackable: false, owned: false, equipped: false },
     { key: 'frame_neon_blue', type: 'avatar_frame', title: 'Неоновый синий', price_coins: 140, stackable: false, owned: false, equipped: false },
     { key: 'frame_neon_pink', type: 'avatar_frame', title: 'Неоновый розовый', price_coins: 140, stackable: false, owned: false, equipped: false },
