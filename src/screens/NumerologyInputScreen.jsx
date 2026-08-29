@@ -62,7 +62,7 @@ export default function NumerologyInputScreen({ test, onBack, onSubmit }) {
             placeholder="ДД"
             value={day}
             onChange={(e) => setDay(e.target.value.replace(/\D/g, '').slice(0, 2))}
-            className="w-full rounded-xl bg-tg-bg px-3 py-3 text-center text-lg font-semibold text-tg-text outline-none"
+            className="min-w-0 flex-1 rounded-xl bg-tg-bg px-3 py-3 text-center text-lg font-semibold text-tg-text outline-none"
           />
           <input
             inputMode="numeric"
@@ -70,7 +70,7 @@ export default function NumerologyInputScreen({ test, onBack, onSubmit }) {
             placeholder="ММ"
             value={month}
             onChange={(e) => setMonth(e.target.value.replace(/\D/g, '').slice(0, 2))}
-            className="w-full rounded-xl bg-tg-bg px-3 py-3 text-center text-lg font-semibold text-tg-text outline-none"
+            className="min-w-0 flex-1 rounded-xl bg-tg-bg px-3 py-3 text-center text-lg font-semibold text-tg-text outline-none"
           />
           <input
             inputMode="numeric"
@@ -78,7 +78,7 @@ export default function NumerologyInputScreen({ test, onBack, onSubmit }) {
             placeholder="ГГГГ"
             value={year}
             onChange={(e) => setYear(e.target.value.replace(/\D/g, '').slice(0, 4))}
-            className="w-full flex-[1.4] rounded-xl bg-tg-bg px-3 py-3 text-center text-lg font-semibold text-tg-text outline-none"
+            className="min-w-0 flex-[1.4] rounded-xl bg-tg-bg px-3 py-3 text-center text-lg font-semibold text-tg-text outline-none"
           />
         </div>
         {touched && !valid && (
