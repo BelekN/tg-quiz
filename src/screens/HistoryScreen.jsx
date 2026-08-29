@@ -6,6 +6,8 @@ import { Loader, ErrorView } from '../components/StateView'
 import { fetchHistory } from '../lib/api'
 import { categoryMeta } from '../lib/categories'
 import { formatNumber } from '../lib/format'
+import { haptic } from '../lib/telegram'
+import HistoryDetailScreen from './HistoryDetailScreen'
 
 const OUTCOME_BADGE = {
   win: { label: 'Победа', className: 'text-quiz-right' },
@@ -23,6 +25,7 @@ const dateFormatter = new Intl.DateTimeFormat('ru', {
 
 export default function HistoryScreen({ onBack }) {
   const [state, setState] = useState({ status: 'loading', items: [] })
+  const [selected, setSelected] = useState(null)
 
   useEffect(() => {
     let alive = true
@@ -41,6 +44,15 @@ export default function HistoryScreen({ onBack }) {
   if (state.status === 'loading') return <Loader label="Загружаем историю…" />
   if (state.status === 'error') return <ErrorView code={state.code} onRetry={onBack} />
 
+  if (selected) {
+    return <HistoryDetailScreen item={selected} onBack={() => setSelected(null)} />
+  }
+
+  const open = (item) => {
+    haptic.tap()
+    setSelected(item)
+  }
+
   return (
     <Screen>
       <header className="flex items-center gap-3">
@@ -55,23 +67,30 @@ export default function HistoryScreen({ onBack }) {
           </p>
         )}
 
-        {state.items.map((item) =>
-          item.kind === 'duel' ? (
-            <DuelRow key={item.id} item={item} />
-          ) : item.kind === 'solo' ? (
-            <SoloRow key={item.id} item={item} />
-          ) : item.kind === 'persona' ? (
-            <PersonaRow key={item.id} item={item} />
-          ) : item.kind === 'daily' ? (
-            <DailyRow key={item.id} item={item} />
-          ) : item.kind === 'marathon' ? (
-            <MarathonRow key={item.id} item={item} />
-          ) : item.kind === 'compat' ? (
-            <CompatRow key={item.id} item={item} />
-          ) : (
-            <SprintRow key={item.id} item={item} />
-          ),
-        )}
+        {state.items.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => open(item)}
+            className="w-full text-left active:scale-[0.98]"
+          >
+            {item.kind === 'duel' ? (
+              <DuelRow item={item} />
+            ) : item.kind === 'solo' ? (
+              <SoloRow item={item} />
+            ) : item.kind === 'persona' ? (
+              <PersonaRow item={item} />
+            ) : item.kind === 'daily' ? (
+              <DailyRow item={item} />
+            ) : item.kind === 'marathon' ? (
+              <MarathonRow item={item} />
+            ) : item.kind === 'compat' ? (
+              <CompatRow item={item} />
+            ) : (
+              <SprintRow item={item} />
+            )}
+          </button>
+        ))}
       </div>
     </Screen>
   )
