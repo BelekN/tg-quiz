@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import ResultCard from '../components/ResultCard'
 import Screen from '../components/Screen'
 import CompatBreakdown from '../components/CompatBreakdown'
+import BottomButtonSpacer from '../components/BottomButtonSpacer'
 import { useMainButton } from '../hooks/useBottomButton'
 import { categoryMeta } from '../lib/categories'
 import { compatVerdict } from '../lib/compatVerdict'
@@ -142,6 +143,7 @@ function PersonaDetail({ item, onBack }) {
       <div className="animate-rise mt-7 rounded-3xl border border-white/5 bg-tg-section p-5">
         <p className="text-center text-[15px] leading-relaxed text-tg-text">{item.description}</p>
       </div>
+      <BottomButtonSpacer />
     </Screen>
   )
 }
@@ -178,6 +180,7 @@ function CompatDetail({ item, onBack }) {
           <CompatBreakdown items={detail.items} />
         </div>
       )}
+      <BottomButtonSpacer />
     </Screen>
   )
 }
