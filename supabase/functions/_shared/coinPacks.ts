@@ -18,6 +18,7 @@ export const COIN_PACKS: CoinPack[] = [
   { key: "coins_small", title: "100 монет", stars: 50, coins: 100 },
   { key: "coins_medium", title: "300 монет", stars: 150, coins: 300 },
   { key: "coins_large", title: "800 монет", stars: 400, coins: 800 },
+  { key: "coins_xlarge", title: "1600 монет", stars: 800, coins: 1600 },
 ];
 
 export function findCoinPack(key: string): CoinPack | null {

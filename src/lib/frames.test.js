@@ -4,7 +4,10 @@ import { frameBackground, FRAME_META } from './frames'
 describe('frameBackground', () => {
   it('resolves a known frame to a CSS background value', () => {
     expect(frameBackground('frame_gold')).toBe(FRAME_META.frame_gold.background)
-    expect(frameBackground('frame_gold')).toMatch(/gradient/)
+    // tier 1 — простой цвет, без градиента (см. frames.js)
+    expect(frameBackground('frame_gold')).not.toMatch(/gradient/)
+    // tier 3 — градиент
+    expect(frameBackground('frame_rainbow')).toMatch(/gradient/)
   })
 
   it('returns null for no frame / unknown frame', () => {

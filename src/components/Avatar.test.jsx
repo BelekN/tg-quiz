@@ -9,12 +9,18 @@ describe('Avatar', () => {
     expect(container.querySelectorAll('div').length).toBe(1)
   })
 
-  it('wraps the avatar in a gradient-background frame when frameKey resolves', () => {
+  it('wraps the avatar in a colored frame when frameKey resolves', () => {
     const { container } = render(<Avatar name="Dev" frameKey="frame_gold" />)
     const outer = container.firstChild
-    expect(outer.style.background).toMatch(/gradient/)
+    expect(outer.style.background).toBeTruthy()
     // рамка -> прослойка фона -> сам круг = 3 вложенных div
     expect(container.querySelectorAll('div').length).toBe(3)
+  })
+
+  it('wraps the avatar in a gradient-background frame for a gradient tier', () => {
+    const { container } = render(<Avatar name="Dev" frameKey="frame_rainbow" />)
+    const outer = container.firstChild
+    expect(outer.style.background).toMatch(/gradient/)
   })
 
   it('ignores an unknown frameKey the same as no frame', () => {
