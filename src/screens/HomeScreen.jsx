@@ -53,6 +53,14 @@ export default function HomeScreen({
                 🔥 {user.current_streak} {pluralDays(user.current_streak)} подряд
               </span>
             )}
+            {/* Запас заморозок — не только в Магазине, а тут же, где видна
+                сама серия: иначе после покупки не понятно, прошла она
+                или нет (в Магазине это мелкая подпись под лотом). */}
+            {user?.streak_freezes > 0 && (
+              <span className="ml-1.5 text-xs font-normal text-tg-hint">
+                🧊×{user.streak_freezes}
+              </span>
+            )}
           </p>
           {badgeLabel(user?.equipped_badge) && (
             <p className="truncate text-[12px] font-medium text-tg-accent">
