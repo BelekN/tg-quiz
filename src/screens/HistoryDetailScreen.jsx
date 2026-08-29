@@ -1,8 +1,11 @@
+import { useEffect, useState } from 'react'
 import ResultCard from '../components/ResultCard'
 import Screen from '../components/Screen'
+import CompatBreakdown from '../components/CompatBreakdown'
 import { useMainButton } from '../hooks/useBottomButton'
 import { categoryMeta } from '../lib/categories'
 import { compatVerdict } from '../lib/compatVerdict'
+import { fetchCompatDetail } from '../lib/api'
 
 const OUTCOME = {
   win: { emoji: '🏆', title: 'Победа!', color: 'text-quiz-gold' },
@@ -146,7 +149,20 @@ function PersonaDetail({ item, onBack }) {
 function CompatDetail({ item, onBack }) {
   const verdict = compatVerdict(item.match_percent)
   const partnerName = item.partner?.first_name || item.partner?.username || 'Партнёр'
+  const [detail, setDetail] = useState(null)
   useMainButton({ text: 'Назад', onClick: onBack })
+
+  useEffect(() => {
+    let alive = true
+    fetchCompatDetail(item.id)
+      .then((res) => {
+        if (alive) setDetail(res)
+      })
+      .catch(() => {}) // необязательное дополнение — молча пропускаем
+    return () => {
+      alive = false
+    }
+  }, [item.id])
 
   return (
     <Screen className="items-center justify-center text-center">
@@ -156,6 +172,12 @@ function CompatDetail({ item, onBack }) {
         {item.icon} {item.test_title} · с {partnerName}
       </p>
       <p className="mt-2 max-w-xs text-sm text-tg-hint">{verdict.text}</p>
+
+      {detail && (
+        <div className="animate-rise mt-6 w-full max-w-xs">
+          <CompatBreakdown items={detail.items} />
+        </div>
+      )}
     </Screen>
   )
 }

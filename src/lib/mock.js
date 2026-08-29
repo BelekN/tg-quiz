@@ -654,6 +654,19 @@ export const mockApi = {
     }
   },
 
+  async compat_detail() {
+    await wait(200)
+    return {
+      items: COMPAT_QUESTIONS.map((q, i) => ({
+        question: q.question,
+        my_answer: q.options[0],
+        partner_answer: q.options[i % 2],
+        matched: i % 2 === 0,
+      })),
+      match_percent: 72,
+    }
+  },
+
   async buy_persona_category({ category }) {
     await wait(300)
     const tests = Object.values(PERSONA_TESTS).filter((t) => t.category === category)

@@ -704,6 +704,16 @@ Deno.serve(async (req) => {
         return json(data);
       }
 
+      // ---- совместимость: разбивка по вопросам (только для завершённой сессии) ----
+      case "compat_detail": {
+        const { data, error } = await supabase.rpc("get_compat_detail", {
+          p_tg_id: tgId,
+          p_session_id: payload.session_id,
+        });
+        if (error) throw error;
+        return json(data);
+      }
+
       // ---- нумерология: каталог ----
       case "numerology_tests": {
         const { data, error } = await supabase.rpc("get_numerology_tests", { p_tg_id: tgId });

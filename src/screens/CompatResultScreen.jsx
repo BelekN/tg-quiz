@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import Screen from '../components/Screen'
-import { fetchCompatProgress } from '../lib/api'
+import CompatBreakdown from '../components/CompatBreakdown'
+import { fetchCompatProgress, fetchCompatDetail } from '../lib/api'
 import { haptic, shareCompatLink } from '../lib/telegram'
 import { compatVerdict } from '../lib/compatVerdict'
 
@@ -15,9 +16,26 @@ const POLL_MS = 4000
 export default function CompatResultScreen({ sessionId, role, title, initial, onHome, onPlayAgain }) {
   const [state, setState] = useState(initial)
   const [shared, setShared] = useState(false)
+  const [detail, setDetail] = useState(null)
 
   const completed = state.session_completed ?? state.completed ?? false
   const matchPercent = state.match_percent
+
+  // Постатейная разбивка грузится отдельно и лениво — доступна только
+  // когда сессия уже завершена (см. get_compat_detail), поэтому нет
+  // смысла запрашивать её раньше.
+  useEffect(() => {
+    if (!completed) return
+    let alive = true
+    fetchCompatDetail(sessionId)
+      .then((res) => {
+        if (alive) setDetail(res)
+      })
+      .catch(() => {}) // необязательное дополнение — молча пропускаем
+    return () => {
+      alive = false
+    }
+  }, [completed, sessionId])
 
   useEffect(() => {
     if (completed) return
@@ -52,6 +70,13 @@ export default function CompatResultScreen({ sessionId, role, title, initial, on
         <div className="text-5xl">{verdict.emoji}</div>
         <h1 className="animate-rise mt-4 text-2xl font-bold">{matchPercent}% совпадения</h1>
         <p className="mt-2 max-w-xs text-sm text-tg-hint">{verdict.text}</p>
+
+        {detail && (
+          <div className="animate-rise mt-6 w-full max-w-xs">
+            <CompatBreakdown items={detail.items} />
+          </div>
+        )}
+
         <button
           type="button"
           onClick={onPlayAgain}
@@ -62,7 +87,7 @@ export default function CompatResultScreen({ sessionId, role, title, initial, on
         <button
           type="button"
           onClick={onHome}
-          className="mt-2.5 w-full max-w-xs rounded-2xl bg-tg-surface px-6 py-3.5 text-[15px] font-semibold text-tg-text active:scale-[0.98]"
+          className="mt-2.5 mb-6 w-full max-w-xs rounded-2xl bg-tg-surface px-6 py-3.5 text-[15px] font-semibold text-tg-text active:scale-[0.98]"
         >
           На главную
         </button>

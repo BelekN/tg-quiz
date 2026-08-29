@@ -231,6 +231,9 @@ export const answerCompat = (sessionId, questionId, optionIndex) =>
 /** Поллинг для того, кто уже ответил и ждёт партнёра. -> { guest_joined, guest_answered, total, completed, match_percent } */
 export const fetchCompatProgress = (sessionId) => call('compat_progress', { session_id: sessionId })
 
+/** Разбивка по вопросам — только для уже завершённой сессии. -> { items: [{question, my_answer, partner_answer, matched}], match_percent } */
+export const fetchCompatDetail = (sessionId) => call('compat_detail', { session_id: sessionId })
+
 /** duel_<uuid> -> uuid */
 export function parseDuelStartParam(startParam) {
   const m = /^duel_([0-9a-fA-F-]{36})$/.exec(startParam ?? '')
