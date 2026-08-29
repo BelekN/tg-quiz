@@ -118,7 +118,7 @@ export default function HomeScreen({
           haptic.tap()
           onCreateDuel()
         }}
-        className="animate-rise mt-7 w-full rounded-3xl bg-tg-accent px-6 py-6 text-left shadow-xl shadow-tg-accent/25 transition-transform active:scale-[0.98] disabled:opacity-60"
+        className="animate-rise mt-7 w-full rounded-3xl bg-tg-accent px-6 py-6 text-center shadow-xl shadow-tg-accent/25 transition-transform active:scale-[0.98] disabled:opacity-60"
       >
         <span className="block text-[20px] font-bold text-tg-accent-text">
           {busy ? 'Готовим вопросы…' : '⚔️ Создать дуэль'}
