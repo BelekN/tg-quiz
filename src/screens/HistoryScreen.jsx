@@ -66,6 +66,8 @@ export default function HistoryScreen({ onBack }) {
             <DailyRow key={item.id} item={item} />
           ) : item.kind === 'marathon' ? (
             <MarathonRow key={item.id} item={item} />
+          ) : item.kind === 'compat' ? (
+            <CompatRow key={item.id} item={item} />
           ) : (
             <SprintRow key={item.id} item={item} />
           ),
@@ -185,6 +187,25 @@ function DailyRow({ item }) {
           {item.correct}/{item.total}
         </p>
       }
+    />
+  )
+}
+
+function CompatRow({ item }) {
+  const partnerName = item.partner?.first_name || item.partner?.username || 'Партнёр'
+  return (
+    <Card
+      icon={
+        <Avatar
+          src={item.partner?.photo_url}
+          avatarKey={item.partner?.avatar_key}
+          name={partnerName}
+          size={40}
+        />
+      }
+      title={`${item.icon} vs ${item.partner ? partnerName : '?'}`}
+      subtitle={`${item.test_title} · ${dateFormatter.format(new Date(item.happened_at))}`}
+      score={`${item.match_percent}%`}
     />
   )
 }

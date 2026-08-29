@@ -670,6 +670,27 @@ Deno.serve(async (req) => {
           p_option_index: payload.option_index,
         });
         if (error) throw error;
+
+        // Пуш второму участнику: без этого его результат было некому
+        // сообщить — партнёр почти всегда сворачивает мини-апп сразу
+        // после отправки инвайта (чтобы дотянуться до чата), поллинг
+        // останавливается вместе с JS, и без пуша итог терялся
+        // безвозвратно. startapp=compat_<id> ведёт назад в ЭТУ сессию —
+        // start_compat теперь резюмирует её сразу на экране результата.
+        const notify = data.notify;
+        delete data.notify;
+        if (notify) {
+          await sendTelegramMessage(
+            BOT_TOKEN,
+            notify.tg_id,
+            `💞 Партнёр прошёл тест на совместимость с тобой — ${notify.match_percent}% совпадения!`,
+            {
+              text: "Посмотреть результат",
+              url: appDeepLink(BOT_USERNAME, APP_SHORT_NAME, `compat_${payload.session_id}`),
+            },
+          ).catch(() => {});
+        }
+
         return json(data);
       }
 

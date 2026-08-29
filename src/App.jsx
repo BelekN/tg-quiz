@@ -186,13 +186,21 @@ export default function App() {
           return
         }
 
-        // ?startapp=compat_<uuid> -> гость сразу присоединяется к тесту
+        // ?startapp=compat_<uuid> -> гость присоединяется, а хост,
+        // открывший мини-апп по пушу "партнёр прошёл тест", резюмирует
+        // свою же сессию — если она уже завершена, сразу на результат,
+        // а не заново через вступление/вопросы.
         const compatId = parseCompatStartParam(me.start_param ?? getStartParam())
         if (compatId) {
           const joined = await startCompat(null, compatId)
           if (!alive) return
           setCompat(joined)
-          setScreen('compat-intro')
+          if (joined.session_completed) {
+            setCompatResult(joined)
+            setScreen('compat-result')
+          } else {
+            setScreen('compat-intro')
+          }
           return
         }
 
