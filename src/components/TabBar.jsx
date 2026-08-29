@@ -14,11 +14,19 @@ const TABS = [
  *
  * Крупные плашки (иконка + подпись внутри залитого закруглённого
  * блока у активной вкладки) — по образцу нижнего бара Telegram Wallet.
+ *
+ * Liquid Glass: плавающая капсула вместо сплошной полосы во всю
+ * ширину — таббар статичен, поэтому backdrop-blur считается один раз
+ * при появлении экрана, а не на каждый кадр скролла (в отличие от
+ * шапки экрана, которую в стекло сознательно НЕ переводим).
+ * px-3 на <nav> (не padding-bottom!) — safe-bottom уже занимает
+ * padding-bottom этого узла, а margin/padding на других осях с ним
+ * не конфликтует (см. TabBarSpacer.jsx про сам конфликт).
  */
 export default function TabBar({ active, onChange }) {
   return (
-    <nav className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-white/5 bg-tg-bg/95 backdrop-blur">
-      <div className="mx-auto flex max-w-md items-stretch justify-between gap-1.5 px-3 py-2">
+    <nav className="safe-bottom fixed inset-x-0 bottom-0 z-40 px-3">
+      <div className="mx-auto mb-2 flex max-w-md items-stretch justify-between gap-1.5 rounded-[24px] border border-glass-border bg-glass-surface px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.28),0_10px_28px_-6px_rgba(0,0,0,0.45)] backdrop-blur-[22px] backdrop-saturate-150">
         {TABS.map((tab) => {
           const isActive = active === tab.key
           return (
