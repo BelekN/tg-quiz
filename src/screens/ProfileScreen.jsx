@@ -42,11 +42,16 @@ export default function ProfileScreen({
 
   return (
     <Screen>
-      {/* Градиентная "шапка" — как карточка баланса/бонусов в Wallet,
-          вместо плоского фона. Очки/монеты сюда сознательно не
-          дублируем (см. комментарий класса выше) — только личность. */}
-      <div className="animate-rise rounded-3xl bg-gradient-to-b from-[#4fa9f5] to-[#2f6ee0] px-5 pb-6 pt-7">
-        <div className="flex justify-center">
+      {/* Градиентная "шапка" — сплошная заливка во всю ширину экрана
+          (как "Мои бонусы" в Wallet), а не карточка с отступами по
+          бокам. -mx-4 гасит горизонтальный px-4 у <Screen> (реальный,
+          рабочий паддинг — в отличие от его же pt-4/pb-6, которые
+          всегда бьёт safe-top/safe-bottom в каскаде); фон — absolute
+          inset-0 внутри relative-обёртки, поэтому подстраивается под
+          высоту контента сам, без гадания с фиксированным числом. */}
+      <div className="animate-rise relative -mx-4">
+        <div className="absolute inset-0 -z-10 rounded-b-[32px] bg-gradient-to-b from-[#4fa9f5] to-[#2f6ee0]" />
+        <div className="flex flex-col items-center px-4 pt-6 pb-6">
           <Avatar
             src={tgUser?.photoUrl || user?.photo_url}
             avatarKey={user?.avatar_key}
@@ -58,16 +63,16 @@ export default function ProfileScreen({
               onEditAvatar()
             }}
           />
+          <p className="mt-3 truncate text-center text-[19px] font-bold text-white">{name}</p>
+          {badgeLabel(user?.equipped_badge) && (
+            <p className="truncate text-center text-[13px] font-semibold text-white/80">
+              {badgeLabel(user.equipped_badge)}
+            </p>
+          )}
+          {user?.city && (
+            <p className="mt-0.5 truncate text-center text-xs text-white/60">📍 {user.city}</p>
+          )}
         </div>
-        <p className="mt-3 truncate text-center text-[19px] font-bold text-white">{name}</p>
-        {badgeLabel(user?.equipped_badge) && (
-          <p className="truncate text-center text-[13px] font-semibold text-white/80">
-            {badgeLabel(user.equipped_badge)}
-          </p>
-        )}
-        {user?.city && (
-          <p className="mt-0.5 truncate text-center text-xs text-white/60">📍 {user.city}</p>
-        )}
       </div>
 
       {user && !user.city && <CityPrompt onSave={onSaveCity} />}
