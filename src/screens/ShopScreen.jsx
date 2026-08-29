@@ -32,6 +32,7 @@ export default function ShopScreen({ user, onUpdateUser }) {
   const [notice, setNotice] = useState(null)
   const [coinPacks, setCoinPacks] = useState([])
   const [reloadToken, setReloadToken] = useState(0)
+  const [tab, setTab] = useState('cosmetics')
 
   useEffect(() => {
     let alive = true
@@ -154,9 +155,15 @@ export default function ShopScreen({ user, onUpdateUser }) {
       <header>
         <h1 className="text-lg font-bold">🛍 Магазин</h1>
       </header>
-      <p className="mt-1 text-sm text-tg-hint">
-        Баланс: <span className="font-semibold text-quiz-gold">{formatNumber(user?.coins)} монет</span>
-      </p>
+
+      {/* Крупная карточка баланса — как "Баланс" у Wallet: одно
+          большое число, а не мелкая строка текста. */}
+      <div className="animate-rise mt-4 rounded-3xl bg-quiz-gold/10 px-5 py-5 text-center">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-quiz-gold/80">Баланс</p>
+        <p className="mt-1 text-[34px] font-extrabold tabular-nums text-tg-text">
+          🪙 {formatNumber(user?.coins)}
+        </p>
+      </div>
 
       {notice && (
         <p className="animate-rise mt-3 rounded-xl bg-tg-section px-3.5 py-2.5 text-center text-[13px] text-tg-text">
@@ -164,58 +171,82 @@ export default function ShopScreen({ user, onUpdateUser }) {
         </p>
       )}
 
-      {bySection.map((section) => (
-        <div key={section.type}>
-          <p className="mt-6 mb-3 px-1 text-[11px] font-semibold uppercase tracking-wider text-tg-hint">
-            {SECTION_TITLES[section.type]}
-          </p>
+      {/* Сегмент-переключатель — как разделы вверху Wallet: два
+          состояния экрана вместо одной длинной прокрутки. */}
+      <div className="mt-5 flex gap-1 rounded-2xl bg-tg-section p-1">
+        {[
+          { key: 'cosmetics', label: 'Косметика' },
+          { key: 'coins', label: 'Монеты' },
+        ].map((seg) => (
+          <button
+            key={seg.key}
+            type="button"
+            onClick={() => {
+              if (tab !== seg.key) haptic.tap()
+              setTab(seg.key)
+            }}
+            className={`flex-1 rounded-xl py-2.5 text-[14px] font-bold transition-colors ${
+              tab === seg.key ? 'bg-tg-accent text-tg-accent-text' : 'text-tg-hint'
+            }`}
+          >
+            {seg.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'cosmetics' ? (
+        bySection.map((section) => (
+          <div key={section.type}>
+            <p className="mt-6 mb-3 px-1 text-[11px] font-semibold uppercase tracking-wider text-tg-hint">
+              {SECTION_TITLES[section.type]}
+            </p>
+            <div className="flex flex-col gap-2.5">
+              {section.items.map((item) => (
+                <CosmeticRow
+                  key={item.key}
+                  item={item}
+                  user={user}
+                  busy={busyKey === item.key}
+                  onBuy={() => buy(item)}
+                  onEquip={() => equip(item)}
+                />
+              ))}
+            </div>
+          </div>
+        ))
+      ) : (
+        <div className="mt-6">
+          {!isInvoiceSupported() && (
+            <p className="mb-3 px-1 text-xs text-tg-hint">
+              Оплата доступна только внутри Telegram.
+            </p>
+          )}
           <div className="flex flex-col gap-2.5">
-            {section.items.map((item) => (
-              <CosmeticRow
-                key={item.key}
-                item={item}
-                user={user}
-                busy={busyKey === item.key}
-                onBuy={() => buy(item)}
-                onEquip={() => equip(item)}
-              />
+            {coinPacks.map((pack) => (
+              <div
+                key={pack.key}
+                className="flex items-center gap-4 rounded-3xl border border-white/5 bg-tg-section px-4 py-4"
+              >
+                <span className="grid h-13 w-13 shrink-0 place-items-center rounded-2xl bg-quiz-gold/15 text-2xl">
+                  🪙
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-base font-bold">{pack.title}</p>
+                  <p className="text-sm text-tg-hint">⭐ {formatNumber(pack.stars)} Stars</p>
+                </div>
+                <button
+                  type="button"
+                  disabled={busyKey === pack.key || !isInvoiceSupported()}
+                  onClick={() => buyStars(pack)}
+                  className="shrink-0 rounded-2xl bg-tg-accent px-4 py-2.5 text-sm font-bold text-tg-accent-text active:scale-95 disabled:opacity-40"
+                >
+                  Купить
+                </button>
+              </div>
             ))}
           </div>
         </div>
-      ))}
-
-      <p className="mt-8 mb-3 px-1 text-[11px] font-semibold uppercase tracking-wider text-tg-hint">
-        Монеты за Stars
-      </p>
-      {!isInvoiceSupported() && (
-        <p className="mb-2 px-1 text-xs text-tg-hint">
-          Оплата доступна только внутри Telegram.
-        </p>
       )}
-      <div className="flex flex-col gap-2.5">
-        {coinPacks.map((pack) => (
-          <div
-            key={pack.key}
-            className="flex items-center gap-3.5 rounded-2xl border border-white/5 bg-tg-section px-3.5 py-3"
-          >
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-quiz-gold/15 text-xl">
-              🪙
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-[15px] font-semibold">{pack.title}</p>
-              <p className="text-xs text-tg-hint">⭐ {formatNumber(pack.stars)} Stars</p>
-            </div>
-            <button
-              type="button"
-              disabled={busyKey === pack.key || !isInvoiceSupported()}
-              onClick={() => buyStars(pack)}
-              className="shrink-0 rounded-xl bg-tg-accent px-3.5 py-2 text-[13px] font-semibold text-tg-accent-text active:scale-95 disabled:opacity-40"
-            >
-              Купить
-            </button>
-          </div>
-        ))}
-      </div>
 
       <TabBarSpacer />
     </Screen>
@@ -226,29 +257,29 @@ function CosmeticRow({ item, user, busy, onBuy, onEquip }) {
   const canAfford = (user?.coins ?? 0) >= item.price_coins
 
   return (
-    <div className="flex items-center gap-3.5 rounded-2xl border border-white/5 bg-tg-section px-3.5 py-3">
+    <div className="flex items-center gap-4 rounded-3xl border border-white/5 bg-tg-section px-4 py-4">
       {item.type === 'avatar_frame' ? (
         <Avatar
           avatarKey={user?.avatar_key}
           src={user?.photo_url}
           frameKey={item.key}
           name={user?.first_name}
-          size={44}
+          size={52}
         />
       ) : (
-        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-tg-accent/15 text-xl">
+        <span className="grid h-13 w-13 shrink-0 place-items-center rounded-2xl bg-tg-accent/15 text-2xl">
           {item.type === 'badge' ? '🏷️' : '🧊'}
         </span>
       )}
 
       <div className="min-w-0 flex-1">
-        <p className="text-[15px] font-semibold">{item.title}</p>
+        <p className="text-base font-bold">{item.title}</p>
         {item.stackable ? (
-          <p className="text-xs text-tg-hint">
+          <p className="text-sm text-tg-hint">
             У вас: {formatNumber(item.stock)} · {formatNumber(item.price_coins)} монет за штуку
           </p>
         ) : (
-          !item.owned && <p className="text-xs text-tg-hint">{formatNumber(item.price_coins)} монет</p>
+          !item.owned && <p className="text-sm text-tg-hint">{formatNumber(item.price_coins)} монет</p>
         )}
       </div>
 
@@ -257,7 +288,7 @@ function CosmeticRow({ item, user, busy, onBuy, onEquip }) {
           type="button"
           disabled={busy || !canAfford}
           onClick={onBuy}
-          className="shrink-0 rounded-xl bg-tg-accent px-3.5 py-2 text-[13px] font-semibold text-tg-accent-text active:scale-95 disabled:opacity-40"
+          className="shrink-0 rounded-2xl bg-tg-accent px-4 py-2.5 text-sm font-bold text-tg-accent-text active:scale-95 disabled:opacity-40"
         >
           Купить ещё
         </button>
@@ -266,7 +297,7 @@ function CosmeticRow({ item, user, busy, onBuy, onEquip }) {
           type="button"
           disabled={busy}
           onClick={onEquip}
-          className={`shrink-0 rounded-xl px-3.5 py-2 text-[13px] font-semibold active:scale-95 disabled:opacity-50 ${
+          className={`shrink-0 rounded-2xl px-4 py-2.5 text-sm font-bold active:scale-95 disabled:opacity-50 ${
             item.equipped ? 'bg-tg-surface text-tg-text' : 'bg-tg-accent text-tg-accent-text'
           }`}
         >
@@ -277,7 +308,7 @@ function CosmeticRow({ item, user, busy, onBuy, onEquip }) {
           type="button"
           disabled={busy || !canAfford}
           onClick={onBuy}
-          className="shrink-0 rounded-xl bg-tg-accent px-3.5 py-2 text-[13px] font-semibold text-tg-accent-text active:scale-95 disabled:opacity-40"
+          className="shrink-0 rounded-2xl bg-tg-accent px-4 py-2.5 text-sm font-bold text-tg-accent-text active:scale-95 disabled:opacity-40"
         >
           Купить
         </button>
