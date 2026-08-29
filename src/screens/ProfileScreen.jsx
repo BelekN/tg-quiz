@@ -50,43 +50,45 @@ export default function ProfileScreen({
 
   return (
     <Screen>
-      {/* Градиентная "шапка" — сплошная заливка во всю ширину экрана
-          (как "Мои бонусы" в Wallet), а не карточка с отступами по
-          бокам. -mx-4 гасит горизонтальный px-4 у <Screen> (реальный,
-          рабочий паддинг — в отличие от его же pt-4/pb-6, которые
-          всегда бьёт safe-top/safe-bottom в каскаде). Высота — на
-          полэкрана (50dvh) и последняя точка = --color-tg-bg, поэтому
-          низ утекает в обычный фон без видимого шва, а не режется
-          скруглением сразу под текстом. */}
-      <div className="animate-rise relative -mx-4">
-        <div
-          className="absolute inset-x-0 top-0 -z-10 h-[50dvh]"
-          style={{
-            background: `linear-gradient(to bottom, ${HEADER_TOP_COLOR}, #2f6ee0 45%, var(--color-tg-bg) 100%)`,
+      {/* Градиентная "шапка" — сплошная заливка во всю ширину экрана И
+          до самого верха (за плавающими Close/•••: в fullscreen-режиме
+          Telegram у них нет отдельной цветной "полосы", это прозрачные
+          иконки поверх нашего же контента — тонировать там нечего,
+          нужно самим дотянуть фон до истинного верха). Позиционируется
+          НЕ относительно своей обёртки, а от <Screen> (relative isolate
+          там же) — top:0/inset-x:0 у absolute игнорируют паддинг
+          родителя (safe-top/px-4), поэтому дотягивается и за них тоже.
+          Высота — на полэкрана (50dvh), последняя точка градиента =
+          --color-tg-bg, поэтому низ утекает в обычный фон без шва. */}
+      <div
+        className="absolute inset-x-0 top-0 -z-10 h-[50dvh]"
+        style={{
+          background: `linear-gradient(to bottom, ${HEADER_TOP_COLOR}, #2f6ee0 45%, var(--color-tg-bg) 100%)`,
+        }}
+        aria-hidden="true"
+      />
+
+      <div className="animate-rise flex flex-col items-center pt-6 pb-6">
+        <Avatar
+          src={tgUser?.photoUrl || user?.photo_url}
+          avatarKey={user?.avatar_key}
+          frameKey={user?.equipped_frame}
+          name={name}
+          size={72}
+          onClick={() => {
+            haptic.tap()
+            onEditAvatar()
           }}
         />
-        <div className="flex flex-col items-center px-4 pt-6 pb-6">
-          <Avatar
-            src={tgUser?.photoUrl || user?.photo_url}
-            avatarKey={user?.avatar_key}
-            frameKey={user?.equipped_frame}
-            name={name}
-            size={72}
-            onClick={() => {
-              haptic.tap()
-              onEditAvatar()
-            }}
-          />
-          <p className="mt-3 truncate text-center text-[19px] font-bold text-white">{name}</p>
-          {badgeLabel(user?.equipped_badge) && (
-            <p className="truncate text-center text-[13px] font-semibold text-white/80">
-              {badgeLabel(user.equipped_badge)}
-            </p>
-          )}
-          {user?.city && (
-            <p className="mt-0.5 truncate text-center text-xs text-white/60">📍 {user.city}</p>
-          )}
-        </div>
+        <p className="mt-3 truncate text-center text-[19px] font-bold text-white">{name}</p>
+        {badgeLabel(user?.equipped_badge) && (
+          <p className="truncate text-center text-[13px] font-semibold text-white/80">
+            {badgeLabel(user.equipped_badge)}
+          </p>
+        )}
+        {user?.city && (
+          <p className="mt-0.5 truncate text-center text-xs text-white/60">📍 {user.city}</p>
+        )}
       </div>
 
       {user && !user.city && <CityPrompt onSave={onSaveCity} />}
