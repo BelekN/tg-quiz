@@ -200,9 +200,9 @@ export default function ShopScreen({ user, onUpdateUser }) {
             <p className="mt-6 mb-3 px-1 text-[11px] font-semibold uppercase tracking-wider text-tg-hint">
               {SECTION_TITLES[section.type]}
             </p>
-            <div className="flex flex-col gap-2.5">
+            <div className="grid grid-cols-3 gap-2.5">
               {section.items.map((item) => (
-                <CosmeticRow
+                <CosmeticCell
                   key={item.key}
                   item={item}
                   user={user}
@@ -221,28 +221,21 @@ export default function ShopScreen({ user, onUpdateUser }) {
               Оплата доступна только внутри Telegram.
             </p>
           )}
-          <div className="flex flex-col gap-2.5">
+          <div className="grid grid-cols-3 gap-2.5">
             {coinPacks.map((pack) => (
-              <div
+              <button
                 key={pack.key}
-                className="flex items-center gap-4 rounded-3xl border border-white/5 bg-tg-section px-4 py-4"
+                type="button"
+                disabled={busyKey === pack.key || !isInvoiceSupported()}
+                onClick={() => buyStars(pack)}
+                className="flex flex-col items-center gap-2 rounded-2xl border border-white/5 bg-tg-section px-2 py-4 text-center active:scale-95 disabled:opacity-40"
               >
-                <span className="grid h-13 w-13 shrink-0 place-items-center rounded-2xl bg-quiz-gold/15 text-2xl">
+                <span className="grid h-12 w-12 place-items-center rounded-2xl bg-quiz-gold/15 text-2xl">
                   🪙
                 </span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-base font-bold">{pack.title}</p>
-                  <p className="text-sm text-tg-hint">⭐ {formatNumber(pack.stars)} Stars</p>
-                </div>
-                <button
-                  type="button"
-                  disabled={busyKey === pack.key || !isInvoiceSupported()}
-                  onClick={() => buyStars(pack)}
-                  className="shrink-0 rounded-2xl bg-tg-accent px-4 py-2.5 text-sm font-bold text-tg-accent-text active:scale-95 disabled:opacity-40"
-                >
-                  Купить
-                </button>
-              </div>
+                <span className="line-clamp-2 text-[12.5px] font-bold leading-tight">{pack.title}</span>
+                <span className="text-[11px] font-semibold text-tg-hint">⭐ {formatNumber(pack.stars)}</span>
+              </button>
             ))}
           </div>
         </div>
@@ -253,66 +246,53 @@ export default function ShopScreen({ user, onUpdateUser }) {
   )
 }
 
-function CosmeticRow({ item, user, busy, onBuy, onEquip }) {
+function CosmeticCell({ item, user, busy, onBuy, onEquip }) {
   const canAfford = (user?.coins ?? 0) >= item.price_coins
+  const locked = !item.stackable && !item.owned && !canAfford
+  const disabled = busy || (item.stackable ? !canAfford : locked)
+
+  const tap = () => {
+    if (item.stackable) return onBuy()
+    if (item.owned) return onEquip()
+    return onBuy()
+  }
 
   return (
-    <div className="flex items-center gap-4 rounded-3xl border border-white/5 bg-tg-section px-4 py-4">
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={tap}
+      className={`flex flex-col items-center gap-2 rounded-2xl border px-2 py-4 text-center transition-colors active:scale-95 disabled:opacity-40 ${
+        item.equipped ? 'border-tg-accent bg-tg-accent/10' : 'border-white/5 bg-tg-section'
+      }`}
+    >
       {item.type === 'avatar_frame' ? (
         <Avatar
           avatarKey={user?.avatar_key}
           src={user?.photo_url}
           frameKey={item.key}
           name={user?.first_name}
-          size={52}
+          size={48}
         />
       ) : (
-        <span className="grid h-13 w-13 shrink-0 place-items-center rounded-2xl bg-tg-accent/15 text-2xl">
+        <span className="grid h-12 w-12 place-items-center rounded-2xl bg-tg-accent/15 text-2xl">
           {item.type === 'badge' ? '🏷️' : '🧊'}
         </span>
       )}
 
-      <div className="min-w-0 flex-1">
-        <p className="text-base font-bold">{item.title}</p>
-        {item.stackable ? (
-          <p className="text-sm text-tg-hint">
-            У вас: {formatNumber(item.stock)} · {formatNumber(item.price_coins)} монет за штуку
-          </p>
-        ) : (
-          !item.owned && <p className="text-sm text-tg-hint">{formatNumber(item.price_coins)} монет</p>
-        )}
-      </div>
+      <span className="line-clamp-2 text-[12.5px] font-bold leading-tight">{item.title}</span>
 
       {item.stackable ? (
-        <button
-          type="button"
-          disabled={busy || !canAfford}
-          onClick={onBuy}
-          className="shrink-0 rounded-2xl bg-tg-accent px-4 py-2.5 text-sm font-bold text-tg-accent-text active:scale-95 disabled:opacity-40"
-        >
-          Купить ещё
-        </button>
+        <span className="text-[11px] font-semibold text-tg-hint">
+          ×{formatNumber(item.stock)} · {formatNumber(item.price_coins)}
+        </span>
       ) : item.owned ? (
-        <button
-          type="button"
-          disabled={busy}
-          onClick={onEquip}
-          className={`shrink-0 rounded-2xl px-4 py-2.5 text-sm font-bold active:scale-95 disabled:opacity-50 ${
-            item.equipped ? 'bg-tg-surface text-tg-text' : 'bg-tg-accent text-tg-accent-text'
-          }`}
-        >
-          {item.equipped ? 'Снять' : 'Надеть'}
-        </button>
+        <span className={`text-[11px] font-bold ${item.equipped ? 'text-tg-accent' : 'text-quiz-right'}`}>
+          {item.equipped ? 'Надето' : 'Куплено'}
+        </span>
       ) : (
-        <button
-          type="button"
-          disabled={busy || !canAfford}
-          onClick={onBuy}
-          className="shrink-0 rounded-2xl bg-tg-accent px-4 py-2.5 text-sm font-bold text-tg-accent-text active:scale-95 disabled:opacity-40"
-        >
-          Купить
-        </button>
+        <span className="text-[11px] font-bold text-quiz-gold">{formatNumber(item.price_coins)}</span>
       )}
-    </div>
+    </button>
   )
 }
