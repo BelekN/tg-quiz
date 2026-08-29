@@ -24,7 +24,11 @@ export default function AvatarPickerScreen({ currentAvatarKey, onBack, onPick })
         <BackButton onBack={onBack} />
         <h1 className="text-lg font-bold">Выбор аватарки</h1>
       </header>
-      <p className="mt-1 text-sm text-tg-hint">Выберите один из {AVATAR_KEYS.length} готовых</p>
+      <p className="mt-1 text-sm text-tg-hint">
+        {AVATAR_KEYS.length > 0
+          ? `Выберите один из ${AVATAR_KEYS.length} готовых`
+          : 'Готовых аватарок пока нет — все аватарки теперь в 🛍 Магазине, во вкладке «Аватарки»'}
+      </p>
 
       <div className="animate-rise mt-5 grid grid-cols-3 gap-3">
         {AVATAR_KEYS.map((key) => {

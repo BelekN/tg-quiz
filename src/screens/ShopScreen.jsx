@@ -8,6 +8,7 @@ import {
   buyCosmetic,
   equipFrame,
   equipBadge,
+  setAvatar,
   createStarsInvoice,
   fetchMe,
 } from '../lib/api'
@@ -20,11 +21,12 @@ const BUY_ERROR_MESSAGES = {
 }
 
 const SECTION_TITLES = {
+  avatar_image: 'Аватарки',
   avatar_frame: 'Рамки аватарки',
   badge: 'Титулы у имени',
   streak_freeze: 'Расходники',
 }
-const SECTION_ORDER = ['avatar_frame', 'badge', 'streak_freeze']
+const SECTION_ORDER = ['avatar_image', 'avatar_frame', 'badge', 'streak_freeze']
 
 export default function ShopScreen({ user, onUpdateUser }) {
   const [state, setState] = useState({ status: 'loading', cosmetics: [] })
@@ -95,7 +97,8 @@ export default function ShopScreen({ user, onUpdateUser }) {
     const nextKey = item.equipped ? null : item.key
     setBusyKey(item.key)
     try {
-      const equipFn = item.type === 'badge' ? equipBadge : equipFrame
+      const equipFn =
+        item.type === 'badge' ? equipBadge : item.type === 'avatar_image' ? setAvatar : equipFrame
       const res = await equipFn(nextKey)
       onUpdateUser(res.user)
       setState((s) => ({
@@ -275,7 +278,9 @@ function CosmeticCell({ item, user, busy, onBuy, onEquip }) {
         item.equipped ? 'border-tg-accent bg-tg-accent/10' : 'border-white/5 bg-tg-section'
       }`}
     >
-      {item.type === 'avatar_frame' ? (
+      {item.type === 'avatar_image' ? (
+        <Avatar avatarKey={item.key} name={item.title} size={48} />
+      ) : item.type === 'avatar_frame' ? (
         <Avatar
           avatarKey={user?.avatar_key}
           src={user?.photo_url}
