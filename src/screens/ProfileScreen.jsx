@@ -42,28 +42,33 @@ export default function ProfileScreen({
 
   return (
     <Screen>
-      <header className="flex items-center gap-3">
-        <Avatar
-          src={tgUser?.photoUrl || user?.photo_url}
-          avatarKey={user?.avatar_key}
-          frameKey={user?.equipped_frame}
-          name={name}
-          size={56}
-          onClick={() => {
-            haptic.tap()
-            onEditAvatar()
-          }}
-        />
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[18px] font-semibold leading-tight">{name}</p>
-          {badgeLabel(user?.equipped_badge) && (
-            <p className="truncate text-[12px] font-medium text-tg-accent">
-              {badgeLabel(user.equipped_badge)}
-            </p>
-          )}
-          {user?.city && <p className="truncate text-xs text-tg-hint">📍 {user.city}</p>}
+      {/* Градиентная "шапка" — как карточка баланса/бонусов в Wallet,
+          вместо плоского фона. Очки/монеты сюда сознательно не
+          дублируем (см. комментарий класса выше) — только личность. */}
+      <div className="animate-rise rounded-3xl bg-gradient-to-b from-[#4fa9f5] to-[#2f6ee0] px-5 pb-6 pt-7">
+        <div className="flex justify-center">
+          <Avatar
+            src={tgUser?.photoUrl || user?.photo_url}
+            avatarKey={user?.avatar_key}
+            frameKey={user?.equipped_frame}
+            name={name}
+            size={72}
+            onClick={() => {
+              haptic.tap()
+              onEditAvatar()
+            }}
+          />
         </div>
-      </header>
+        <p className="mt-3 truncate text-center text-[19px] font-bold text-white">{name}</p>
+        {badgeLabel(user?.equipped_badge) && (
+          <p className="truncate text-center text-[13px] font-semibold text-white/80">
+            {badgeLabel(user.equipped_badge)}
+          </p>
+        )}
+        {user?.city && (
+          <p className="mt-0.5 truncate text-center text-xs text-white/60">📍 {user.city}</p>
+        )}
+      </div>
 
       {user && !user.city && <CityPrompt onSave={onSaveCity} />}
 
