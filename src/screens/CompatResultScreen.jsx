@@ -72,7 +72,7 @@ export default function CompatResultScreen({ sessionId, role, title, initial, on
         <p className="mt-2 max-w-xs text-sm text-tg-hint">{verdict.text}</p>
 
         {detail && (
-          <div className="animate-rise mt-6 w-full max-w-xs">
+          <div className="animate-rise mt-6 w-full">
             <CompatBreakdown items={detail.items} />
           </div>
         )}

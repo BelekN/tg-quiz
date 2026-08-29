@@ -15,16 +15,6 @@ const REVEAL_MS = 500
  * достраиваем этот ответ и завершаем сразу после, а не обрываем его.
  */
 export default function SprintScreen({ sessionId, questions, onComplete, onError }) {
-  const {
-    index,
-    phase,
-    correctCount,
-    question,
-    submit,
-    advance,
-    optionState,
-  } = useAnswerFlow({ questions, onError })
-
   // "done" — сессия закрыта (по таймеру или по последнему вопросу).
   // Отдельно от phase из useAnswerFlow: тому не нужно знать про сессию
   // целиком, только про текущий вопрос.
@@ -37,6 +27,36 @@ export default function SprintScreen({ sessionId, questions, onComplete, onError
     finishedRef.current = true
     onComplete()
   }, [onComplete])
+
+  // Сервер — источник истины по времени, свой таймер у него строже
+  // клиентского: если тап приходится ровно на границу истечения 60с,
+  // ответ может уйти чуть раньше, чем клиентский onExpire успеет
+  // выставить timeUpRef, и сервер честно отклонит его SPRINT_TIME_UP.
+  // Это не поломка — тот же самый "время вышло", просто узнали о нём
+  // из ответа сервера, а не из своего таймера. Показывать как обычную
+  // ошибку незачем — просто завершаем сессию, как при обычном таймауте.
+  const handleAnswerError = useCallback(
+    (e) => {
+      if (e.message === 'SPRINT_TIME_UP') {
+        timeUpRef.current = true
+        setDone(true)
+        finishNow()
+        return
+      }
+      onError(e)
+    },
+    [onError, finishNow],
+  )
+
+  const {
+    index,
+    phase,
+    correctCount,
+    question,
+    submit,
+    advance,
+    optionState,
+  } = useAnswerFlow({ questions, onError: handleAnswerError })
 
   const submitAnswer = (answerIndex) => {
     if (timeUpRef.current) return
