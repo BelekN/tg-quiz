@@ -1,4 +1,4 @@
-/** 10 готовых аватарок на выбор. Ключ — то, что хранится в users.avatar_key. */
+/** Готовые аватарки на выбор. Ключ — то, что хранится в users.avatar_key. */
 export const AVATAR_META = {
   fox: { file: 'avatar-01.png', label: 'Лиса' },
   owl: { file: 'avatar-02.png', label: 'Сова' },
@@ -10,6 +10,7 @@ export const AVATAR_META = {
   octopus: { file: 'avatar-08.png', label: 'Осьминог' },
   alien: { file: 'avatar-09.png', label: 'Инопланетянин' },
   astronaut: { file: 'avatar-10.png', label: 'Космонавт' },
+  frog: { file: 'avatar-11.png', label: 'Лягушка' },
 }
 
 export const AVATAR_KEYS = Object.keys(AVATAR_META)
