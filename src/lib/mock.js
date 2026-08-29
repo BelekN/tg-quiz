@@ -87,30 +87,30 @@ const meUser = {
 
 const shopState = {
   cosmetics: [
-    { key: 'frame_gold', type: 'avatar_frame', title: 'Золотое кольцо', price_coins: 700, stackable: false, owned: false, equipped: false },
-    { key: 'frame_neon_blue', type: 'avatar_frame', title: 'Неоновый синий', price_coins: 700, stackable: false, owned: false, equipped: false },
-    { key: 'frame_neon_pink', type: 'avatar_frame', title: 'Неоновый розовый', price_coins: 700, stackable: false, owned: false, equipped: false },
-    { key: 'frame_silver', type: 'avatar_frame', title: 'Серебро', price_coins: 700, stackable: false, owned: false, equipped: false },
-    { key: 'frame_fire', type: 'avatar_frame', title: 'Огонь', price_coins: 900, stackable: false, owned: false, equipped: false },
-    { key: 'frame_ice', type: 'avatar_frame', title: 'Лёд', price_coins: 900, stackable: false, owned: false, equipped: false },
-    { key: 'frame_emerald', type: 'avatar_frame', title: 'Изумруд', price_coins: 1100, stackable: false, owned: false, equipped: false },
-    { key: 'frame_amethyst', type: 'avatar_frame', title: 'Аметист', price_coins: 1100, stackable: false, owned: false, equipped: false },
-    { key: 'frame_rainbow', type: 'avatar_frame', title: 'Радуга', price_coins: 1500, stackable: false, owned: false, equipped: false },
-    { key: 'badge_lucky', type: 'badge', title: '🍀 Счастливчик', price_coins: 600, stackable: false, owned: false, equipped: false },
-    { key: 'badge_erudite', type: 'badge', title: '🧠 Эрудит', price_coins: 900, stackable: false, owned: false, equipped: false },
-    { key: 'badge_speedster', type: 'badge', title: '⚡ Скоростной', price_coins: 900, stackable: false, owned: false, equipped: false },
-    { key: 'badge_sharpshooter', type: 'badge', title: '🎯 Точный расчёт', price_coins: 900, stackable: false, owned: false, equipped: false },
-    { key: 'badge_invincible', type: 'badge', title: '🔥 Непобедимый', price_coins: 1200, stackable: false, owned: false, equipped: false },
-    { key: 'badge_legend', type: 'badge', title: '👑 Легенда викторин', price_coins: 1800, stackable: false, owned: false, equipped: false },
-    { key: 'streak_freeze', type: 'streak_freeze', title: '🧊 Заморозка серии', price_coins: 400, stackable: true, quantity: 1, stock: 0 },
-    { key: 'streak_freeze_3', type: 'streak_freeze', title: '🧊 Заморозка ×3', price_coins: 1000, stackable: true, quantity: 3, stock: 0 },
-    { key: 'streak_freeze_5', type: 'streak_freeze', title: '🧊 Заморозка ×5', price_coins: 1500, stackable: true, quantity: 5, stock: 0 },
+    { key: 'frame_gold', type: 'avatar_frame', title: 'Золотое кольцо', price_coins: 140, stackable: false, owned: false, equipped: false },
+    { key: 'frame_neon_blue', type: 'avatar_frame', title: 'Неоновый синий', price_coins: 140, stackable: false, owned: false, equipped: false },
+    { key: 'frame_neon_pink', type: 'avatar_frame', title: 'Неоновый розовый', price_coins: 140, stackable: false, owned: false, equipped: false },
+    { key: 'frame_silver', type: 'avatar_frame', title: 'Серебро', price_coins: 140, stackable: false, owned: false, equipped: false },
+    { key: 'frame_fire', type: 'avatar_frame', title: 'Огонь', price_coins: 180, stackable: false, owned: false, equipped: false },
+    { key: 'frame_ice', type: 'avatar_frame', title: 'Лёд', price_coins: 180, stackable: false, owned: false, equipped: false },
+    { key: 'frame_emerald', type: 'avatar_frame', title: 'Изумруд', price_coins: 220, stackable: false, owned: false, equipped: false },
+    { key: 'frame_amethyst', type: 'avatar_frame', title: 'Аметист', price_coins: 220, stackable: false, owned: false, equipped: false },
+    { key: 'frame_rainbow', type: 'avatar_frame', title: 'Радуга', price_coins: 300, stackable: false, owned: false, equipped: false },
+    { key: 'badge_lucky', type: 'badge', title: '🍀 Счастливчик', price_coins: 120, stackable: false, owned: false, equipped: false },
+    { key: 'badge_erudite', type: 'badge', title: '🧠 Эрудит', price_coins: 180, stackable: false, owned: false, equipped: false },
+    { key: 'badge_speedster', type: 'badge', title: '⚡ Скоростной', price_coins: 180, stackable: false, owned: false, equipped: false },
+    { key: 'badge_sharpshooter', type: 'badge', title: '🎯 Точный расчёт', price_coins: 180, stackable: false, owned: false, equipped: false },
+    { key: 'badge_invincible', type: 'badge', title: '🔥 Непобедимый', price_coins: 240, stackable: false, owned: false, equipped: false },
+    { key: 'badge_legend', type: 'badge', title: '👑 Легенда викторин', price_coins: 360, stackable: false, owned: false, equipped: false },
+    { key: 'streak_freeze', type: 'streak_freeze', title: '🧊 Заморозка серии', price_coins: 80, stackable: true, quantity: 1, stock: 0 },
+    { key: 'streak_freeze_3', type: 'streak_freeze', title: '🧊 Заморозка ×3', price_coins: 200, stackable: true, quantity: 3, stock: 0 },
+    { key: 'streak_freeze_5', type: 'streak_freeze', title: '🧊 Заморозка ×5', price_coins: 300, stackable: true, quantity: 5, stock: 0 },
   ],
 }
 const COIN_PACKS = [
-  { key: 'coins_small', title: '500 монет', stars: 50, coins: 500 },
-  { key: 'coins_medium', title: '1 800 монет', stars: 150, coins: 1800 },
-  { key: 'coins_large', title: '5 500 монет', stars: 400, coins: 5500 },
+  { key: 'coins_small', title: '100 монет', stars: 50, coins: 100 },
+  { key: 'coins_medium', title: '300 монет', stars: 150, coins: 300 },
+  { key: 'coins_large', title: '800 монет', stars: 400, coins: 800 },
 ]
 const PERSONA_TESTS = {
   mock_categorical: {
@@ -187,10 +187,10 @@ const compatState = { session_id: null, answered: 0 }
 
 const NUMEROLOGY_TESTS = [
   { key: 'numerology_life_path', title: 'Число судьбы', description: 'Главное число всей твоей жизни', icon: '🌟', price_coins: 0, unlocked: true },
-  { key: 'numerology_birthday', title: 'Число дня рождения', description: 'Твой врождённый талант', icon: '🎂', price_coins: 500, unlocked: false },
-  { key: 'numerology_year', title: 'Число текущего года', description: 'Чего ждать от этого года', icon: '📅', price_coins: 500, unlocked: false },
-  { key: 'numerology_challenge', title: 'Число испытания', description: 'Твой главный урок в этой жизни', icon: '⚡', price_coins: 500, unlocked: false },
-  { key: 'numerology_cycles', title: 'Числа циклов жизни', description: 'Три периода твоей судьбы', icon: '🔄', price_coins: 500, unlocked: false },
+  { key: 'numerology_birthday', title: 'Число дня рождения', description: 'Твой врождённый талант', icon: '🎂', price_coins: 100, unlocked: false },
+  { key: 'numerology_year', title: 'Число текущего года', description: 'Чего ждать от этого года', icon: '📅', price_coins: 100, unlocked: false },
+  { key: 'numerology_challenge', title: 'Число испытания', description: 'Твой главный урок в этой жизни', icon: '⚡', price_coins: 100, unlocked: false },
+  { key: 'numerology_cycles', title: 'Числа циклов жизни', description: 'Три периода твоей судьбы', icon: '🔄', price_coins: 100, unlocked: false },
 ]
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms))
@@ -317,8 +317,8 @@ export const mockApi = {
       correct: state.correct,
       total: QUESTIONS.length,
       score: state.score,
-      coins_earned: state.correct * 5,
-      coins_balance: 85 + state.correct * 5,
+      coins_earned: state.correct,
+      coins_balance: 85 + state.correct,
       opponent_score: null,
       outcome: 'pending',
       new_achievements: [],
@@ -385,7 +385,7 @@ export const mockApi = {
           happened_at: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(),
           score: 350,
           correct: 7,
-          coins_earned: 21,
+          coins_earned: 7,
         },
         {
           kind: 'duel',
@@ -406,7 +406,7 @@ export const mockApi = {
           score: 900,
           correct: 9,
           total: 10,
-          coins_earned: 45,
+          coins_earned: 9,
         },
         {
           kind: 'persona',
@@ -477,8 +477,8 @@ export const mockApi = {
       correct: soloState.correct,
       total: qs.length,
       score: soloState.score,
-      coins_earned: soloState.correct * 5,
-      coins_balance: 85 + soloState.correct * 5,
+      coins_earned: soloState.correct,
+      coins_balance: 85 + soloState.correct,
       new_achievements: [],
     }
   },
@@ -514,8 +514,8 @@ export const mockApi = {
       answered: sprintState.correct,
       correct: sprintState.correct,
       score: sprintState.score,
-      coins_earned: sprintState.correct * 3,
-      coins_balance: 85 + sprintState.correct * 3,
+      coins_earned: sprintState.correct,
+      coins_balance: 85 + sprintState.correct,
       new_achievements: [],
     }
   },
@@ -551,8 +551,8 @@ export const mockApi = {
       correct: dailyState.correct,
       total: dailyState.questions.length,
       score: dailyState.score,
-      coins_earned: dailyState.correct * 5,
-      coins_balance: 85 + dailyState.correct * 5,
+      coins_earned: dailyState.correct,
+      coins_balance: 85 + dailyState.correct,
       new_achievements: [],
     }
   },
@@ -584,8 +584,8 @@ export const mockApi = {
     return {
       correct: marathonState.correct,
       score: marathonState.score,
-      coins_earned: marathonState.correct * 5,
-      coins_balance: 85 + marathonState.correct * 5,
+      coins_earned: marathonState.correct,
+      coins_balance: 85 + marathonState.correct,
       best_streak: Math.max(6, marathonState.correct),
       new_achievements: [],
     }

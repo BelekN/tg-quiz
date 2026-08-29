@@ -10,10 +10,14 @@ export interface CoinPack {
   coins: number;
 }
 
+// Курс: 1 Star ≈ 2 монеты (при условном курсе 1 Star ≈ 2 сом/рубля,
+// то есть 1 монета ≈ 1 сом/рубль — числа сумм в магазине не должны
+// выглядеть как реальные деньги, см. денонимацию всей экономики монет
+// в 055_coin_denomination.sql).
 export const COIN_PACKS: CoinPack[] = [
-  { key: "coins_small", title: "500 монет", stars: 50, coins: 500 },
-  { key: "coins_medium", title: "1 800 монет", stars: 150, coins: 1800 },
-  { key: "coins_large", title: "5 500 монет", stars: 400, coins: 5500 },
+  { key: "coins_small", title: "100 монет", stars: 50, coins: 100 },
+  { key: "coins_medium", title: "300 монет", stars: 150, coins: 300 },
+  { key: "coins_large", title: "800 монет", stars: 400, coins: 800 },
 ];
 
 export function findCoinPack(key: string): CoinPack | null {

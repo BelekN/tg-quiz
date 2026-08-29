@@ -1,10 +1,11 @@
 import { resolveAvatarSrc } from '../lib/avatars'
-import { frameBackground } from '../lib/frames'
+import { frameBackground, frameStyle } from '../lib/frames'
 
 export default function Avatar({ src, avatarKey, frameKey, name = '', size = 44, onClick }) {
   const initial = name.trim().charAt(0).toUpperCase() || '?'
   const resolvedSrc = resolveAvatarSrc(avatarKey, src)
   const background = frameBackground(frameKey)
+  const { ring, glow } = frameStyle(frameKey)
 
   const circle = (
     <div
@@ -28,13 +29,16 @@ export default function Avatar({ src, avatarKey, frameKey, name = '', size = 44,
   // Рамка — "бутерброд" из паддингов: внешний слой красится градиентом
   // косметики, внутренний — фоном приложения, получается кольцо любой
   // толщины без картинок и без спец-обработки под каждый стиль отдельно.
+  // Толщина кольца/свечение — по тиру (см. frames.js): чем дороже
+  // рамка, тем толще и заметнее, иначе разница видна только по цвету,
+  // а не по "статусности".
   if (!background) return circle
 
   return (
     <div
       onClick={onClick}
-      className={`shrink-0 rounded-full p-[2.5px] ${onClick ? 'cursor-pointer active:scale-95' : ''}`}
-      style={{ background }}
+      className={`shrink-0 rounded-full ${onClick ? 'cursor-pointer active:scale-95' : ''}`}
+      style={{ background, padding: ring, boxShadow: glow ?? undefined }}
     >
       <div className="rounded-full bg-tg-bg p-[1.5px]">{circle}</div>
     </div>
