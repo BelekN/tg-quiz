@@ -4,7 +4,13 @@ import TabBarSpacer from '../components/TabBarSpacer'
 import Avatar from '../components/Avatar'
 import CityPrompt from '../components/CityPrompt'
 import { haptic, getHomeScreenStatus, promptAddToHomeScreen } from '../lib/telegram'
+import { useHeaderColor } from '../hooks/useHeaderColor'
 import { badgeLabel } from '../lib/badges'
+
+// Верхняя точка градиента шапки — тот же цвет уходит в нативную
+// шапку Telegram (Close/•••) через useHeaderColor, чтобы не было
+// видимого шва между нативной и веб-частью экрана.
+const HEADER_TOP_COLOR = '#4fa9f5'
 
 /**
  * Вкладка «Профиль» — аватар/титул/город + доступ к Рейтингу,
@@ -23,6 +29,8 @@ export default function ProfileScreen({
 }) {
   const name = tgUser?.firstName || user?.first_name || user?.username || 'Игрок'
   const [showHomeScreenPrompt, setShowHomeScreenPrompt] = useState(false)
+
+  useHeaderColor(HEADER_TOP_COLOR)
 
   useEffect(() => {
     let alive = true
@@ -46,11 +54,17 @@ export default function ProfileScreen({
           (как "Мои бонусы" в Wallet), а не карточка с отступами по
           бокам. -mx-4 гасит горизонтальный px-4 у <Screen> (реальный,
           рабочий паддинг — в отличие от его же pt-4/pb-6, которые
-          всегда бьёт safe-top/safe-bottom в каскаде); фон — absolute
-          inset-0 внутри relative-обёртки, поэтому подстраивается под
-          высоту контента сам, без гадания с фиксированным числом. */}
+          всегда бьёт safe-top/safe-bottom в каскаде). Высота — на
+          полэкрана (50dvh) и последняя точка = --color-tg-bg, поэтому
+          низ утекает в обычный фон без видимого шва, а не режется
+          скруглением сразу под текстом. */}
       <div className="animate-rise relative -mx-4">
-        <div className="absolute inset-0 -z-10 rounded-b-[32px] bg-gradient-to-b from-[#4fa9f5] to-[#2f6ee0]" />
+        <div
+          className="absolute inset-x-0 top-0 -z-10 h-[50dvh]"
+          style={{
+            background: `linear-gradient(to bottom, ${HEADER_TOP_COLOR}, #2f6ee0 45%, var(--color-tg-bg) 100%)`,
+          }}
+        />
         <div className="flex flex-col items-center px-4 pt-6 pb-6">
           <Avatar
             src={tgUser?.photoUrl || user?.photo_url}

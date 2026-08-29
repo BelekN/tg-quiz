@@ -24,7 +24,7 @@ import {
 export { openInvoice, isInvoiceSupported }
 import { getHapticsEnabled } from './preferences'
 
-export { backButton, mainButton, secondaryButton }
+export { backButton, mainButton, secondaryButton, miniApp }
 
 let booted = false
 
