@@ -93,12 +93,18 @@ const shopState = {
     { key: 'frame_silver', type: 'avatar_frame', title: 'Серебро', price_coins: 700, stackable: false, owned: false, equipped: false },
     { key: 'frame_fire', type: 'avatar_frame', title: 'Огонь', price_coins: 900, stackable: false, owned: false, equipped: false },
     { key: 'frame_ice', type: 'avatar_frame', title: 'Лёд', price_coins: 900, stackable: false, owned: false, equipped: false },
+    { key: 'frame_emerald', type: 'avatar_frame', title: 'Изумруд', price_coins: 1100, stackable: false, owned: false, equipped: false },
+    { key: 'frame_amethyst', type: 'avatar_frame', title: 'Аметист', price_coins: 1100, stackable: false, owned: false, equipped: false },
     { key: 'frame_rainbow', type: 'avatar_frame', title: 'Радуга', price_coins: 1500, stackable: false, owned: false, equipped: false },
+    { key: 'badge_lucky', type: 'badge', title: '🍀 Счастливчик', price_coins: 600, stackable: false, owned: false, equipped: false },
     { key: 'badge_erudite', type: 'badge', title: '🧠 Эрудит', price_coins: 900, stackable: false, owned: false, equipped: false },
     { key: 'badge_speedster', type: 'badge', title: '⚡ Скоростной', price_coins: 900, stackable: false, owned: false, equipped: false },
     { key: 'badge_sharpshooter', type: 'badge', title: '🎯 Точный расчёт', price_coins: 900, stackable: false, owned: false, equipped: false },
+    { key: 'badge_invincible', type: 'badge', title: '🔥 Непобедимый', price_coins: 1200, stackable: false, owned: false, equipped: false },
     { key: 'badge_legend', type: 'badge', title: '👑 Легенда викторин', price_coins: 1800, stackable: false, owned: false, equipped: false },
-    { key: 'streak_freeze', type: 'streak_freeze', title: '🧊 Заморозка серии', price_coins: 400, stackable: true, stock: 0 },
+    { key: 'streak_freeze', type: 'streak_freeze', title: '🧊 Заморозка серии', price_coins: 400, stackable: true, quantity: 1, stock: 0 },
+    { key: 'streak_freeze_3', type: 'streak_freeze', title: '🧊 Заморозка ×3', price_coins: 1000, stackable: true, quantity: 3, stock: 0 },
+    { key: 'streak_freeze_5', type: 'streak_freeze', title: '🧊 Заморозка ×5', price_coins: 1500, stackable: true, quantity: 5, stock: 0 },
   ],
 }
 const COIN_PACKS = [
@@ -225,8 +231,10 @@ export const mockApi = {
     if (meUser.coins < item.price_coins) throw new Error('NOT_ENOUGH_COINS')
     meUser.coins -= item.price_coins
     if (item.stackable) {
-      item.stock += 1
-      meUser.streak_freezes = item.stock
+      meUser.streak_freezes = (meUser.streak_freezes ?? 0) + (item.quantity ?? 1)
+      shopState.cosmetics.forEach((c) => {
+        if (c.stackable) c.stock = meUser.streak_freezes
+      })
     } else {
       if (item.owned) throw new Error('ALREADY_OWNED')
       item.owned = true

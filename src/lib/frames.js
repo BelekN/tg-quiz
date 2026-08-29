@@ -12,6 +12,8 @@ export const FRAME_META = {
   frame_silver: { background: 'linear-gradient(135deg, #e8e8e8, #9ca3af)' },
   frame_fire: { background: 'linear-gradient(135deg, #ffb703, #fb5607, #d00000)' },
   frame_ice: { background: 'linear-gradient(135deg, #caf0f8, #48cae4, #0077b6)' },
+  frame_emerald: { background: 'linear-gradient(135deg, #8ef0c0, #10b981, #065f46)' },
+  frame_amethyst: { background: 'linear-gradient(135deg, #e0c3fc, #9d4edd, #5a189a)' },
   frame_rainbow: {
     background: 'linear-gradient(135deg, #ff5e5e, #ffd166, #4ade80, #38bdf8, #a78bfa)',
   },

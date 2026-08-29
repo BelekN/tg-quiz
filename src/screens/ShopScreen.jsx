@@ -67,7 +67,16 @@ export default function ShopScreen({ user, onUpdateUser }) {
       const res = await buyCosmetic(item.key)
       onUpdateUser(res.user)
       if (item.stackable) {
-        updateItem(item.key, { stock: (item.stock ?? 0) + 1 })
+        // stock — общий остаток заморозок, один на всех stackable-
+        // товаров (не по штуке за этот конкретный пакет) — берём из
+        // res.user, а не прибавляем локально: разные пакеты дают
+        // разное количество (×1/×3/×5), угадывать на клиенте нечего.
+        setState((s) => ({
+          ...s,
+          cosmetics: s.cosmetics.map((c) =>
+            c.stackable ? { ...c, stock: res.user.streak_freezes } : c,
+          ),
+        }))
       } else {
         updateItem(item.key, { owned: true })
       }
