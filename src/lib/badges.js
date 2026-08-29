@@ -7,11 +7,13 @@
  */
 export const BADGE_META = {
   badge_lucky: { label: '🍀 Счастливчик' },
+  badge_gambler: { label: '🎲 Азартный' },
   badge_erudite: { label: '🧠 Эрудит' },
   badge_speedster: { label: '⚡ Скоростной' },
   badge_sharpshooter: { label: '🎯 Точный расчёт' },
   badge_invincible: { label: '🔥 Непобедимый' },
   badge_legend: { label: '👑 Легенда викторин' },
+  badge_champion: { label: '🏆 Чемпион' },
 }
 
 export const badgeLabel = (key) => BADGE_META[key]?.label ?? null
