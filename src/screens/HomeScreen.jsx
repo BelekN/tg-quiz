@@ -53,18 +53,19 @@ export default function HomeScreen({
                 🔥 {user.current_streak} {pluralDays(user.current_streak)} подряд
               </span>
             )}
-            {/* Запас заморозок — не только в Магазине, а тут же, где видна
-                сама серия: иначе после покупки не понятно, прошла она
-                или нет (в Магазине это мелкая подпись под лотом). */}
-            {user?.streak_freezes > 0 && (
-              <span className="ml-1.5 text-xs font-normal text-tg-hint">
-                🧊×{user.streak_freezes}
-              </span>
-            )}
           </p>
-          {badgeLabel(user?.equipped_badge) && (
+          {/* Титул и запас заморозок — на второй строке, а не в первой:
+              иначе первая строка выше обычного (из-за эмодзи) и весь
+              экран ниже "уезжает". Заморозки — не только в Магазине, а
+              тут же, где видна сама серия: иначе после покупки не понятно,
+              прошла она или нет (в Магазине это мелкая подпись под лотом). */}
+          {(badgeLabel(user?.equipped_badge) || user?.streak_freezes > 0) && (
             <p className="truncate text-[12px] font-medium text-tg-accent">
-              {badgeLabel(user.equipped_badge)}
+              {badgeLabel(user?.equipped_badge)}
+              {badgeLabel(user?.equipped_badge) && user?.streak_freezes > 0 && ' · '}
+              {user?.streak_freezes > 0 && (
+                <span className="font-normal text-tg-hint">🧊×{user.streak_freezes}</span>
+              )}
             </p>
           )}
         </div>
