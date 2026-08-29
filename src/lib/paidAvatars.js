@@ -6,6 +6,7 @@
  * (см. set_avatar в 057_paid_avatars.sql).
  */
 export const PAID_AVATAR_META = {
+  avatar_frog: 'paid/avatar_frog.png',
   avatar_sloth: 'paid/avatar_sloth.png',
   avatar_cat: 'paid/avatar_cat.png',
   avatar_deer: 'paid/avatar_deer.png',
