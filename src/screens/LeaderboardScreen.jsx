@@ -36,8 +36,9 @@ export default function LeaderboardScreen({ onBack }) {
     <Screen>
       <header className="flex items-center gap-3">
         <BackButton onBack={onBack} />
-        <h1 className="text-lg font-bold">🏆 Рейтинг</h1>
+        <h1 className="text-lg font-bold">🏆 Рейтинг недели</h1>
       </header>
+      <p className="mt-1 text-sm text-tg-hint">Обнуляется каждый понедельник — у всех равные шансы на новую неделю</p>
 
       <div className="animate-rise mt-5 flex flex-col gap-2">
         {state.top.length === 0 && (
@@ -102,7 +103,7 @@ function Row({ player, isMe }) {
         )}
       </span>
       <span className="text-[15px] font-bold tabular-nums">
-        {formatNumber(player.total_score)}
+        {formatNumber(player.weekly_score)}
       </span>
     </div>
   )
