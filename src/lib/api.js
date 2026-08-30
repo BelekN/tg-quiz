@@ -140,6 +140,16 @@ export const fetchRivals = () => call('rivals')
 /** Топ-20 по total_score + позиция текущего игрока. -> { top, me } */
 export const fetchLeaderboard = () => call('leaderboard')
 
+/** Рейтинг среди тех, с кем реально играл (не весь глобальный топ). -> { top, me } */
+export const fetchCircleLeaderboard = () => call('circle_leaderboard')
+
+/**
+ * Профиль другого игрока: публичная статистика + разблокированные
+ * достижения + личный счёт с текущим пользователем (vs_me).
+ * -> { tg_id, ..., total_score, weekly_score, current_streak, achievements, vs_me }
+ */
+export const fetchPlayerProfile = (tgId) => call('player_profile', { tg_id: tgId })
+
 /** Последние сыгранные дуэли/квиз-тесты/спринты. -> { items: [...] } */
 export const fetchHistory = () => call('history')
 
@@ -152,6 +162,14 @@ export const setCity = (city) => call('set_city', { city })
 /** Настройки: включить/отключить retention-напоминания. -> { user } */
 export const setRemindersEnabled = (enabled) =>
   call('set_reminders_enabled', { enabled })
+
+/** Настройки: пуши "тебя вызвали"/"твой вызов приняли"/реванш-приглашение. -> { user } */
+export const setChallengeNotificationsEnabled = (enabled) =>
+  call('set_challenge_notifications_enabled', { enabled })
+
+/** Настройки: пуши "соперник доиграл дуэль"/"партнёр прошёл тест на совместимость". -> { user } */
+export const setResultNotificationsEnabled = (enabled) =>
+  call('set_result_notifications_enabled', { enabled })
 
 /** Сохранить выбранную аватарку. avatarKey=null -> вернуть фото Telegram. -> { user } */
 export const setAvatar = (avatarKey) => call('set_avatar', { avatar_key: avatarKey })

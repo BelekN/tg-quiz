@@ -2,14 +2,16 @@ import { useEffect, useState } from 'react'
 import Screen from '../components/Screen'
 import Avatar from '../components/Avatar'
 import BackButton from '../components/BackButton'
-import { fetchLeaderboard } from '../lib/api'
+import { fetchLeaderboard, fetchCircleLeaderboard } from '../lib/api'
 import { formatNumber } from '../lib/format'
 import { badgeLabel } from '../lib/badges'
+import { haptic } from '../lib/telegram'
 import { Loader, ErrorView } from '../components/StateView'
 
 const MEDAL = { 1: '🥇', 2: '🥈', 3: '🥉' }
 
-export default function LeaderboardScreen({ onBack, onChallenge }) {
+export default function LeaderboardScreen({ onBack, onChallenge, onOpenProfile }) {
+  const [tab, setTab] = useState('top')
   const [state, setState] = useState({ status: 'loading', top: [], me: null })
   const [busyTgId, setBusyTgId] = useState(null)
 
@@ -25,7 +27,9 @@ export default function LeaderboardScreen({ onBack, onChallenge }) {
 
   useEffect(() => {
     let alive = true
-    fetchLeaderboard()
+    setState((s) => ({ ...s, status: 'loading' }))
+    const fetchFn = tab === 'top' ? fetchLeaderboard : fetchCircleLeaderboard
+    fetchFn()
       .then(({ top, me }) => {
         if (alive) setState({ status: 'ready', top: top ?? [], me })
       })
@@ -35,7 +39,7 @@ export default function LeaderboardScreen({ onBack, onChallenge }) {
     return () => {
       alive = false
     }
-  }, [])
+  }, [tab])
 
   if (state.status === 'loading') return <Loader label="Считаем рейтинг…" />
   if (state.status === 'error') return <ErrorView code={state.code} onRetry={onBack} />
@@ -47,11 +51,40 @@ export default function LeaderboardScreen({ onBack, onChallenge }) {
     <Screen>
       <header className="flex items-center gap-3">
         <BackButton onBack={onBack} />
-        <h1 className="text-lg font-bold">🏆 Рейтинг недели</h1>
+        <h1 className="text-lg font-bold">🏆 Рейтинг</h1>
       </header>
-      <p className="mt-1 text-sm text-tg-hint">Обнуляется каждый понедельник — у всех равные шансы на новую неделю</p>
+
+      <div className="animate-rise mt-4 flex gap-1 rounded-2xl bg-tg-section p-1">
+        {[
+          { key: 'top', label: 'Топ недели' },
+          { key: 'circle', label: 'Мои соперники' },
+        ].map((seg) => (
+          <button
+            key={seg.key}
+            type="button"
+            onClick={() => {
+              if (tab !== seg.key) haptic.tap()
+              setTab(seg.key)
+            }}
+            className={`flex-1 rounded-xl py-2.5 text-[14px] font-bold transition-colors ${
+              tab === seg.key ? 'bg-tg-accent text-tg-accent-text' : 'text-tg-hint'
+            }`}
+          >
+            {seg.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'top' && (
+        <p className="mt-3 text-sm text-tg-hint">Обнуляется каждый понедельник — у всех равные шансы на новую неделю</p>
+      )}
 
       <div className="animate-rise mt-5 flex flex-col gap-2">
+        {tab === 'circle' && state.top.length <= 1 && (
+          <p className="mt-8 text-center text-sm text-tg-hint">
+            Пока нет завершённых дуэлей ни с кем — сыграйте первую!
+          </p>
+        )}
         {state.top.length === 0 && (
           <p className="mt-8 text-center text-sm text-tg-hint">
             Пока никто не набрал очков — будьте первым!
@@ -64,6 +97,7 @@ export default function LeaderboardScreen({ onBack, onChallenge }) {
             player={p}
             isMe={p.tg_id === state.me?.tg_id}
             onChallenge={challenge}
+            onOpenProfile={onOpenProfile}
             busy={busyTgId === p.tg_id}
           />
         ))}
@@ -81,9 +115,11 @@ export default function LeaderboardScreen({ onBack, onChallenge }) {
   )
 }
 
-function Row({ player, isMe, onChallenge, busy }) {
+function Row({ player, isMe, onChallenge, onOpenProfile, busy }) {
   const name = player.first_name || player.username || 'Игрок'
   const medal = MEDAL[player.rank]
+  const canOpenProfile = !isMe && onOpenProfile
+  const IdentityTag = canOpenProfile ? 'button' : 'div'
 
   return (
     <div
@@ -96,29 +132,35 @@ function Row({ player, isMe, onChallenge, busy }) {
       <span className="w-7 text-center text-base font-bold tabular-nums text-tg-hint">
         {medal ?? player.rank}
       </span>
-      <Avatar
-        src={player.photo_url}
-        avatarKey={player.avatar_key}
-        frameKey={player.equipped_frame}
-        name={name}
-        size={38}
-      />
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-[15px] font-medium">
-          {name}
-          {isMe && <span className="ml-1.5 text-xs text-tg-hint">(вы)</span>}
+      <IdentityTag
+        type={canOpenProfile ? 'button' : undefined}
+        onClick={canOpenProfile ? () => onOpenProfile(player.tg_id) : undefined}
+        className="flex min-w-0 flex-1 items-center gap-3 text-left"
+      >
+        <Avatar
+          src={player.photo_url}
+          avatarKey={player.avatar_key}
+          frameKey={player.equipped_frame}
+          name={name}
+          size={38}
+        />
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[15px] font-medium">
+            {name}
+            {isMe && <span className="ml-1.5 text-xs text-tg-hint">(вы)</span>}
+          </span>
+          {badgeLabel(player.equipped_badge) && (
+            <span className="block truncate text-xs font-medium text-tg-accent">
+              {badgeLabel(player.equipped_badge)}
+            </span>
+          )}
+          {player.city && (
+            <span className="block truncate text-xs text-tg-hint">
+              {player.city}
+            </span>
+          )}
         </span>
-        {badgeLabel(player.equipped_badge) && (
-          <span className="block truncate text-xs font-medium text-tg-accent">
-            {badgeLabel(player.equipped_badge)}
-          </span>
-        )}
-        {player.city && (
-          <span className="block truncate text-xs text-tg-hint">
-            {player.city}
-          </span>
-        )}
-      </span>
+      </IdentityTag>
       <span className="flex flex-col items-end gap-1">
         <span className="text-[15px] font-bold tabular-nums">
           {formatNumber(player.weekly_score)}

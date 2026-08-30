@@ -9,6 +9,7 @@ import ResultScreen from './screens/ResultScreen'
 import LeaderboardScreen from './screens/LeaderboardScreen'
 import DuelChallengesScreen from './screens/DuelChallengesScreen'
 import RivalsScreen from './screens/RivalsScreen'
+import PlayerProfileScreen from './screens/PlayerProfileScreen'
 import HistoryScreen from './screens/HistoryScreen'
 import AchievementsScreen from './screens/AchievementsScreen'
 import AchievementToast from './components/AchievementToast'
@@ -117,6 +118,8 @@ export default function App() {
   const [duel, setDuel] = useState(null) // { duel_id, role, questions }
   const [result, setResult] = useState(null)
   const [duelChallenges, setDuelChallenges] = useState([]) // входящие вызовы (не отвечено)
+  const [viewingPlayerTgId, setViewingPlayerTgId] = useState(null)
+  const [playerProfileReturnTo, setPlayerProfileReturnTo] = useState('profile')
 
   const [solo, setSolo] = useState(null) // { session_id, category, questions }
   const [soloResult, setSoloResult] = useState(null)
@@ -281,6 +284,14 @@ export default function App() {
       // не критично — если не получилось, вызов просто снова появится
       // при следующем заходе (get_duel_challenges всё ещё вернёт его)
     }
+  }, [])
+
+  // Профиль другого игрока — открывается с трёх разных экранов
+  // (рейтинг/соперники/вызовы), поэтому запоминаем, куда вернуться.
+  const openPlayerProfile = useCallback((tgId, returnTo) => {
+    setViewingPlayerTgId(tgId)
+    setPlayerProfileReturnTo(returnTo)
+    setScreen('player-profile')
   }, [])
 
   // "Реванш" на экране результата — новая дуэль с тем же соперником,
@@ -707,6 +718,7 @@ const pickCategory = useCallback(async (category, difficulty) => {
         <LeaderboardScreen
           onBack={() => setScreen('profile')}
           onChallenge={challengeTarget}
+          onOpenProfile={(tgId) => openPlayerProfile(tgId, 'leaderboard')}
         />
       )
 
@@ -717,11 +729,26 @@ const pickCategory = useCallback(async (category, difficulty) => {
           onAccept={acceptChallenge}
           onDecline={declineChallenge}
           onBack={() => setScreen('home')}
+          onOpenProfile={(tgId) => openPlayerProfile(tgId, 'duel-challenges')}
         />
       )
 
     case 'rivals':
-      return <RivalsScreen onBack={() => setScreen('profile')} onChallenge={challengeTarget} />
+      return (
+        <RivalsScreen
+          onBack={() => setScreen('profile')}
+          onChallenge={challengeTarget}
+          onOpenProfile={(tgId) => openPlayerProfile(tgId, 'rivals')}
+        />
+      )
+
+    case 'player-profile':
+      return (
+        <PlayerProfileScreen
+          tgId={viewingPlayerTgId}
+          onBack={() => setScreen(playerProfileReturnTo)}
+        />
+      )
 
     case 'history':
       return <HistoryScreen onBack={() => setScreen('profile')} />

@@ -97,6 +97,8 @@ const meUser = {
   longest_streak: 9,
   longest_marathon_streak: 6,
   reminders_enabled: true,
+  challenge_notifications_enabled: true,
+  result_notifications_enabled: true,
   equipped_frame: null,
   equipped_badge: null,
   streak_freezes: 0,
@@ -246,6 +248,18 @@ export const mockApi = {
   async set_reminders_enabled({ enabled }) {
     await wait(200)
     meUser.reminders_enabled = enabled
+    return { user: meUser }
+  },
+
+  async set_challenge_notifications_enabled({ enabled }) {
+    await wait(200)
+    meUser.challenge_notifications_enabled = enabled
+    return { user: meUser }
+  },
+
+  async set_result_notifications_enabled({ enabled }) {
+    await wait(200)
+    meUser.result_notifications_enabled = enabled
     return { user: meUser }
   },
 
@@ -456,6 +470,35 @@ export const mockApi = {
       { rank: 5, tg_id: 5, username: 'bob', first_name: 'Боб', photo_url: null, city: 'Москва', weekly_score: 210, total_score: 980, coins: 40 },
     ]
     return { top, me }
+  },
+
+  async circle_leaderboard() {
+    await wait(300)
+    const me = { rank: 2, tg_id: 99281932, username: 'dev_user', first_name: 'Dev', photo_url: null, avatar_key: meUser.avatar_key, equipped_frame: meUser.equipped_frame, city: meUser.city, weekly_score: 340, total_score: 1240 }
+    const top = [
+      { rank: 1, ...MOCK_PLAYERS[2], city: 'Алматы', weekly_score: 890, total_score: 3390 },
+      me,
+    ]
+    return { top, me }
+  },
+
+  async player_profile({ tg_id }) {
+    await wait(300)
+    const p = MOCK_PLAYERS[tg_id] ?? { tg_id, username: null, first_name: 'Игрок', photo_url: null, avatar_key: null, equipped_frame: null }
+    return {
+      ...p,
+      equipped_badge: null,
+      city: 'Бишкек',
+      total_score: 3390,
+      weekly_score: 890,
+      current_streak: 5,
+      longest_streak: 12,
+      achievements: [
+        { key: 'first_duel', title: 'Первая дуэль', description: 'Сыграйте свою первую дуэль', icon: '⚔️', category: 'Дуэли', unlocked_at: new Date().toISOString() },
+        { key: 'duel_wins_10', title: 'Ветеран', description: 'Одержите 10 побед в дуэлях', icon: '🎖️', category: 'Дуэли', unlocked_at: new Date().toISOString() },
+      ],
+      vs_me: { games: 5, wins: 4, losses: 1, draws: 0 },
+    }
   },
 
   async history() {

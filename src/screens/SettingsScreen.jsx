@@ -3,7 +3,7 @@ import Screen from '../components/Screen'
 import BackButton from '../components/BackButton'
 import { haptic } from '../lib/telegram'
 import { getHapticsEnabled, setHapticsEnabled } from '../lib/preferences'
-import { setRemindersEnabled } from '../lib/api'
+import { setRemindersEnabled, setChallengeNotificationsEnabled, setResultNotificationsEnabled } from '../lib/api'
 import { APP_VERSION } from '../lib/version'
 import { t } from '../lib/i18n'
 
@@ -17,7 +17,7 @@ export default function SettingsScreen({
   onReportIssue,
 }) {
   const [hapticsOn, setHapticsOn] = useState(getHapticsEnabled())
-  const [remindersBusy, setRemindersBusy] = useState(false)
+  const [busyPref, setBusyPref] = useState(null)
 
   const toggleHaptics = () => {
     const next = !hapticsOn
@@ -27,17 +27,31 @@ export default function SettingsScreen({
     if (next) haptic.tap()
   }
 
-  const toggleReminders = async () => {
-    if (remindersBusy) return
+  // Общий переключатель для трёх похожих пуш-тумблеров (напоминания /
+  // вызовы / результаты) — разные RPC, но одинаковая логика busy+haptic.
+  const togglePref = (key, current, setter) => async () => {
+    if (busyPref) return
     haptic.tap()
-    setRemindersBusy(true)
+    setBusyPref(key)
     try {
-      const res = await setRemindersEnabled(!user?.reminders_enabled)
+      const res = await setter(!current)
       onUpdateUser(res.user)
     } finally {
-      setRemindersBusy(false)
+      setBusyPref(null)
     }
   }
+
+  const toggleReminders = togglePref('reminders', user?.reminders_enabled, setRemindersEnabled)
+  const toggleChallengeNotifications = togglePref(
+    'challenge',
+    user?.challenge_notifications_enabled,
+    setChallengeNotificationsEnabled,
+  )
+  const toggleResultNotifications = togglePref(
+    'result',
+    user?.result_notifications_enabled,
+    setResultNotificationsEnabled,
+  )
 
   return (
     <Screen>
@@ -54,7 +68,21 @@ export default function SettingsScreen({
           <Switch
             checked={user?.reminders_enabled ?? true}
             onClick={toggleReminders}
-            disabled={remindersBusy}
+            disabled={busyPref === 'reminders'}
+          />
+        </Row>
+        <Row label={t('settings.challenge_notifications.label')} sub={t('settings.challenge_notifications.sub')}>
+          <Switch
+            checked={user?.challenge_notifications_enabled ?? true}
+            onClick={toggleChallengeNotifications}
+            disabled={busyPref === 'challenge'}
+          />
+        </Row>
+        <Row label={t('settings.result_notifications.label')} sub={t('settings.result_notifications.sub')}>
+          <Switch
+            checked={user?.result_notifications_enabled ?? true}
+            onClick={toggleResultNotifications}
+            disabled={busyPref === 'result'}
           />
         </Row>
       </Section>

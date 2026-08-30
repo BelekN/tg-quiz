@@ -8,7 +8,7 @@ import { haptic } from '../lib/telegram'
 import { Loader, ErrorView } from '../components/StateView'
 
 /** С кем чаще всего играешь в дуэли и какой счёт побед — по завершённым дуэлям. */
-export default function RivalsScreen({ onBack, onChallenge }) {
+export default function RivalsScreen({ onBack, onChallenge, onOpenProfile }) {
   const [state, setState] = useState({ status: 'loading', items: [] })
   const [busyTgId, setBusyTgId] = useState(null)
 
@@ -59,20 +59,26 @@ export default function RivalsScreen({ onBack, onChallenge }) {
           const name = r.first_name || r.username || 'Игрок'
           return (
             <div key={r.tg_id} className="flex items-center gap-3 rounded-2xl border border-white/5 bg-tg-section px-3 py-2.5">
-              <Avatar
-                src={r.photo_url}
-                avatarKey={r.avatar_key}
-                frameKey={r.equipped_frame}
-                name={name}
-                size={40}
-              />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-[15px] font-medium">{name}</span>
-                <span className="block text-xs text-tg-hint">
-                  {r.games} {pluralGames(r.games)}
-                  {r.draws > 0 ? ` · ${r.draws} вничью` : ''}
+              <button
+                type="button"
+                onClick={() => onOpenProfile?.(r.tg_id)}
+                className="flex min-w-0 flex-1 items-center gap-3 text-left"
+              >
+                <Avatar
+                  src={r.photo_url}
+                  avatarKey={r.avatar_key}
+                  frameKey={r.equipped_frame}
+                  name={name}
+                  size={40}
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[15px] font-medium">{name}</span>
+                  <span className="block text-xs text-tg-hint">
+                    {r.games} {pluralGames(r.games)}
+                    {r.draws > 0 ? ` · ${r.draws} вничью` : ''}
+                  </span>
                 </span>
-              </span>
+              </button>
               <span className="flex flex-col items-end gap-1">
                 <span className="text-[17px] font-bold tabular-nums">
                   {r.wins}:{r.losses}

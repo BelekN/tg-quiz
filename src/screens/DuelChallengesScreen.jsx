@@ -22,7 +22,7 @@ const dateFormatter = new Intl.DateTimeFormat('ru', {
  * списке. Задел на будущее — сюда же лягут другие типы событий, если
  * появятся, без переделки экрана.
  */
-export default function DuelChallengesScreen({ challenges, onAccept, onDecline, onBack }) {
+export default function DuelChallengesScreen({ challenges, onAccept, onDecline, onBack, onOpenProfile }) {
   const [sent, setSent] = useState({ status: 'loading', items: [] })
   const [busyId, setBusyId] = useState(null)
 
@@ -90,6 +90,7 @@ export default function DuelChallengesScreen({ challenges, onAccept, onDecline, 
               busy={busyId === e.duel_id}
               onAccept={() => respond(onAccept, e.duel_id)}
               onDecline={() => respond(onDecline, e.duel_id)}
+              onOpenProfile={onOpenProfile}
             />
           ))}
         </div>
@@ -98,25 +99,31 @@ export default function DuelChallengesScreen({ challenges, onAccept, onDecline, 
   )
 }
 
-function EventRow({ event, busy, onAccept, onDecline }) {
+function EventRow({ event, busy, onAccept, onDecline, onOpenProfile }) {
   const name = event.person?.first_name || event.person?.username || 'Игрок'
   const when = dateFormatter.format(new Date(event.created_at))
 
   return (
     <div className="flex items-center gap-3 rounded-2xl border border-white/5 bg-tg-section px-3.5 py-3">
-      <Avatar
-        src={event.person?.photo_url}
-        avatarKey={event.person?.avatar_key}
-        frameKey={event.person?.equipped_frame}
-        name={name}
-        size={40}
-      />
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-[14px] font-medium">
-          <span className="font-semibold">{name}</span> {eventText(event)}
-        </p>
-        <p className="text-xs text-tg-hint">{when}</p>
-      </div>
+      <button
+        type="button"
+        onClick={() => onOpenProfile?.(event.person?.tg_id)}
+        className="flex min-w-0 flex-1 items-center gap-3 text-left"
+      >
+        <Avatar
+          src={event.person?.photo_url}
+          avatarKey={event.person?.avatar_key}
+          frameKey={event.person?.equipped_frame}
+          name={name}
+          size={40}
+        />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[14px] font-medium">
+            <span className="font-semibold">{name}</span> {eventText(event)}
+          </p>
+          <p className="text-xs text-tg-hint">{when}</p>
+        </div>
+      </button>
 
       {event.kind === 'incoming' ? (
         <div className="flex shrink-0 gap-1.5">

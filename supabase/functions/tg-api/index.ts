@@ -108,6 +108,21 @@ async function attachNewAchievements(tgId: number, data: Record<string, unknown>
   }
 }
 
+// Настройки уведомлений — отдельные тумблеры на "вызовы" (кто-то
+// вызвал/принял вызов) и "результаты" (соперник/партнёр доиграл), не
+// один общий reminders_enabled (тот — только про ретеншн-напоминания
+// из tg-cron). Сверяемся с настройками ПОЛУЧАТЕЛЯ перед каждым таким
+// пушем; транзиентная ошибка тут не должна тихо гасить пуш — лучше
+// один лишний, чем ни одного.
+async function shouldNotify(recipientTgId: number, kind: "challenge" | "result"): Promise<boolean> {
+  const { data, error } = await supabase.rpc("get_notification_prefs", { p_tg_id: recipientTgId });
+  if (error) {
+    console.error("get_notification_prefs failed", error.message);
+    return true;
+  }
+  return kind === "challenge" ? data.challenge_notifications_enabled : data.result_notifications_enabled;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ error: "METHOD_NOT_ALLOWED" }, 405);
@@ -254,7 +269,7 @@ Deno.serve(async (req) => {
         // Пуш №1: соперник (доигравший первым) узнаёт исход сразу
         const notify = data.notify;
         delete data.notify;
-        if (notify) {
+        if (notify && await shouldNotify(notify.tg_id, "result")) {
           const outcomeText = {
             win: "🏆 Ты выиграл дуэль!",
             lose: "💔 Соперник обошёл тебя в дуэли",
@@ -286,7 +301,7 @@ Deno.serve(async (req) => {
         const rivalId = data.rival_tg_id;
         delete data.rival_tg_id;
 
-        if (rivalId) {
+        if (rivalId && await shouldNotify(rivalId, "challenge")) {
           // startapp=duel_<id> обязателен, чтобы initData.startParam
           // донёс id новой дуэли — web_app-кнопка это не умеет,
           // поэтому тут классическая t.me-ссылка, как у обычного инвайта.
@@ -319,12 +334,14 @@ Deno.serve(async (req) => {
         });
         if (error) throw error;
 
-        await sendTelegramMessage(
-          BOT_TOKEN,
-          targetTgId,
-          `⚔️ ${escapeHtml(tg.user.first_name ?? "Игрок")} вызывает тебя на дуэль в КвизДуэль!`,
-          { text: "Играть", url: APP_URL, webApp: true },
-        ).catch(() => {});
+        if (await shouldNotify(targetTgId, "challenge")) {
+          await sendTelegramMessage(
+            BOT_TOKEN,
+            targetTgId,
+            `⚔️ ${escapeHtml(tg.user.first_name ?? "Игрок")} вызывает тебя на дуэль в КвизДуэль!`,
+            { text: "Играть", url: APP_URL, webApp: true },
+          ).catch(() => {});
+        }
 
         return json(data);
       }
@@ -359,11 +376,13 @@ Deno.serve(async (req) => {
         });
         if (error) throw error;
 
-        await sendTelegramMessage(
-          BOT_TOKEN,
-          accepted.host_tg_id,
-          `✅ ${escapeHtml(tg.user.first_name ?? "Игрок")} принял твой вызов на дуэль!`,
-        ).catch(() => {});
+        if (await shouldNotify(accepted.host_tg_id, "challenge")) {
+          await sendTelegramMessage(
+            BOT_TOKEN,
+            accepted.host_tg_id,
+            `✅ ${escapeHtml(tg.user.first_name ?? "Игрок")} принял твой вызов на дуэль!`,
+          ).catch(() => {});
+        }
 
         return json(data);
       }
@@ -383,6 +402,26 @@ Deno.serve(async (req) => {
         const { data, error } = await supabase.rpc("get_rivals", { p_tg_id: tgId });
         if (error) throw error;
         return json({ items: data });
+      }
+
+      // ---- профиль другого игрока: публичная статистика + разблокированные
+      // достижения + личный счёт с текущим пользователем ----
+      case "player_profile": {
+        const targetTgId = Number(payload.tg_id);
+        if (!Number.isInteger(targetTgId)) return json({ error: "INVALID_TARGET" }, 400);
+        const { data, error } = await supabase.rpc("get_player_profile", {
+          p_tg_id: targetTgId,
+          p_viewer_tg_id: tgId,
+        });
+        if (error) throw error;
+        return json(data);
+      }
+
+      // ---- рейтинг среди тех, с кем реально играл (не весь глобальный топ) ----
+      case "circle_leaderboard": {
+        const { data, error } = await supabase.rpc("get_circle_leaderboard", { p_tg_id: tgId });
+        if (error) throw error;
+        return json(data);
       }
 
       // ---- история игр: дуэли + завершённые соло/спринт сессии ----
@@ -428,6 +467,24 @@ Deno.serve(async (req) => {
       // ---- Настройки: включить/отключить retention-напоминания ----
       case "set_reminders_enabled": {
         const { data, error } = await supabase.rpc("set_reminders_enabled", {
+          p_tg_id: tgId,
+          p_enabled: payload.enabled === true,
+        });
+        if (error) throw error;
+        return json({ user: data });
+      }
+
+      case "set_challenge_notifications_enabled": {
+        const { data, error } = await supabase.rpc("set_challenge_notifications_enabled", {
+          p_tg_id: tgId,
+          p_enabled: payload.enabled === true,
+        });
+        if (error) throw error;
+        return json({ user: data });
+      }
+
+      case "set_result_notifications_enabled": {
+        const { data, error } = await supabase.rpc("set_result_notifications_enabled", {
           p_tg_id: tgId,
           p_enabled: payload.enabled === true,
         });
@@ -762,7 +819,7 @@ Deno.serve(async (req) => {
         // start_compat теперь резюмирует её сразу на экране результата.
         const notify = data.notify;
         delete data.notify;
-        if (notify) {
+        if (notify && await shouldNotify(notify.tg_id, "result")) {
           await sendTelegramMessage(
             BOT_TOKEN,
             notify.tg_id,
