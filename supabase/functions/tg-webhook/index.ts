@@ -158,8 +158,22 @@ async function registerBot(publicUrl: string) {
   }
 }
 
+// Показывается в превью бота ДО того, как открыт чат (поиск, шеринг
+// ссылки) — Telegram обрезает по 120 символов, длиннее просто не примет.
+const SHORT_DESCRIPTION =
+  "Викторина в Telegram: дуэли с друзьями 1×1, квиз-тесты, спринт на скорость, монеты и рейтинг.";
+// Показывается в самом чате с ботом, пока пользователь ни разу не
+// нажал /start — единственный текст, который видит человек до первого
+// действия, если он не искал бота специально. Лимит 512 символов.
+const DESCRIPTION =
+  "🧠 КвизДуэль — викторина прямо в Telegram, без установки приложений.\n\n" +
+  "⚔️ Вызови друга на дуэль — 5 вопросов на скорость и точность\n" +
+  "🧩 Играй соло по темам или на время\n" +
+  "🏆 Зарабатывай монеты, открывай ачивки и поднимайся в рейтинге\n\n" +
+  "Жми «Запустить», чтобы начать.";
+
 async function registerBotUnsafe(publicUrl: string) {
-  const [webhookRes, commandsRes, menuButtonRes] = await Promise.all([
+  const [webhookRes, commandsRes, menuButtonRes, shortDescRes, descRes] = await Promise.all([
     fetch(`https://api.telegram.org/bot${BOT_TOKEN}/setWebhook`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -184,8 +198,18 @@ async function registerBotUnsafe(publicUrl: string) {
         menu_button: { type: "web_app", text: "Играть", web_app: { url: APP_URL } },
       }),
     }).then((r) => r.json()),
+    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/setMyShortDescription`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ short_description: SHORT_DESCRIPTION }),
+    }).then((r) => r.json()),
+    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/setMyDescription`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ description: DESCRIPTION }),
+    }).then((r) => r.json()),
   ]);
-  return { webhookRes, commandsRes, menuButtonRes };
+  return { webhookRes, commandsRes, menuButtonRes, shortDescRes, descRes };
 }
 
 async function sendRating(chatId: number, tgId: number) {
