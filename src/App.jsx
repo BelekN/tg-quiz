@@ -969,7 +969,6 @@ const pickCategory = useCallback(async (category, difficulty) => {
           onShop={() => setScreen('shop')}
           challenges={duelChallenges}
           onOpenChallenges={() => setScreen('duel-challenges')}
-          onChallengePick={() => setScreen('challenge-pick')}
         />
       )
   }

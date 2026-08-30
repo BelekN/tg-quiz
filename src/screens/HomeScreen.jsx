@@ -150,17 +150,6 @@ export default function HomeScreen({
         </span>
       </button>
 
-      <button
-        type="button"
-        onClick={() => {
-          haptic.tap()
-          onChallengePick()
-        }}
-        className="mt-2 w-full px-1 text-center text-[13px] font-medium text-tg-hint underline decoration-tg-hint/40 underline-offset-2"
-      >
-        Вызвать по нику или ID →
-      </button>
-
       {/* ---- другие режимы: все играют в общий счёт и ранг ---- */}
       <p className="mt-8 mb-3 px-1 text-[11px] font-semibold uppercase tracking-wider text-tg-hint">
         Другие режимы
