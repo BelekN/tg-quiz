@@ -25,10 +25,26 @@ export default function HomeScreen({
   onEditAvatar,
   onShop,
   busy,
+  challenges = [],
+  onAcceptChallenge,
+  onDeclineChallenge,
+  onChallengePick,
 }) {
   const name = tgUser?.firstName || user?.first_name || user?.username || 'Игрок'
   const rank = getRank(user?.total_score)
   const [showRanks, setShowRanks] = useState(false)
+  const [busyChallengeId, setBusyChallengeId] = useState(null)
+
+  const respond = async (fn, duelId) => {
+    if (busyChallengeId) return
+    haptic.tap()
+    setBusyChallengeId(duelId)
+    try {
+      await fn(duelId)
+    } finally {
+      setBusyChallengeId(null)
+    }
+  }
 
   return (
     <Screen>
@@ -110,6 +126,53 @@ export default function HomeScreen({
         </div>
       )}
 
+      {/* ---- входящие вызовы: кто вызвал именно меня ---- */}
+      {challenges.length > 0 && (
+        <div className="animate-rise mt-6 rounded-3xl bg-tg-section p-3">
+          <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-tg-hint">
+            ⚔️ Тебя вызвали
+          </p>
+          <div className="flex flex-col gap-2">
+            {challenges.map((c) => {
+              const host = c.host
+              const hostName = host?.first_name || host?.username || 'Игрок'
+              const rowBusy = busyChallengeId === c.duel_id
+              return (
+                <div
+                  key={c.duel_id}
+                  className="flex items-center gap-2.5 rounded-2xl bg-tg-bg px-3 py-2.5"
+                >
+                  <Avatar
+                    src={host?.photo_url}
+                    avatarKey={host?.avatar_key}
+                    frameKey={host?.equipped_frame}
+                    name={hostName}
+                    size={36}
+                  />
+                  <span className="min-w-0 flex-1 truncate text-[14px] font-medium">{hostName}</span>
+                  <button
+                    type="button"
+                    disabled={rowBusy}
+                    onClick={() => respond(onDeclineChallenge, c.duel_id)}
+                    className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/5 text-base disabled:opacity-40"
+                  >
+                    ✕
+                  </button>
+                  <button
+                    type="button"
+                    disabled={rowBusy}
+                    onClick={() => respond(onAcceptChallenge, c.duel_id)}
+                    className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-tg-accent text-base text-tg-accent-text disabled:opacity-40"
+                  >
+                    ✓
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {/* ---- главное действие: основная функция приложения ---- */}
       <button
         type="button"
@@ -126,6 +189,17 @@ export default function HomeScreen({
         <span className="mt-1 block text-[13px] text-tg-accent-text/80">
           5 вопросов · 10 секунд на ответ · вызови друга
         </span>
+      </button>
+
+      <button
+        type="button"
+        onClick={() => {
+          haptic.tap()
+          onChallengePick()
+        }}
+        className="mt-2 w-full px-1 text-center text-[13px] font-medium text-tg-hint underline decoration-tg-hint/40 underline-offset-2"
+      >
+        Вызвать по нику или ID →
       </button>
 
       {/* ---- другие режимы: все играют в общий счёт и ранг ---- */}

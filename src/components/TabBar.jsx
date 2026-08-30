@@ -23,7 +23,7 @@ const TABS = [
  * padding-bottom этого узла, а margin/padding на других осях с ним
  * не конфликтует (см. TabBarSpacer.jsx про сам конфликт).
  */
-export default function TabBar({ active, onChange }) {
+export default function TabBar({ active, onChange, pendingChallenges = 0 }) {
   return (
     <nav className="safe-bottom fixed inset-x-0 bottom-0 z-40 px-3">
       <div className="mx-auto mb-2 flex max-w-md items-stretch justify-between gap-1.5 rounded-[24px] border border-glass-border bg-glass-surface px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.28),0_10px_28px_-6px_rgba(0,0,0,0.45)] backdrop-blur-[22px] backdrop-saturate-150">
@@ -41,7 +41,14 @@ export default function TabBar({ active, onChange }) {
                 isActive ? 'bg-tg-accent/15' : ''
               }`}
             >
-              <span className="text-[26px] leading-none">{tab.icon}</span>
+              <span className="relative text-[26px] leading-none">
+                {tab.icon}
+                {/* Непринятые вызовы на дуэль — точка на иконке "Играть",
+                    видна с любой вкладки, а не только зайдя на Home. */}
+                {tab.key === 'home' && pendingChallenges > 0 && (
+                  <span className="absolute -right-1 -top-0.5 h-2.5 w-2.5 rounded-full bg-quiz-wrong ring-2 ring-tg-bg" />
+                )}
+              </span>
               <span
                 className={`text-[13px] leading-none ${
                   isActive ? 'font-bold text-tg-accent' : 'font-medium text-tg-hint'

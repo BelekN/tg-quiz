@@ -106,6 +106,32 @@ export const fetchDuelProgress = (duelId) => call('duel_progress', { duel_id: du
 export const rematchDuel = (finishedDuelId) =>
   call('rematch_duel', { duel_id: finishedDuelId })
 
+/**
+ * Вызвать конкретного игрока (из рейтинга или найденного по нику/ID) —
+ * играешь сразу, как при обычном "Создать дуэль", просто с известной
+ * целью. Цель увидит вызов во входящих (fetchDuelChallenges) + получит пуш.
+ * -> { duel_id, role: 'host', status: 'invited', questions, answered: 0, correct: 0 }
+ */
+export const challengeDuel = (targetTgId) => call('challenge_duel', { target_tg_id: targetTgId })
+
+/** Входящие вызовы: кто вызвал именно меня и ждёт ответа. -> { items: [{duel_id, created_at, host}] } */
+export const fetchDuelChallenges = () => call('duel_challenges')
+
+/**
+ * Принять вызов -> сразу вопросы, как при переходе по ссылке-приглашению.
+ * -> { duel_id, role: 'guest', status: 'pending', questions, answered: 0, correct: 0 }
+ */
+export const acceptDuelChallenge = (duelId) => call('accept_duel_challenge', { duel_id: duelId })
+
+/** Отклонить вызов — тихо, без уведомления хосту. */
+export const declineDuelChallenge = (duelId) => call('decline_duel_challenge', { duel_id: duelId })
+
+/** Найти игрока по нику (с "@" или без) или по tg_id. -> { user: {...} | null } */
+export const findUser = (query) => call('find_user', { query })
+
+/** С кем чаще всего играешь и какой счёт побед. -> { items: [{tg_id, ..., games, wins, losses, draws}] } */
+export const fetchRivals = () => call('rivals')
+
 /** Топ-20 по total_score + позиция текущего игрока. -> { top, me } */
 export const fetchLeaderboard = () => call('leaderboard')
 

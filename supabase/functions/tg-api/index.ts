@@ -65,6 +65,8 @@ const FUNNEL_ACTIONS = new Set([
   "start_duel",
   "finish_duel",
   "rematch_duel",
+  "challenge_duel",
+  "accept_duel_challenge",
   "start_solo",
   "finish_solo",
   "start_sprint",
@@ -300,6 +302,87 @@ Deno.serve(async (req) => {
         }
 
         return json(data);
+      }
+
+      // ---- вызвать конкретного игрока (из рейтинга или по нику/ID):
+      // та же start_duel, просто с известной целью — хост играет
+      // сразу, как при обычном "Создать дуэль", цель увидит вызов во
+      // входящих (см. "duel_challenges") + получит пуш ----
+      case "challenge_duel": {
+        const targetTgId = Number(payload.target_tg_id);
+        if (!Number.isInteger(targetTgId)) return json({ error: "INVALID_TARGET" }, 400);
+
+        const { data, error } = await supabase.rpc("start_duel", {
+          p_tg_id: tgId,
+          p_questions_count: 5,
+          p_target_tg_id: targetTgId,
+        });
+        if (error) throw error;
+
+        await sendTelegramMessage(
+          BOT_TOKEN,
+          targetTgId,
+          `⚔️ ${escapeHtml(tg.user.first_name ?? "Игрок")} вызывает тебя на дуэль в КвизДуэль!`,
+          { text: "Играть", url: APP_URL, webApp: true },
+        ).catch(() => {});
+
+        return json(data);
+      }
+
+      // ---- входящие вызовы: кто вызвал именно меня и ждёт ответа ----
+      case "duel_challenges": {
+        const { data, error } = await supabase.rpc("get_duel_challenges", { p_tg_id: tgId });
+        if (error) throw error;
+        return json({ items: data });
+      }
+
+      // ---- принять вызов: становлюсь гостем + сразу получаю вопросы,
+      // как при обычном переходе по ссылке-приглашению ----
+      case "accept_duel_challenge": {
+        const { data: accepted, error: acceptError } = await supabase.rpc("accept_duel_challenge", {
+          p_tg_id: tgId,
+          p_duel_id: payload.duel_id,
+        });
+        if (acceptError) throw acceptError;
+
+        const { data, error } = await supabase.rpc("start_duel", {
+          p_tg_id: tgId,
+          p_duel_id: payload.duel_id,
+        });
+        if (error) throw error;
+
+        await sendTelegramMessage(
+          BOT_TOKEN,
+          accepted.host_tg_id,
+          `✅ ${escapeHtml(tg.user.first_name ?? "Игрок")} принял твой вызов на дуэль!`,
+        ).catch(() => {});
+
+        return json(data);
+      }
+
+      // ---- отклонить вызов: тихо, без пуша хосту ----
+      case "decline_duel_challenge": {
+        const { error } = await supabase.rpc("decline_duel_challenge", {
+          p_tg_id: tgId,
+          p_duel_id: payload.duel_id,
+        });
+        if (error) throw error;
+        return json({ ok: true });
+      }
+
+      // ---- найти игрока по нику (с "@" или без) или по tg_id, чтобы
+      // вызвать его на дуэль напрямую ----
+      case "find_user": {
+        const { data, error } = await supabase.rpc("find_user", { p_query: String(payload.query ?? "") });
+        if (error) throw error;
+        return json({ user: data });
+      }
+
+      // ---- соперники: с кем чаще всего играешь и какой счёт побед ----
+      case "rivals": {
+        const { data, error } = await supabase.rpc("get_rivals", { p_tg_id: tgId });
+        if (error) throw error;
+        return json({ items: data });
       }
 
       // ---- история игр: дуэли + завершённые соло/спринт сессии ----

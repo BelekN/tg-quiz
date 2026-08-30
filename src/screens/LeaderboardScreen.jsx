@@ -9,8 +9,19 @@ import { Loader, ErrorView } from '../components/StateView'
 
 const MEDAL = { 1: '🥇', 2: '🥈', 3: '🥉' }
 
-export default function LeaderboardScreen({ onBack }) {
+export default function LeaderboardScreen({ onBack, onChallenge }) {
   const [state, setState] = useState({ status: 'loading', top: [], me: null })
+  const [busyTgId, setBusyTgId] = useState(null)
+
+  const challenge = async (tgId) => {
+    if (busyTgId) return
+    setBusyTgId(tgId)
+    try {
+      await onChallenge(tgId)
+    } finally {
+      setBusyTgId(null)
+    }
+  }
 
   useEffect(() => {
     let alive = true
@@ -48,7 +59,13 @@ export default function LeaderboardScreen({ onBack }) {
         )}
 
         {state.top.map((p) => (
-          <Row key={p.tg_id} player={p} isMe={p.tg_id === state.me?.tg_id} />
+          <Row
+            key={p.tg_id}
+            player={p}
+            isMe={p.tg_id === state.me?.tg_id}
+            onChallenge={challenge}
+            busy={busyTgId === p.tg_id}
+          />
         ))}
       </div>
 
@@ -64,7 +81,7 @@ export default function LeaderboardScreen({ onBack }) {
   )
 }
 
-function Row({ player, isMe }) {
+function Row({ player, isMe, onChallenge, busy }) {
   const name = player.first_name || player.username || 'Игрок'
   const medal = MEDAL[player.rank]
 
@@ -102,8 +119,21 @@ function Row({ player, isMe }) {
           </span>
         )}
       </span>
-      <span className="text-[15px] font-bold tabular-nums">
-        {formatNumber(player.weekly_score)}
+      <span className="flex flex-col items-end gap-1">
+        <span className="text-[15px] font-bold tabular-nums">
+          {formatNumber(player.weekly_score)}
+        </span>
+        {!isMe && onChallenge && (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => onChallenge(player.tg_id)}
+            className="grid h-6 w-6 place-items-center rounded-full bg-tg-accent/15 text-xs disabled:opacity-40"
+            aria-label={`Вызвать ${name}`}
+          >
+            ⚔️
+          </button>
+        )}
       </span>
     </div>
   )

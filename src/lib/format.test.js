@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatNumber, pluralDays } from './format'
+import { formatNumber, pluralDays, pluralGames } from './format'
 
 describe('formatNumber', () => {
   it('inserts a thousands separator', () => {
@@ -46,5 +46,25 @@ describe('pluralDays', () => {
     expect(pluralDays(11)).toBe('дней')
     expect(pluralDays(12)).toBe('дней')
     expect(pluralDays(25)).toBe('дней')
+  })
+})
+
+describe('pluralGames', () => {
+  it('picks "игра" for 1, 21...', () => {
+    expect(pluralGames(1)).toBe('игра')
+    expect(pluralGames(21)).toBe('игра')
+  })
+
+  it('picks "игры" for 2-4, 22-24...', () => {
+    expect(pluralGames(2)).toBe('игры')
+    expect(pluralGames(3)).toBe('игры')
+    expect(pluralGames(4)).toBe('игры')
+  })
+
+  it('picks "игр" for 0, 5-20...', () => {
+    expect(pluralGames(0)).toBe('игр')
+    expect(pluralGames(5)).toBe('игр')
+    expect(pluralGames(11)).toBe('игр')
+    expect(pluralGames(12)).toBe('игр')
   })
 })

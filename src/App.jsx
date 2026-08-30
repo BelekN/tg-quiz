@@ -7,6 +7,8 @@ import DuelIntroScreen from './screens/DuelIntroScreen'
 import QuizScreen from './screens/QuizScreen'
 import ResultScreen from './screens/ResultScreen'
 import LeaderboardScreen from './screens/LeaderboardScreen'
+import ChallengePickScreen from './screens/ChallengePickScreen'
+import RivalsScreen from './screens/RivalsScreen'
 import HistoryScreen from './screens/HistoryScreen'
 import AchievementsScreen from './screens/AchievementsScreen'
 import AchievementToast from './components/AchievementToast'
@@ -45,6 +47,10 @@ import {
   startDuel,
   finishDuel,
   rematchDuel,
+  challengeDuel,
+  fetchDuelChallenges,
+  acceptDuelChallenge,
+  declineDuelChallenge,
   parseDuelStartParam,
   setCity,
   startSolo,
@@ -110,6 +116,7 @@ export default function App() {
   const [user, setUser] = useState(null)
   const [duel, setDuel] = useState(null) // { duel_id, role, questions }
   const [result, setResult] = useState(null)
+  const [duelChallenges, setDuelChallenges] = useState([]) // входящие вызовы (не отвечено)
 
   const [solo, setSolo] = useState(null) // { session_id, category, questions }
   const [soloResult, setSoloResult] = useState(null)
@@ -159,6 +166,15 @@ export default function App() {
         }
 
         if (me.new_achievements?.length) setNewAchievements(me.new_achievements)
+
+        // Входящие вызовы — best-effort, отдельно от критического пути
+        // запуска: карточка на Home и бейдж на табе появятся чуть позже,
+        // не стоит задерживать ради них весь бутстрап.
+        fetchDuelChallenges()
+          .then((r) => {
+            if (alive) setDuelChallenges(r.items ?? [])
+          })
+          .catch(() => {})
 
         // ?startapp=duel_<uuid> -> гость сразу попадает в дуэль
         const duelId = parseDuelStartParam(me.start_param ?? getStartParam())
@@ -224,6 +240,48 @@ export default function App() {
       setBusy(false)
     }
   }, [showError])
+
+  // Вызвать конкретного игрока (из рейтинга или найденного по нику/ID) —
+  // играю сразу, как при обычном "Создать дуэль", просто с известной целью.
+  const challengeTarget = useCallback(async (targetTgId) => {
+    setBusy(true)
+    try {
+      const created = await challengeDuel(targetTgId)
+      setDuel(created)
+      setScreen('duel-intro')
+    } catch (e) {
+      showError(e)
+    } finally {
+      setBusy(false)
+    }
+  }, [showError])
+
+  // Принять входящий вызов -> сразу вопросы, как при обычном переходе
+  // по ссылке-приглашению. Убираем из списка оптимистично сразу — не
+  // ждём успеха, чтобы карточка не "подвисала" на Home.
+  const acceptChallenge = useCallback(async (duelId) => {
+    setDuelChallenges((list) => list.filter((c) => c.duel_id !== duelId))
+    setBusy(true)
+    try {
+      const joined = await acceptDuelChallenge(duelId)
+      setDuel(joined)
+      setScreen('duel-intro')
+    } catch (e) {
+      showError(e)
+    } finally {
+      setBusy(false)
+    }
+  }, [showError])
+
+  const declineChallenge = useCallback(async (duelId) => {
+    setDuelChallenges((list) => list.filter((c) => c.duel_id !== duelId))
+    try {
+      await declineDuelChallenge(duelId)
+    } catch {
+      // не критично — если не получилось, вызов просто снова появится
+      // при следующем заходе (get_duel_challenges всё ещё вернёт его)
+    }
+  }, [])
 
   // "Реванш" на экране результата — новая дуэль с тем же соперником,
   // сервер сам его определяет из только что завершённой дуэли и
@@ -645,7 +703,18 @@ const pickCategory = useCallback(async (category, difficulty) => {
       )
 
     case 'leaderboard':
-      return <LeaderboardScreen onBack={() => setScreen('profile')} />
+      return (
+        <LeaderboardScreen
+          onBack={() => setScreen('profile')}
+          onChallenge={challengeTarget}
+        />
+      )
+
+    case 'challenge-pick':
+      return <ChallengePickScreen onBack={() => setScreen('home')} onChallenge={challengeTarget} />
+
+    case 'rivals':
+      return <RivalsScreen onBack={() => setScreen('profile')} />
 
     case 'history':
       return <HistoryScreen onBack={() => setScreen('profile')} />
@@ -869,6 +938,7 @@ const pickCategory = useCallback(async (category, difficulty) => {
           onLeaderboard={() => setScreen('leaderboard')}
           onAchievements={() => setScreen('achievements')}
           onHistory={() => setScreen('history')}
+          onRivals={() => setScreen('rivals')}
           onSettings={() => setScreen('settings')}
         />
       )
@@ -886,6 +956,10 @@ const pickCategory = useCallback(async (category, difficulty) => {
           onMarathon={() => setScreen('marathon-intro')}
           onEditAvatar={() => setScreen('shop')}
           onShop={() => setScreen('shop')}
+          challenges={duelChallenges}
+          onAcceptChallenge={acceptChallenge}
+          onDeclineChallenge={declineChallenge}
+          onChallengePick={() => setScreen('challenge-pick')}
         />
       )
   }
@@ -903,7 +977,9 @@ const pickCategory = useCallback(async (category, difficulty) => {
         <AchievementToast achievements={newAchievements} />
       </div>
       {content}
-      {ROOT_TABS.includes(screen) && <TabBar active={screen} onChange={setScreen} />}
+      {ROOT_TABS.includes(screen) && (
+        <TabBar active={screen} onChange={setScreen} pendingChallenges={duelChallenges.length} />
+      )}
     </>
   )
 }

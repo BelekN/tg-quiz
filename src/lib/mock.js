@@ -67,6 +67,17 @@ const sprintState = { score: 0, correct: 0, questions: [] }
 const dailyState = { score: 0, correct: 0, questions: QUESTIONS.slice(0, 5), played: false }
 const marathonState = { score: 0, correct: 0, questions: SPRINT_POOL }
 const state = { score: 0, correct: 0 }
+
+/** Общие личности для рейтинга/поиска/входящих вызовов/соперников — те же tg_id, что в leaderboard(). */
+const MOCK_PLAYERS = {
+  1: { tg_id: 1, username: 'quiz_master', first_name: 'Алина', photo_url: null, avatar_key: null, equipped_frame: 'frame_rainbow' },
+  2: { tg_id: 2, username: 'nikita', first_name: 'Никита', photo_url: null, avatar_key: null, equipped_frame: 'frame_neon_blue' },
+  3: { tg_id: 3, username: null, first_name: 'Асель', photo_url: null, avatar_key: null, equipped_frame: null },
+  5: { tg_id: 5, username: 'bob', first_name: 'Боб', photo_url: null, avatar_key: null, equipped_frame: null },
+}
+const challengesState = [
+  { duel_id: '00000000-0000-4000-8000-000000000010', created_at: new Date(Date.now() - 1000 * 60 * 20).toISOString(), host: MOCK_PLAYERS[2] },
+]
 const meUser = {
   tg_id: 99281932,
   username: 'dev_user',
@@ -355,6 +366,69 @@ export const mockApi = {
       answered: 0,
       correct: 0,
       questions: QUESTIONS.map(({ correct: _c, ...q }) => q),
+    }
+  },
+
+  async challenge_duel({ target_tg_id }) {
+    await wait(300)
+    state.score = 0
+    state.correct = 0
+    return {
+      duel_id: '00000000-0000-4000-8000-000000000003',
+      role: 'host',
+      status: 'invited',
+      answered: 0,
+      correct: 0,
+      target_tg_id,
+      questions: QUESTIONS.map(({ correct: _c, ...q }) => q),
+    }
+  },
+
+  async duel_challenges() {
+    await wait(250)
+    return { items: [...challengesState] }
+  },
+
+  async accept_duel_challenge({ duel_id }) {
+    await wait(300)
+    const i = challengesState.findIndex((c) => c.duel_id === duel_id)
+    if (i !== -1) challengesState.splice(i, 1)
+    state.score = 0
+    state.correct = 0
+    return {
+      duel_id,
+      role: 'guest',
+      status: 'pending',
+      answered: 0,
+      correct: 0,
+      questions: QUESTIONS.map(({ correct: _c, ...q }) => q),
+    }
+  },
+
+  async decline_duel_challenge({ duel_id }) {
+    await wait(200)
+    const i = challengesState.findIndex((c) => c.duel_id === duel_id)
+    if (i !== -1) challengesState.splice(i, 1)
+    return { ok: true }
+  },
+
+  async find_user({ query }) {
+    await wait(300)
+    const q = String(query ?? '').trim().replace(/^@/, '').toLowerCase()
+    if (!q) return { user: null }
+    const found = Object.values(MOCK_PLAYERS).find(
+      (p) => p.tg_id === Number(q) || p.username?.toLowerCase() === q,
+    )
+    return { user: found ?? null }
+  },
+
+  async rivals() {
+    await wait(300)
+    return {
+      items: [
+        { ...MOCK_PLAYERS[2], games: 5, wins: 4, losses: 1, draws: 0 },
+        { ...MOCK_PLAYERS[1], games: 2, wins: 0, losses: 1, draws: 1 },
+      ],
     }
   },
 
