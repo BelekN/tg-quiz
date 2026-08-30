@@ -721,7 +721,7 @@ const pickCategory = useCallback(async (category, difficulty) => {
       )
 
     case 'rivals':
-      return <RivalsScreen onBack={() => setScreen('profile')} />
+      return <RivalsScreen onBack={() => setScreen('profile')} onChallenge={challengeTarget} />
 
     case 'history':
       return <HistoryScreen onBack={() => setScreen('profile')} />

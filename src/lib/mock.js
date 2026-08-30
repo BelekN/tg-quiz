@@ -701,6 +701,9 @@ export const mockApi = {
         { key: 'score_5000', title: 'Профи', description: 'Наберите 5000 очков всего', icon: '🏆', category: 'Особые', unlocked_at: null, progress: { current: 1240, target: 5000 } },
         { key: 'all_modes', title: 'Универсал', description: 'Сыграй в дуэль, квиз-тест и спринт хотя бы раз', icon: '🎯', category: 'Особые', unlocked_at: null, progress: { current: 1, target: 3 } },
         { key: 'night_owl', title: 'Полуночник', description: 'Сыграй что-нибудь между полуночью и 5 утра', icon: '🦉', category: 'Особые', unlocked_at: null, progress: null },
+        { key: 'first_challenge', title: 'Бросил вызов', description: 'Вызови другого игрока напрямую — из рейтинга или списка соперников', icon: '📨', category: 'Дуэли', unlocked_at: new Date().toISOString(), progress: null },
+        { key: 'social_butterfly', title: 'Душа компании', description: 'Сыграй завершённые дуэли с 5 разными соперниками', icon: '🎉', category: 'Дуэли', unlocked_at: null, progress: { current: 2, target: 5 } },
+        { key: 'nemesis', title: 'Личный счёт', description: 'Выиграй 3 дуэли подряд у одного и того же соперника', icon: '🥊', category: 'Дуэли', unlocked_at: null, progress: { current: 1, target: 3 } },
       ],
     }
   },

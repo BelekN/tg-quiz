@@ -4,11 +4,24 @@ import BackButton from '../components/BackButton'
 import Avatar from '../components/Avatar'
 import { fetchRivals } from '../lib/api'
 import { pluralGames } from '../lib/format'
+import { haptic } from '../lib/telegram'
 import { Loader, ErrorView } from '../components/StateView'
 
 /** С кем чаще всего играешь в дуэли и какой счёт побед — по завершённым дуэлям. */
-export default function RivalsScreen({ onBack }) {
+export default function RivalsScreen({ onBack, onChallenge }) {
   const [state, setState] = useState({ status: 'loading', items: [] })
+  const [busyTgId, setBusyTgId] = useState(null)
+
+  const challenge = async (tgId) => {
+    if (busyTgId) return
+    haptic.tap()
+    setBusyTgId(tgId)
+    try {
+      await onChallenge(tgId)
+    } finally {
+      setBusyTgId(null)
+    }
+  }
 
   useEffect(() => {
     let alive = true
@@ -60,8 +73,19 @@ export default function RivalsScreen({ onBack }) {
                   {r.draws > 0 ? ` · ${r.draws} вничью` : ''}
                 </span>
               </span>
-              <span className="text-[17px] font-bold tabular-nums">
-                {r.wins}:{r.losses}
+              <span className="flex flex-col items-end gap-1">
+                <span className="text-[17px] font-bold tabular-nums">
+                  {r.wins}:{r.losses}
+                </span>
+                <button
+                  type="button"
+                  disabled={busyTgId === r.tg_id}
+                  onClick={() => challenge(r.tg_id)}
+                  className="grid h-6 w-6 place-items-center rounded-full bg-tg-accent/15 text-xs disabled:opacity-40"
+                  aria-label={`Вызвать ${name} снова`}
+                >
+                  ⚔️
+                </button>
               </span>
             </div>
           )

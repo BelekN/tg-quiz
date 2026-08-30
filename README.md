@@ -184,6 +184,14 @@ https://t.me/<bot>/<app>?startapp=duel_<uuid>
 - Вызов, на который никто не ответил 7 дней, удаляется сам — pg_cron
   job `expire-stale-duel-challenges` (068_expire_stale_challenges.sql),
   раз в сутки в 03:00 UTC, чистый SQL без похода в tg-cron.
+- 3 новых достижения (069_social_achievements.sql, категория «Дуэли»):
+  `first_challenge` — отправил вызов хоть раз; `social_butterfly` —
+  завершённые дуэли с 5 разными соперниками; `nemesis` — 3 победы
+  подряд именно над одним и тем же соперником (не путать с
+  `win_streak_3` — это серия побед вообще, не важно над кем).
+  `get_user_stats` для этого считает `distinct_opponents` и
+  `max_opponent_streak` тем же оконным приёмом (loss_group), что и
+  общий `streak`, только партиционированным по сопернику.
 
 Заодно найден и починен баг в `finish_duel` (065_fix_finish_duel_
 completed.sql): условие "пометить дуэль завершённой + уведомить
