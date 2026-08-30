@@ -336,6 +336,14 @@ Deno.serve(async (req) => {
         return json({ items: data });
       }
 
+      // ---- исходящие вызовы: кого вызвал я сам, кто ответил и чем
+      // закончилось (счёт — только когда status='completed') ----
+      case "sent_duel_challenges": {
+        const { data, error } = await supabase.rpc("get_sent_duel_challenges", { p_tg_id: tgId });
+        if (error) throw error;
+        return json({ items: data });
+      }
+
       // ---- принять вызов: становлюсь гостем + сразу получаю вопросы,
       // как при обычном переходе по ссылке-приглашению ----
       case "accept_duel_challenge": {

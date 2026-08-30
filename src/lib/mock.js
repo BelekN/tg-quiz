@@ -78,6 +78,12 @@ const MOCK_PLAYERS = {
 const challengesState = [
   { duel_id: '00000000-0000-4000-8000-000000000010', created_at: new Date(Date.now() - 1000 * 60 * 20).toISOString(), host: MOCK_PLAYERS[2] },
 ]
+const sentChallengesState = [
+  { duel_id: '00000000-0000-4000-8000-000000000020', created_at: new Date(Date.now() - 1000 * 60 * 5).toISOString(), status: 'invited', host_score: null, guest_score: null, target: MOCK_PLAYERS[1] },
+  { duel_id: '00000000-0000-4000-8000-000000000021', created_at: new Date(Date.now() - 1000 * 60 * 60).toISOString(), status: 'declined', host_score: null, guest_score: null, target: MOCK_PLAYERS[3] },
+  { duel_id: '00000000-0000-4000-8000-000000000022', created_at: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(), status: 'pending', host_score: null, guest_score: null, target: MOCK_PLAYERS[5] },
+  { duel_id: '00000000-0000-4000-8000-000000000023', created_at: new Date(Date.now() - 1000 * 60 * 60 * 26).toISOString(), status: 'completed', host_score: 420, guest_score: 310, target: MOCK_PLAYERS[2] },
+]
 const meUser = {
   tg_id: 99281932,
   username: 'dev_user',
@@ -387,6 +393,11 @@ export const mockApi = {
   async duel_challenges() {
     await wait(250)
     return { items: [...challengesState] }
+  },
+
+  async sent_duel_challenges() {
+    await wait(250)
+    return { items: [...sentChallengesState] }
   },
 
   async accept_duel_challenge({ duel_id }) {

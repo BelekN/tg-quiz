@@ -164,12 +164,18 @@ tg_id (`find_user`). Механика — тот же `duels`/`start_duel`, чт
   адресный: `invited_tg_id = цель`, `status='invited'`, `guest_tg_id`
   пока пуст. Хост как и раньше сразу получает вопросы и играет.
 - `get_duel_challenges` — входящие вызовы (`invited_tg_id = я`,
-  `status='invited'`) — карточка на вкладке «Играть» + точка на иконке
-  таббара, не отдельный экран/вкладка.
+  `status='invited'`) — кнопка ⚔️ в шапке «Играть» (всегда на виду, с
+  числом непринятых, когда есть) открывает `DuelChallengesScreen`.
 - `accept_duel_challenge` переводит в `guest_tg_id = я, status='pending'`
   и сразу зовёт уже существующий `start_duel(duel_id)` за вопросами —
   ноль дублирования логики подбора вопросов. `decline_duel_challenge`
   ставит `status='declined'`, тихо, без пуша хосту.
+- `get_sent_duel_challenges` — исходящие: кого вызвал я сам
+  (`host_tg_id = я and invited_tg_id is not null`) и что там с ответом —
+  `invited`/`declined`/`pending` (принял, играем) — а для уже
+  `completed` сразу счёт (`host_score`/`guest_score`, я всегда хост в
+  адресном вызове). Второй таб на том же `DuelChallengesScreen`, чтобы
+  видно было, кто ответил, а кто нет, без похода в отдельную историю.
 - `get_rivals` — счёт побед с каждым соперником по завершённым дуэлям
   (`status='completed'`), сортировка по количеству игр вместе.
 

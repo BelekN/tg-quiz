@@ -118,6 +118,14 @@ export const challengeDuel = (targetTgId) => call('challenge_duel', { target_tg_
 export const fetchDuelChallenges = () => call('duel_challenges')
 
 /**
+ * Исходящие вызовы: кого вызвал я сам, кто ответил, а кто ещё нет.
+ * -> { items: [{duel_id, created_at, status, host_score, guest_score, target}] }
+ * status: 'invited' (ждёт ответа) | 'declined' | 'pending' (принял, играем)
+ * | 'completed' (счёт — host_score/guest_score, мой/его).
+ */
+export const fetchSentDuelChallenges = () => call('sent_duel_challenges')
+
+/**
  * Принять вызов -> сразу вопросы, как при переходе по ссылке-приглашению.
  * -> { duel_id, role: 'guest', status: 'pending', questions, answered: 0, correct: 0 }
  */
