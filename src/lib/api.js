@@ -294,3 +294,16 @@ export function parseCompatStartParam(startParam) {
   const m = /^compat_([0-9a-fA-F-]{36})$/.exec(startParam ?? '')
   return m ? m[1] : null
 }
+
+/** ref_<tg_id> -> tg_id (число) */
+export function parseReferralStartParam(startParam) {
+  const m = /^ref_(\d+)$/.exec(startParam ?? '')
+  return m ? Number(m[1]) : null
+}
+
+/** Заявить награду за переход по реферальной ссылке друга. -> { reward } */
+export const claimReferral = (referrerTgId) =>
+  call('claim_referral', { referrer_tg_id: referrerTgId })
+
+/** Сколько друзей уже пришло по моей ссылке. -> { invited_count, coins_per_referral } */
+export const fetchReferralStats = () => call('referral_stats')

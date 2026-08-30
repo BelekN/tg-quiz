@@ -87,6 +87,7 @@ const FUNNEL_ACTIONS = new Set([
   "create_stars_invoice",
   "buy_persona_category",
   "buy_numerology_test",
+  "claim_referral",
 ]);
 
 const json = (body: unknown, status = 200) =>
@@ -889,6 +890,26 @@ Deno.serve(async (req) => {
         const { data, error } = await supabase.rpc("get_achievements", { p_tg_id: tgId });
         if (error) throw error;
         return json({ items: data });
+      }
+
+      // ---- реферал: пригласивший и приглашённый получают монеты, один
+      // раз на каждого приглашённого (UNIQUE в 072_referrals.sql) ----
+      case "claim_referral": {
+        const referrerTgId = Number(payload.referrer_tg_id);
+        if (!Number.isInteger(referrerTgId)) return json({ error: "INVALID_REFERRER" }, 400);
+        const { data, error } = await supabase.rpc("claim_referral", {
+          p_tg_id: tgId,
+          p_referrer_tg_id: referrerTgId,
+        });
+        if (error) throw error;
+        return json(data);
+      }
+
+      // ---- реферал: сколько друзей уже пришло по моей ссылке ----
+      case "referral_stats": {
+        const { data, error } = await supabase.rpc("get_referral_stats", { p_tg_id: tgId });
+        if (error) throw error;
+        return json(data);
       }
 
       // ---- прогресс соперника в текущей дуэли (поллинг вместо realtime) ----

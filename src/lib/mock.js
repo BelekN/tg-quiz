@@ -886,6 +886,17 @@ export const mockApi = {
     return { test_key, title: test.title, numbers: numbersByTest[test_key] ?? [] }
   },
 
+  async referral_stats() {
+    await wait(250)
+    return { invited_count: 2, coins_per_referral: 30 }
+  },
+
+  async claim_referral() {
+    await wait(300)
+    meUser.coins += 30
+    return { reward: 30 }
+  },
+
   async duel_progress() {
     await wait(200)
     return {

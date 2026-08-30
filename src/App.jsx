@@ -11,6 +11,7 @@ import DuelChallengesScreen from './screens/DuelChallengesScreen'
 import RivalsScreen from './screens/RivalsScreen'
 import PlayerProfileScreen from './screens/PlayerProfileScreen'
 import HistoryScreen from './screens/HistoryScreen'
+import ReferralScreen from './screens/ReferralScreen'
 import AchievementsScreen from './screens/AchievementsScreen'
 import AchievementToast from './components/AchievementToast'
 import RankUpToast from './components/RankUpToast'
@@ -67,6 +68,8 @@ import {
   startCompat,
   parseCompatStartParam,
   computeNumerology,
+  parseReferralStartParam,
+  claimReferral,
 } from './lib/api'
 import { computePersonaResult } from './lib/persona'
 import { getRank } from './lib/ranks'
@@ -218,6 +221,20 @@ export default function App() {
             setScreen('compat-intro')
           }
           return
+        }
+
+        // ?startapp=ref_<tg_id> -> заявляем награду за приглашение (сервер
+        // сам отбрасывает самоприглашение/повторный заход по той же
+        // ссылке — не критично, просто продолжаем на home без награды)
+        const refTgId = parseReferralStartParam(me.start_param ?? getStartParam())
+        if (refTgId) {
+          try {
+            await claimReferral(refTgId)
+            const fresh = await fetchMe()
+            if (alive) setUser(fresh.user)
+          } catch {
+            /* SELF_REFERRAL / ALREADY_REFERRED / REFERRER_NOT_FOUND — молча пропускаем */
+          }
         }
 
         setScreen('home')
@@ -753,6 +770,9 @@ const pickCategory = useCallback(async (category, difficulty) => {
     case 'history':
       return <HistoryScreen onBack={() => setScreen('profile')} />
 
+    case 'referral':
+      return <ReferralScreen tgId={user?.tg_id} onBack={() => setScreen('profile')} />
+
     case 'achievements':
       return <AchievementsScreen onBack={() => setScreen('profile')} />
 
@@ -973,6 +993,7 @@ const pickCategory = useCallback(async (category, difficulty) => {
           onAchievements={() => setScreen('achievements')}
           onHistory={() => setScreen('history')}
           onRivals={() => setScreen('rivals')}
+          onReferral={() => setScreen('referral')}
           onSettings={() => setScreen('settings')}
         />
       )

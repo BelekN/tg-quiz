@@ -241,6 +241,36 @@ export function shareCompatLink(sessionId, text) {
 }
 
 /**
+ * Реферальная ссылка — тот же принцип, что shareDuelLink/shareCompatLink,
+ * но параметр ref_<tg_id> постоянный (не одноразовый UUID), поэтому
+ * один и тот же пригласивший может слать её сколько угодно раз разным
+ * друзьям. Карточку инлайн-режима собирает tg-webhook по ref_<tg_id>.
+ */
+export function shareReferralLink(tgId, text) {
+  const bot = import.meta.env.VITE_BOT_USERNAME
+  const app = import.meta.env.VITE_APP_SHORT_NAME
+  const query = `ref_${tgId}`
+  const url = app
+    ? `https://t.me/${bot}/${app}?startapp=${query}`
+    : `https://t.me/${bot}?startapp=${query}`
+
+  if (switchInlineQuery.isAvailable()) {
+    switchInlineQuery(query, ['users'])
+    return url
+  }
+
+  try {
+    shareURL(url, text)
+  } catch {
+    window.open(
+      `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`,
+      '_blank',
+    )
+  }
+  return url
+}
+
+/**
  * Публикует результат в Stories пользователя — картинка фиксированная
  * (брендинг приложения), а сам счёт идёт подписью. Ссылка на приложение
  * добавляется как виджет (виден только у Premium-подписчиков — это

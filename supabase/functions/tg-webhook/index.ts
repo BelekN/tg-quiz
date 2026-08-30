@@ -73,6 +73,7 @@ async function answerInviteQuery(inlineQueryId: string, query: string) {
   const trimmed = query.trim();
   const duelMatch = /^duel_([0-9a-fA-F-]{36})$/.exec(trimmed);
   const compatMatch = /^compat_([0-9a-fA-F-]{36})$/.exec(trimmed);
+  const refMatch = /^ref_(\d+)$/.exec(trimmed);
 
   let text = "⚔️ Зову тебя на дуэль в КвизДуэль — 5 вопросов, кто быстрее и точнее!";
   let startParam: string | undefined;
@@ -80,7 +81,13 @@ async function answerInviteQuery(inlineQueryId: string, query: string) {
   let description = "5 вопросов, 10 секунд на каждый — кто быстрее и точнее";
   let resultId = "duel_invite_generic";
 
-  if (compatMatch) {
+  if (refMatch) {
+    startParam = `ref_${refMatch[1]}`;
+    resultId = startParam;
+    title = "Позвать в КвизДуэль";
+    description = "Оба получите монеты, когда друг откроет приложение по ссылке";
+    text = "🎁 Присоединяйся к КвизДуэль по моей ссылке — получим монеты за приглашение!";
+  } else if (compatMatch) {
     startParam = `compat_${compatMatch[1]}`;
     resultId = compatMatch[1];
     title = "Позвать пройти тест на совместимость";

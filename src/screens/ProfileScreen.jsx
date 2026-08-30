@@ -26,6 +26,7 @@ export default function ProfileScreen({
   onAchievements,
   onHistory,
   onRivals,
+  onReferral,
   onSettings,
 }) {
   const name = tgUser?.firstName || user?.first_name || user?.username || 'Игрок'
@@ -115,6 +116,7 @@ export default function ProfileScreen({
         <ProfileRow icon="🏅" label="Достижения" onClick={onAchievements} />
         <ProfileRow icon="📜" label="История игр" onClick={onHistory} />
         <ProfileRow icon="🤝" label="Соперники" onClick={onRivals} />
+        <ProfileRow icon="🎁" label="Пригласить друга" onClick={onReferral} />
         <ProfileRow icon="⚙️" label="Настройки" onClick={onSettings} />
       </div>
 
