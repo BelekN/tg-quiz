@@ -134,9 +134,6 @@ export const acceptDuelChallenge = (duelId) => call('accept_duel_challenge', { d
 /** Отклонить вызов — тихо, без уведомления хосту. */
 export const declineDuelChallenge = (duelId) => call('decline_duel_challenge', { duel_id: duelId })
 
-/** Найти игрока по нику (с "@" или без) или по tg_id. -> { user: {...} | null } */
-export const findUser = (query) => call('find_user', { query })
-
 /** С кем чаще всего играешь и какой счёт побед. -> { items: [{tg_id, ..., games, wins, losses, draws}] } */
 export const fetchRivals = () => call('rivals')
 

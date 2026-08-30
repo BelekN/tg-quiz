@@ -7,7 +7,6 @@ import DuelIntroScreen from './screens/DuelIntroScreen'
 import QuizScreen from './screens/QuizScreen'
 import ResultScreen from './screens/ResultScreen'
 import LeaderboardScreen from './screens/LeaderboardScreen'
-import ChallengePickScreen from './screens/ChallengePickScreen'
 import DuelChallengesScreen from './screens/DuelChallengesScreen'
 import RivalsScreen from './screens/RivalsScreen'
 import HistoryScreen from './screens/HistoryScreen'
@@ -710,9 +709,6 @@ const pickCategory = useCallback(async (category, difficulty) => {
           onChallenge={challengeTarget}
         />
       )
-
-    case 'challenge-pick':
-      return <ChallengePickScreen onBack={() => setScreen('home')} onChallenge={challengeTarget} />
 
     case 'duel-challenges':
       return (

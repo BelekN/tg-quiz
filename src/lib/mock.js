@@ -423,16 +423,6 @@ export const mockApi = {
     return { ok: true }
   },
 
-  async find_user({ query }) {
-    await wait(300)
-    const q = String(query ?? '').trim().replace(/^@/, '').toLowerCase()
-    if (!q) return { user: null }
-    const found = Object.values(MOCK_PLAYERS).find(
-      (p) => p.tg_id === Number(q) || p.username?.toLowerCase() === q,
-    )
-    return { user: found ?? null }
-  },
-
   async rivals() {
     await wait(300)
     return {

@@ -378,14 +378,6 @@ Deno.serve(async (req) => {
         return json({ ok: true });
       }
 
-      // ---- найти игрока по нику (с "@" или без) или по tg_id, чтобы
-      // вызвать его на дуэль напрямую ----
-      case "find_user": {
-        const { data, error } = await supabase.rpc("find_user", { p_query: String(payload.query ?? "") });
-        if (error) throw error;
-        return json({ user: data });
-      }
-
       // ---- соперники: с кем чаще всего играешь и какой счёт побед ----
       case "rivals": {
         const { data, error } = await supabase.rpc("get_rivals", { p_tg_id: tgId });
