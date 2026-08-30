@@ -8,6 +8,7 @@ import QuizScreen from './screens/QuizScreen'
 import ResultScreen from './screens/ResultScreen'
 import LeaderboardScreen from './screens/LeaderboardScreen'
 import ChallengePickScreen from './screens/ChallengePickScreen'
+import DuelChallengesScreen from './screens/DuelChallengesScreen'
 import RivalsScreen from './screens/RivalsScreen'
 import HistoryScreen from './screens/HistoryScreen'
 import AchievementsScreen from './screens/AchievementsScreen'
@@ -713,6 +714,16 @@ const pickCategory = useCallback(async (category, difficulty) => {
     case 'challenge-pick':
       return <ChallengePickScreen onBack={() => setScreen('home')} onChallenge={challengeTarget} />
 
+    case 'duel-challenges':
+      return (
+        <DuelChallengesScreen
+          challenges={duelChallenges}
+          onAccept={acceptChallenge}
+          onDecline={declineChallenge}
+          onBack={() => setScreen('home')}
+        />
+      )
+
     case 'rivals':
       return <RivalsScreen onBack={() => setScreen('profile')} />
 
@@ -957,8 +968,7 @@ const pickCategory = useCallback(async (category, difficulty) => {
           onEditAvatar={() => setScreen('shop')}
           onShop={() => setScreen('shop')}
           challenges={duelChallenges}
-          onAcceptChallenge={acceptChallenge}
-          onDeclineChallenge={declineChallenge}
+          onOpenChallenges={() => setScreen('duel-challenges')}
           onChallengePick={() => setScreen('challenge-pick')}
         />
       )
