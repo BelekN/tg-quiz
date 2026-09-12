@@ -29,9 +29,10 @@ const supabase = createClient(
 
 // A/B на формулировки — только у retention-пушей (напоминания), не у
 // транзакционных (итог дуэли — там текст сообщает факт, не убеждает).
-// Вариант выбирается детерминированно от tg_id: один и тот же
-// пользователь всегда попадает в один и тот же вариант — иначе
-// сравнение вариантов между собой не имеет смысла.
+// Для дуэльного напоминания вариант детерминирован от tg_id (один и тот
+// же пользователь всегда видит один и тот же вариант — сравнение
+// вариантов иначе не имеет смысла); у инактивити-пуша своя ротация,
+// см. pickWeeklyVariant ниже.
 const DUEL_REMINDER_VARIANTS = [
   "⏳ Никто пока не принял твой вызов на дуэль. Пригласи ещё раз — вопросы те же ждут соперника.",
   "👀 Твой вызов на дуэль всё ещё висит без ответа. Скинь ссылку другому другу?",
@@ -40,10 +41,22 @@ const DUEL_REMINDER_VARIANTS = [
 const INACTIVITY_VARIANTS = [
   (name: string) => `🧠 ${name}новые дуэли и вопросы уже ждут. Загляни на разок!`,
   (name: string) => `🎮 ${name}соперники заждались реванша. Есть 2 минуты?`,
+  (name: string) => `🏆 ${name}пока тебя не было, рейтинг подрос у других. Отыграйся!`,
+  (name: string) => `⚡ ${name}быстрая дуэль — 2 минуты, и снова в игре!`,
+  (name: string) => `🎯 ${name}новая неделя — новый шанс подняться в рейтинге!`,
 ];
 
 function pickVariant(tgId: number, count: number) {
   return Math.abs(tgId) % count;
+}
+
+// Инактивити-пуш шлётся не чаще раза в неделю (см. 075_weekly_inactivity_nudge.sql),
+// поэтому variant тут завязан ещё и на номер недели — иначе один и тот же
+// пользователь получал бы один и тот же текст неделя за неделей (pickVariant
+// от tg_id детерминирован и не меняется со временем).
+function pickWeeklyVariant(tgId: number, count: number) {
+  const week = Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000));
+  return Math.abs(tgId + week) % count;
 }
 
 async function logPushSent(tgId: number, pushType: string, variant: number) {
@@ -99,7 +112,7 @@ Deno.serve(async (req) => {
 
   for (const r of inactiveReminders ?? []) {
     const name = r.first_name ? `${escapeHtml(r.first_name)}, ` : "";
-    const variant = pickVariant(r.tg_id, INACTIVITY_VARIANTS.length);
+    const variant = pickWeeklyVariant(r.tg_id, INACTIVITY_VARIANTS.length);
     await sendTelegramMessage(
       BOT_TOKEN,
       r.tg_id,

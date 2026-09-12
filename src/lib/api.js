@@ -68,8 +68,9 @@ export class ApiError extends Error {
   }
 }
 
-/** Апсерт профиля + баланс. -> { user, start_param, force_update } */
-export const fetchMe = () => call('me', { app_version: APP_VERSION })
+/** Апсерт профиля + баланс. source — метка канала из src_<code> (см. parseSourceStartParam), best-effort для аналитики. -> { user, start_param, force_update } */
+export const fetchMe = (source) =>
+  call('me', { app_version: APP_VERSION, ...(source ? { source } : {}) })
 
 /** duelId=null -> создать дуэль; иначе войти как гость. */
 export const startDuel = (duelId = null) =>
@@ -299,6 +300,12 @@ export function parseCompatStartParam(startParam) {
 export function parseReferralStartParam(startParam) {
   const m = /^ref_(\d+)$/.exec(startParam ?? '')
   return m ? Number(m[1]) : null
+}
+
+/** src_<code> -> code — метка канала для ссылок вида ?startapp=src_vk1 в постах/рекламе. */
+export function parseSourceStartParam(startParam) {
+  const m = /^src_([A-Za-z0-9-]{1,32})$/.exec(startParam ?? '')
+  return m ? m[1] : null
 }
 
 /** Заявить награду за переход по реферальной ссылке друга. -> { reward } */

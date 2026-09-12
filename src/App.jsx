@@ -69,6 +69,7 @@ import {
   parseCompatStartParam,
   computeNumerology,
   parseReferralStartParam,
+  parseSourceStartParam,
   claimReferral,
 } from './lib/api'
 import { computePersonaResult } from './lib/persona'
@@ -83,9 +84,14 @@ initTelegram()
 // сервер ответил, но с ошибкой (UNAUTHORIZED и т.п.), повтор не
 // поможет и только оттянет показ настоящей причины.
 async function fetchMeWithRetry(retries = 2) {
+  // Метка канала (?startapp=src_<code>) — best-effort для аналитики,
+  // берём клиентский start_param: initData уже восстановлена к этому
+  // моменту (initTelegram() выше), а ждать подписанный ответ сервера
+  // ради одного поля в payload — лишний круг сети.
+  const source = parseSourceStartParam(getStartParam())
   for (let attempt = 0; ; attempt++) {
     try {
-      return await fetchMe()
+      return await fetchMe(source)
     } catch (e) {
       if ((e.message !== 'NETWORK_ERROR' && e.message !== 'OFFLINE') || attempt >= retries) throw e
       await new Promise((r) => setTimeout(r, 600 * (attempt + 1)))

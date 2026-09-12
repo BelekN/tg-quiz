@@ -74,3 +74,20 @@ having not exists (
 )
 order by first_duel_created desc
 limit 50;
+
+-- 5) Источники трафика: сколько новых пользователей пришло по каждой
+--    метке ?startapp=src_<code> (см. parseSourceStartParam в
+--    src/lib/api.js). Смотрим первый в жизни каждого tg_id 'me' с
+--    непустым payload->>'source' — источник фиксируем один раз, при
+--    самом первом заходе, повторные визиты той же меткой не считаем.
+with first_source as (
+  select distinct on (tg_id)
+    tg_id, payload->>'source' as source, created_at
+  from public.events
+  where name = 'me' and payload ? 'source'
+  order by tg_id, created_at
+)
+select source, count(*) as users, min(created_at) as first_seen, max(created_at) as last_seen
+from first_source
+group by source
+order by users desc;
