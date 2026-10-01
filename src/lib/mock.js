@@ -933,6 +933,7 @@ export const mockApi = {
         const p = courseProgress[c.key]
         return {
           key: c.key,
+          category: c.category,
           title: c.title,
           subtitle: c.subtitle,
           description: c.description,
