@@ -98,7 +98,9 @@ export default function CourseScreen({ courseKey, busy, onBack, onStartDay, onOp
       )}
       {!cta && (
         <p className="animate-rise mt-4 rounded-2xl bg-tg-section px-4 py-3 text-center text-sm text-tg-hint">
-          ✅ На сегодня всё! День {nextDay} откроется завтра.
+          {isExamDay && course.exam_attempts > 0
+            ? '📅 Пересдать итоговый тест можно завтра.'
+            : `✅ На сегодня всё! День ${nextDay} откроется завтра.`}
         </p>
       )}
 

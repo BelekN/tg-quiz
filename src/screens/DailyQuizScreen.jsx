@@ -7,7 +7,7 @@ import { answerDaily } from '../lib/api'
 const REVEAL_MS = 1100
 
 /** Тот же анти-чит паттерн, что в соло-квизе — только вопросы у всех одни. */
-export default function DailyQuizScreen({ sessionId, questions, onComplete, onError }) {
+export default function DailyQuizScreen({ sessionId, questions, startIndex = 0, startCorrect = 0, onComplete, onError }) {
   const {
     index,
     phase,
@@ -19,7 +19,7 @@ export default function DailyQuizScreen({ sessionId, questions, onComplete, onEr
     submit,
     advance,
     optionState,
-  } = useAnswerFlow({ questions, onError })
+  } = useAnswerFlow({ questions, startIndex, startCorrect, onError })
 
   const submitAnswer = (answerIndex) =>
     submit(answerIndex, () => answerDaily(sessionId, index, answerIndex))

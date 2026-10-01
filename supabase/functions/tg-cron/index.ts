@@ -136,7 +136,7 @@ Deno.serve(async (req) => {
     await sendTelegramMessage(
       BOT_TOKEN,
       r.tg_id,
-      `📚 ${name}день ${r.day} из ${r.total_days}${title} уже открыт. 4 минуты — и серия не прервётся!`,
+      `📚 ${name}день ${r.day} из ${r.total_days}${title} уже открыт. 4 минуты — и ещё на шаг ближе к сертификату!`,
       { text: "Продолжить курс", url: appDeepLink(BOT_USERNAME, APP_SHORT_NAME, `course_${r.course_key}`) },
     ).catch(() => {});
     await logPushSent(r.tg_id, "course_reminder", 0);

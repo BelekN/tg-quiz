@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import AnswerButton from '../AnswerButton'
 import Quote from './Quote'
 import { haptic } from '../../lib/telegram'
@@ -8,12 +8,16 @@ const ADVANCE_MS = 350
 /**
  * Итоговый тест: без подсказок по ходу — проверяет сервер, разбор
  * ошибок покажет экран результата. Порядок вариантов не перемешиваем:
- * сервер сверяет индексы с exam_key в авторском порядке.
+ * варианты уже перемешаны сервером для этой попытки, он же переводит
+ * индексы обратно при проверке (course_exam_order, 079).
  */
 export default function ExamStep({ step, ui, busy, onDone }) {
   const [index, setIndex] = useState(0)
   const [picked, setPicked] = useState(null)
   const answersRef = useRef([])
+  const timerRef = useRef(null)
+  // Ушёл назад в те 350 мс после последнего ответа — тест не отправляем.
+  useEffect(() => () => clearTimeout(timerRef.current), [])
 
   const q = step.questions[index]
   const isLast = index === step.questions.length - 1
@@ -23,7 +27,7 @@ export default function ExamStep({ step, ui, busy, onDone }) {
     haptic.tap()
     setPicked(i)
     answersRef.current[index] = i
-    setTimeout(() => {
+    timerRef.current = setTimeout(() => {
       if (isLast) {
         onDone(answersRef.current)
         return

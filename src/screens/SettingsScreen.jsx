@@ -36,6 +36,9 @@ export default function SettingsScreen({
     try {
       const res = await setter(!current)
       onUpdateUser(res.user)
+    } catch {
+      // тумблер остаётся в прежнем положении — сервер не принял изменение
+      haptic.error()
     } finally {
       setBusyPref(null)
     }

@@ -300,7 +300,11 @@ Deno.serve(async (req) => {
   // никогда из того, что прислали в самом апдейте.
   const preCheckout = update?.pre_checkout_query;
   if (preCheckout?.id) {
-    const ok = Boolean(findCoinPack(preCheckout.invoice_payload ?? ""));
+    // Сверяем не только ключ пачки, но и валюту/сумму — иначе при
+    // расхождении деньги сначала списались бы, а монеты потом не пришли.
+    const prePack = findCoinPack(preCheckout.invoice_payload ?? "");
+    const ok = Boolean(prePack) && preCheckout.currency === "XTR" &&
+      preCheckout.total_amount === prePack!.stars;
     try {
       await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/answerPreCheckoutQuery`, {
         method: "POST",
@@ -338,7 +342,7 @@ Deno.serve(async (req) => {
     const pack = findCoinPack(payment.invoice_payload ?? "");
     if (!pack) {
       console.error("successful_payment: unknown pack", payment.invoice_payload);
-    } else if (payment.total_amount !== pack.stars) {
+    } else if (payment.currency !== "XTR" || payment.total_amount !== pack.stars) {
       // Реальная сумма списания не совпала с ценой пачки по её ключу —
       // не начисляем молча, это либо баг в создании инвойса, либо
       // подмена. Монеты не летят, деньги не трогаем — разбираемся вручную.
@@ -375,7 +379,10 @@ Deno.serve(async (req) => {
     // "/start@BNQuiz_bot duel_xxx" -> команда "/start", аргумент "duel_xxx"
     const [cmdRaw, ...rest] = text.trim().split(/\s+/);
     const cmd = cmdRaw.split("@")[0];
-    const payload = rest.join(" ") || undefined;
+    // Аргумент /start уходит в ?startapp= — пропускаем только то, что
+    // Telegram и так допускает в start_param, а не произвольный текст.
+    const arg = rest.join(" ");
+    const payload = /^[A-Za-z0-9_-]{1,64}$/.test(arg) ? arg : undefined;
 
     try {
       switch (cmd) {

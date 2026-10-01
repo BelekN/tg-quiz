@@ -4,10 +4,11 @@ import { formatNumber } from '../lib/format'
 
 /**
  * Итог дня курса. Обычный день — сколько верно, монеты, что завтра.
- * Несданный итоговый тест — разбор ошибок и пересдача сразу же
- * (сданный уводит прямо на CertificateScreen, сюда не попадает).
+ * Несданный итоговый тест — какие вопросы не получились (без правильных
+ * ответов: сервер их не раскрывает, иначе пересдача превращалась бы в
+ * списывание) и пересдача завтра. Сданный уводит прямо на CertificateScreen.
  */
-export default function CourseDayResultScreen({ result, exam, onBackToCourse, onRetakeExam }) {
+export default function CourseDayResultScreen({ result, exam, onBackToCourse }) {
   if (result.is_last) {
     const mistakes = (result.results ?? [])
       .map((r, i) => ({ ...r, q: exam?.[i] }))
@@ -23,30 +24,23 @@ export default function CourseDayResultScreen({ result, exam, onBackToCourse, on
           </p>
         </div>
 
+        <p className="mt-4 rounded-2xl bg-tg-section px-4 py-3 text-center text-sm leading-relaxed">
+          Пересдать можно завтра. Загляни в шпаргалку на экране курса — и
+          попробуй снова: варианты ответов будут в другом порядке.
+        </p>
+
         <p className="mt-6 px-1 text-[11px] font-semibold uppercase tracking-wider text-tg-hint">
-          Разбор ошибок
+          Где были ошибки
         </p>
         <div className="mt-2.5 flex flex-col gap-2.5">
           {mistakes.map((m) => (
             <div key={m.q.id} className="animate-rise rounded-2xl bg-tg-section p-4">
-              <p className="text-[14px] leading-snug whitespace-pre-line">{m.q.quote}</p>
-              <p className="mt-2 text-xs text-quiz-wrong">
-                ✕ Твой ответ: {m.q.options[m.chosen] ?? '—'}
-              </p>
-              <p className="text-xs font-semibold text-quiz-right">✓ {m.q.options[m.answer]}</p>
-              <p className="mt-1.5 text-[13px] leading-snug text-tg-hint">{m.explain}</p>
+              <p className="text-[14px] leading-snug whitespace-pre-line">✕ {m.q.quote}</p>
             </div>
           ))}
         </div>
 
-        <LessonButton onClick={onRetakeExam}>Пересдать тест</LessonButton>
-        <button
-          type="button"
-          onClick={onBackToCourse}
-          className="mt-3 text-center text-sm font-medium text-tg-link active:opacity-70"
-        >
-          Вернуться к курсу
-        </button>
+        <LessonButton onClick={onBackToCourse}>К курсу</LessonButton>
       </Screen>
     )
   }

@@ -126,6 +126,13 @@ async function shouldNotify(recipientTgId: number, kind: "challenge" | "result")
   return kind === "challenge" ? data.challenge_notifications_enabled : data.result_notifications_enabled;
 }
 
+// В events пишем только маленький payload: он приходит с клиента как есть,
+// и без ограничения любой мог бы складывать в базу мегабайты на запрос.
+function eventPayload(payload: unknown) {
+  const s = JSON.stringify(payload ?? {});
+  return s.length <= 2000 ? payload : { truncated: true, size: s.length };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ error: "METHOD_NOT_ALLOWED" }, 405);
@@ -173,7 +180,17 @@ Deno.serve(async (req) => {
       return json({ error: "RATE_LIMITED" }, 429);
     }
 
-    const body = await req.json().catch(() => ({}));
+    // Тело больше 64 КБ легитимному клиенту не нужно ни для одного
+    // действия — режем до разбора JSON.
+    const rawBody = await req.text().catch(() => "");
+    if (rawBody.length > 64 * 1024) return json({ error: "PAYLOAD_TOO_LARGE" }, 413);
+    // deno-lint-ignore no-explicit-any
+    let body: any = {};
+    try {
+      body = JSON.parse(rawBody || "{}");
+    } catch {
+      body = {};
+    }
     action = body?.action;
     // "payload = {}" по умолчанию сработал бы только на undefined, а не
     // на явный payload: null — а такой запрос легитимному пользователю
@@ -192,7 +209,7 @@ Deno.serve(async (req) => {
     // FK-ошибку, которая тихо проглатывалась try/catch, и самое важное
     // событие воронки (первый вход) для новых пользователей никогда не
     // попадало в events. Логируем "me" отдельно, после upsert_user.
-    if (FUNNEL_ACTIONS.has(action) && action !== "me") {
+    if (action && FUNNEL_ACTIONS.has(action) && action !== "me") {
       // supabase-js RPC-builder — не всегда настоящий Promise (сборка не
       // закреплена лок-файлом), .catch() на нём может быть не функцией
       // вовсе — из-за этого ловили необработанное исключение мимо всех
@@ -200,7 +217,7 @@ Deno.serve(async (req) => {
       // сетевой сбой). try/catch вместо чейнинга работает независимо от
       // формы возвращаемого объекта.
       try {
-        await supabase.rpc("log_event", { p_tg_id: tgId, p_name: action, p_payload: payload });
+        await supabase.rpc("log_event", { p_tg_id: tgId, p_name: action, p_payload: eventPayload(payload) });
       } catch {
         /* воронка — best-effort, не роняем основной запрос */
       }
@@ -217,7 +234,7 @@ Deno.serve(async (req) => {
         });
         if (error) throw error;
         try {
-          await supabase.rpc("log_event", { p_tg_id: tgId, p_name: "me", p_payload: payload });
+          await supabase.rpc("log_event", { p_tg_id: tgId, p_name: "me", p_payload: eventPayload(payload) });
         } catch {
           /* воронка — best-effort */
         }
@@ -591,7 +608,7 @@ Deno.serve(async (req) => {
         if (SUPPORT_TG_ID && notify) {
           const who = escapeHtml(tg.user.username ? `@${tg.user.username}` : tg.user.first_name ?? String(tgId));
           const contextLine = payload.context
-            ? `\n<code>${escapeHtml(JSON.stringify(payload.context)).slice(0, 3000)}</code>`
+            ? `\n<code>${escapeHtml(JSON.stringify(payload.context).slice(0, 3000))}</code>`
             : "";
           // Крэши рендера (ErrorBoundary) шлют сюда же, но с
           // context.kind === "crash" — помечаем иначе, чтобы сразу
@@ -601,7 +618,9 @@ Deno.serve(async (req) => {
           await sendTelegramMessage(
             BOT_TOKEN,
             Number(SUPPORT_TG_ID),
-            `${label} от ${who} (${tgId}):\n\n${escapeHtml(String(payload.message)).slice(0, 3000)}${contextLine}`,
+            // Сначала режем, потом экранируем: обрезка по уже экранированной
+            // строке могла разрезать &lt; пополам, и Telegram отвергал весь пуш.
+            `${label} от ${who} (${tgId}):\n\n${escapeHtml(String(payload.message).slice(0, 3000))}${contextLine}`,
           ).catch(() => {});
         }
 
@@ -897,7 +916,10 @@ Deno.serve(async (req) => {
       // ---- реферал: пригласивший и приглашённый получают монеты, один
       // раз на каждого приглашённого (UNIQUE в 072_referrals.sql) ----
       case "claim_referral": {
-        const referrerTgId = Number(payload.referrer_tg_id);
+        // Кто пригласил — только из ПОДПИСАННОГО start_param, а не из
+        // payload: иначе любой мог назначить себе любого «пригласившего».
+        const refMatch = /^ref_(\d+)$/.exec(tg.startParam ?? "");
+        const referrerTgId = refMatch ? Number(refMatch[1]) : NaN;
         if (!Number.isInteger(referrerTgId)) return json({ error: "INVALID_REFERRER" }, 400);
         const { data, error } = await supabase.rpc("claim_referral", {
           p_tg_id: tgId,
@@ -944,7 +966,7 @@ Deno.serve(async (req) => {
       // ---- «Учёба»: завершить день (оценки карточек) или сдать итоговый тест ----
       case "complete_course_day": {
         const examAnswers = Array.isArray(payload.exam_answers)
-          ? payload.exam_answers.map((a: unknown) => (Number.isInteger(a) ? a : -1))
+          ? payload.exam_answers.slice(0, 100).map((a: unknown) => (Number.isInteger(a) ? a : -1))
           : null;
         const { data, error } = await supabase.rpc("complete_course_day", {
           p_tg_id: tgId,

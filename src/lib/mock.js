@@ -260,6 +260,8 @@ function mockCertificate(course, p) {
   }
 }
 
+const cardOrd = (course, key) => course.cards.findIndex((c) => c.key === key)
+
 const courseCardsOf = (course, keys) =>
   course.cards.filter((c) => keys.includes(c.key)).map(({ key, title, icon }) => ({ key, title, icon }))
 
@@ -988,7 +990,7 @@ export const mockApi = {
 
     const due = Object.entries(p.cards)
       .filter(([, st]) => isLast || st.due_day <= dayNo)
-      .sort(([ka, a], [kb, b]) => a.box - b.box || a.due_day - b.due_day || ka.localeCompare(kb))
+      .sort(([ka, a], [kb, b]) => a.box - b.box || a.due_day - b.due_day || cardOrd(c, ka) - cardOrd(c, kb))
       .slice(0, isLast ? 6 : 3)
     const review = due.map(([key, st]) => {
       const card = c.cards.find((x) => x.key === key)
@@ -1022,12 +1024,8 @@ export const mockApi = {
     if (day !== p.days_done + 1) throw new Error('COURSE_DAY_MISMATCH')
 
     if (day >= c.days.length) {
-      const results = c.exam.map((q, i) => ({
-        answer: q.answer,
-        chosen: exam_answers[i],
-        correct: exam_answers[i] === q.answer,
-        explain: q.explain,
-      }))
+      // как на сервере (079): без ответов — только какие вопросы неверны
+      const results = c.exam.map((q, i) => ({ correct: exam_answers[i] === q.answer }))
       const score = results.filter((r) => r.correct).length
       p.exam_attempts += 1
       p.exam_best = Math.max(p.exam_best ?? 0, score)

@@ -27,6 +27,14 @@ const MESSAGES = {
   COURSE_DAY_LOCKED: 'На сегодня день курса уже пройден — следующий откроется завтра.',
   COURSE_COMPLETED: 'Курс уже пройден — сертификат ждёт тебя на экране курса.',
   COURSE_DAY_MISMATCH: 'Этот день уже засчитан. Вернитесь к курсу — прогресс сохранён.',
+  COURSE_EXAM_LOCKED: 'Итоговый тест можно сдавать раз в день — попробуйте завтра.',
+  COURSE_NOT_STARTED: 'Курс ещё не начат — откройте его на вкладке «Учёба».',
+  COURSE_DAY_NOT_FOUND: 'Этот день курса пока недоступен.',
+  INVALID_EXAM_ANSWERS: 'Ответы теста не дошли целиком — пройдите тест ещё раз.',
+  ALREADY_CHALLENGED: 'Вы уже вызвали этого игрока — дождитесь ответа.',
+  CHALLENGE_RATE_LIMITED: 'Слишком много вызовов за час — попробуйте позже.',
+  DUEL_DECLINED: 'Этот вызов уже отклонён.',
+  RATE_LIMITED: 'Слишком много запросов — подождите пару секунд.',
 }
 
 export function ErrorView({ code, detail, onRetry, secondaryAction, onReport }) {

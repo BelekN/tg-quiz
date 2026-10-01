@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import HomeScreen from './screens/HomeScreen'
 import FunHubScreen from './screens/FunHubScreen'
 import ProfileScreen from './screens/ProfileScreen'
@@ -107,6 +107,20 @@ async function fetchMeWithRetry(retries = 2) {
   }
 }
 
+// Финиш/сохранение результата — самый дорогой запрос: если он оборвался,
+// человек терял всю сыгранную партию (или день курса). Повторяем только
+// обрыв сети; бизнес-ошибку сервера (ALREADY_* и т.п.) повтор не исправит.
+async function withNetworkRetry(fn, retries = 2) {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await fn()
+    } catch (e) {
+      if ((e.message !== 'NETWORK_ERROR' && e.message !== 'OFFLINE') || attempt >= retries) throw e
+      await new Promise((r) => setTimeout(r, 700 * (attempt + 1)))
+    }
+  }
+}
+
 /**
  * Роутер MVP — конечный автомат на useState.
  * React Router не подключаем: экранов четыре, а в Mini App
@@ -117,6 +131,18 @@ async function fetchMeWithRetry(retries = 2) {
  */
 export default function App() {
   const [screen, setScreen] = useState('boot')
+  // Текущий экран для async-стартов: ответ сервера мог прийти уже после
+  // того, как человек ушёл назад/на другую вкладку — тогда не уводим его
+  // обратно в игру. busyRef — синхронная защита от двойного тапа (state
+  // busy обновляется только со следующим рендером).
+  const screenRef = useRef(screen)
+  useEffect(() => {
+    screenRef.current = screen
+  }, [screen])
+  const busyRef = useRef(false)
+  // Сбой на холодном старте: «повторить» должно перезапустить вход
+  // целиком (с deep link и force_update), а не просто открыть главную.
+  const [bootFailed, setBootFailed] = useState(false)
   const [error, setError] = useState(null)
   const [errorDetail, setErrorDetail] = useState(null)
   const [busy, setBusy] = useState(false)
@@ -217,7 +243,7 @@ export default function App() {
             if (e.message !== 'ALREADY_PLAYED') throw e
             const res = await finishDuel(duelId)
             if (!alive) return
-            setDuel({ duel_id: duelId, role: 'guest' })
+            setDuel({ duel_id: duelId, role: res.role ?? 'guest' })
             setResult(res)
             setScreen('result')
           }
@@ -267,7 +293,10 @@ export default function App() {
 
         setScreen('home')
       } catch (e) {
-        if (alive) showError(e)
+        if (alive) {
+          setBootFailed(true)
+          showError(e)
+        }
       }
     })()
 
@@ -276,33 +305,50 @@ export default function App() {
     }
   }, [showError])
 
-  const createDuel = useCallback(async () => {
+  // Общий каркас «нажал — ждём сервер — открываем экран»: защита от
+  // двойного тапа и от ответа, пришедшего после ухода с экрана.
+  const runStart = useCallback(async (request, onStarted) => {
+    if (busyRef.current) return
+    busyRef.current = true
     setBusy(true)
+    const from = screenRef.current
     try {
-      const created = await startDuel(null)
-      setDuel(created)
-      setScreen('duel-intro')
+      const started = await request()
+      if (screenRef.current !== from) return
+      onStarted(started)
     } catch (e) {
-      showError(e)
+      if (screenRef.current === from) showError(e)
     } finally {
+      busyRef.current = false
       setBusy(false)
     }
   }, [showError])
 
+  const createDuel = useCallback(
+    () =>
+      runStart(
+        () => startDuel(null),
+        (created) => {
+          setDuel(created)
+          setScreen('duel-intro')
+        },
+      ),
+    [runStart],
+  )
+
   // Вызвать конкретного игрока (из рейтинга или найденного по нику/ID) —
   // играю сразу, как при обычном "Создать дуэль", просто с известной целью.
-  const challengeTarget = useCallback(async (targetTgId) => {
-    setBusy(true)
-    try {
-      const created = await challengeDuel(targetTgId)
-      setDuel(created)
-      setScreen('duel-intro')
-    } catch (e) {
-      showError(e)
-    } finally {
-      setBusy(false)
-    }
-  }, [showError])
+  const challengeTarget = useCallback(
+    (targetTgId) =>
+      runStart(
+        () => challengeDuel(targetTgId),
+        (created) => {
+          setDuel(created)
+          setScreen('duel-intro')
+        },
+      ),
+    [runStart],
+  )
 
   // Принять входящий вызов -> сразу вопросы, как при обычном переходе
   // по ссылке-приглашению. Убираем из списка оптимистично сразу — не
@@ -358,7 +404,7 @@ export default function App() {
   const completeDuel = useCallback(async () => {
     setScreen('finishing')
     try {
-      const res = await finishDuel(duel.duel_id)
+      const res = await withNetworkRetry(() => finishDuel(duel.duel_id))
       setResult(res)
       setScreen('result')
       // локальный баланс монет держим в актуальном виде
@@ -394,7 +440,8 @@ export default function App() {
         outcome: progress.outcome,
         coins_earned:
           r.coins_earned +
-          (progress.outcome === 'win' ? 20 : progress.outcome === 'draw' ? 10 : 0),
+          // те же +4/+2, что начисляет finish_duel (055_coin_denomination.sql)
+          (progress.outcome === 'win' ? 4 : progress.outcome === 'draw' ? 2 : 0),
       },
     )
     fetchMe()
@@ -415,30 +462,38 @@ export default function App() {
       setDuel(resumed)
       setScreen('quiz')
     } catch (e) {
+      // Все ответы уже записаны, сорвался только финиш — доводим его,
+      // иначе «Продолжить дуэль» снова вело бы на этот же экран ошибки.
+      if (e.message === 'ALREADY_PLAYED') {
+        completeDuel()
+        return
+      }
       showError(e)
     }
-  }, [duel, showError])
+  }, [duel, showError, completeDuel])
 
   const saveCity = useCallback(async (city) => {
     const res = await setCity(city)
     setUser(res.user)
   }, [])
 
-const pickCategory = useCallback(async (category, difficulty) => {
-    try {
-      const started = await startSolo(category, difficulty)
-      setSolo(started)
-      setScreen('solo-quiz')
-    } catch (e) {
-      showError(e)
-    }
-  }, [showError])
+  const pickCategory = useCallback(
+    (category, difficulty) =>
+      runStart(
+        () => startSolo(category, difficulty),
+        (started) => {
+          setSolo(started)
+          setScreen('solo-quiz')
+        },
+      ),
+    [runStart],
+  )
 
   // все вопросы соло-сессии отвечены -> считаем итог
   const completeSolo = useCallback(async () => {
     setScreen('finishing')
     try {
-      const res = await finishSolo(solo.session_id)
+      const res = await withNetworkRetry(() => finishSolo(solo.session_id))
       setSoloResult(res)
       setScreen('solo-result')
       const totalBefore = user?.total_score ?? 0
@@ -460,24 +515,20 @@ const pickCategory = useCallback(async (category, difficulty) => {
     }
   }, [solo, user, showError])
 
-  const startSprintRun = useCallback(async () => {
-    setBusy(true)
-    try {
-      const started = await startSprint()
-      setSprint(started)
-      setScreen('sprint')
-    } catch (e) {
-      showError(e)
-    } finally {
-      setBusy(false)
-    }
-  }, [showError])
+  const startSprintRun = useCallback(
+    () =>
+      runStart(startSprint, (started) => {
+        setSprint(started)
+        setScreen('sprint')
+      }),
+    [runStart],
+  )
 
   // 60 секунд истекли (или вопросы кончились) -> считаем итог
   const completeSprint = useCallback(async () => {
     setScreen('finishing')
     try {
-      const res = await finishSprint(sprint.session_id)
+      const res = await withNetworkRetry(() => finishSprint(sprint.session_id))
       setSprintResult(res)
       setScreen('sprint-result')
       const totalBefore = user?.total_score ?? 0
@@ -499,24 +550,13 @@ const pickCategory = useCallback(async (category, difficulty) => {
     }
   }, [sprint, user, showError])
 
-  const startDailyRun = useCallback(async () => {
-    setBusy(true)
-    try {
-      const started = await startDaily()
-      setDaily(started)
-      setScreen('daily-quiz')
-    } catch (e) {
-      showError(e)
-    } finally {
-      setBusy(false)
-    }
-  }, [showError])
-
-  // все 5 вопросов ежедневного вызова отвечены -> считаем итог
-  const completeDaily = useCallback(async () => {
+  // все 5 вопросов ежедневного вызова отвечены -> считаем итог.
+  // sessionId передаётся явно для случая «все ответы уже были, сорвался
+  // только финиш» — тогда стейт daily ещё не успел обновиться.
+  const completeDaily = useCallback(async (sessionId = daily?.session_id) => {
     setScreen('finishing')
     try {
-      const res = await finishDaily(daily.session_id)
+      const res = await withNetworkRetry(() => finishDaily(sessionId))
       setDailyResult(res)
       setScreen('daily-result')
       const totalBefore = user?.total_score ?? 0
@@ -538,24 +578,32 @@ const pickCategory = useCallback(async (category, difficulty) => {
     }
   }, [daily, user, showError])
 
-  const startMarathonRun = useCallback(async () => {
-    setBusy(true)
-    try {
-      const started = await startMarathon()
-      setMarathon(started)
-      setScreen('marathon')
-    } catch (e) {
-      showError(e)
-    } finally {
-      setBusy(false)
-    }
-  }, [showError])
+  // start_daily возобновляет прерванный сегодняшний вызов (079): с того
+  // вопроса, где оборвалось, или сразу к финишу, если ответы все есть.
+  const startDailyRun = useCallback(
+    () =>
+      runStart(startDaily, (started) => {
+        setDaily(started)
+        if ((started.answered ?? 0) >= started.questions.length) completeDaily(started.session_id)
+        else setScreen('daily-quiz')
+      }),
+    [runStart, completeDaily],
+  )
+
+  const startMarathonRun = useCallback(
+    () =>
+      runStart(startMarathon, (started) => {
+        setMarathon(started)
+        setScreen('marathon')
+      }),
+    [runStart],
+  )
 
   // серия оборвалась (или пул исчерпан) -> считаем итог
   const completeMarathon = useCallback(async () => {
     setScreen('finishing')
     try {
-      const res = await finishMarathon(marathon.session_id)
+      const res = await withNetworkRetry(() => finishMarathon(marathon.session_id))
       setMarathonResult(res)
       setScreen('marathon-result')
       const totalBefore = user?.total_score ?? 0
@@ -577,15 +625,17 @@ const pickCategory = useCallback(async (category, difficulty) => {
     }
   }, [marathon, user, showError])
 
-  const pickPersonaTest = useCallback(async (testKey) => {
-    try {
-      const started = await startPersona(testKey)
-      setPersona(started)
-      setScreen('persona-quiz')
-    } catch (e) {
-      showError(e)
-    }
-  }, [showError])
+  const pickPersonaTest = useCallback(
+    (testKey) =>
+      runStart(
+        () => startPersona(testKey),
+        (started) => {
+          setPersona(started)
+          setScreen('persona-quiz')
+        },
+      ),
+    [runStart],
+  )
 
   // result_key считаем на клиенте (см. lib/persona.js) — сервер здесь
   // только проверяет, что такой результат существует у этого теста.
@@ -593,7 +643,7 @@ const pickCategory = useCallback(async (category, difficulty) => {
     setScreen('finishing')
     try {
       const resultKey = computePersonaResult(persona.scoring, answers, persona.results)
-      const res = await finishPersona(persona.session_id, resultKey)
+      const res = await withNetworkRetry(() => finishPersona(persona.session_id, resultKey))
       setPersonaResult(res)
       setScreen('persona-result')
       if (res.new_achievements?.length) setNewAchievements(res.new_achievements)
@@ -602,15 +652,17 @@ const pickCategory = useCallback(async (category, difficulty) => {
     }
   }, [persona, showError])
 
-  const pickCompatTest = useCallback(async (testKey) => {
-    try {
-      const started = await startCompat(testKey, null)
-      setCompat(started)
-      setScreen('compat-intro')
-    } catch (e) {
-      showError(e)
-    }
-  }, [showError])
+  const pickCompatTest = useCallback(
+    (testKey) =>
+      runStart(
+        () => startCompat(testKey, null),
+        (started) => {
+          setCompat(started)
+          setScreen('compat-intro')
+        },
+      ),
+    [runStart],
+  )
 
   // Пришёл сюда уже с посчитанным на сервере результатом последнего
   // ответа (answer_compat) — доп. запроса не нужно, в отличие от
@@ -641,31 +693,27 @@ const pickCategory = useCallback(async (category, difficulty) => {
   }, [])
 
   // ui — подписи под тему курса (courses.ui), приходят с экрана курса
-  const startLesson = useCallback(async (key, { examOnly = false, ui = null } = {}) => {
-    setBusy(true)
-    try {
-      const started = await startCourseDay(key)
-      setCourseKey(key)
-      setLesson({ ...started, examOnly, ui })
-      setScreen('course-lesson')
-    } catch (e) {
-      showError(e)
-    } finally {
-      setBusy(false)
-    }
-  }, [showError])
+  const startLesson = useCallback(
+    (key, { examOnly = false, ui = null } = {}) =>
+      runStart(
+        () => startCourseDay(key),
+        (started) => {
+          setCourseKey(key)
+          setLesson({ ...started, examOnly, ui })
+          setScreen('course-lesson')
+        },
+      ),
+    [runStart],
+  )
 
   // Сдал итоговый тест — сразу на сертификат; иначе — экран итога дня
   // (для несданного теста там разбор ошибок и пересдача).
   const completeLesson = useCallback(async ({ correct, total, ratings, examAnswers }) => {
     setScreen('finishing')
     try {
-      const res = await completeCourseDay(lesson.course_key, lesson.day, {
-        correct,
-        total,
-        ratings,
-        examAnswers,
-      })
+      const res = await withNetworkRetry(() =>
+        completeCourseDay(lesson.course_key, lesson.day, { correct, total, ratings, examAnswers }),
+      )
       if (res.coins_balance !== undefined) {
         setUser((u) => (u ? { ...u, coins: res.coins_balance } : u))
       }
@@ -738,7 +786,7 @@ const pickCategory = useCallback(async (category, difficulty) => {
         <ErrorView
           code={error}
           detail={errorDetail}
-          onRetry={goHome}
+          onRetry={bootFailed ? () => window.location.reload() : goHome}
           secondaryAction={
             duel?.duel_id
               ? { label: 'Продолжить дуэль', onClick: resumeDuel }
@@ -752,7 +800,12 @@ const pickCategory = useCallback(async (category, difficulty) => {
       )
 
     case 'report-issue':
-      return <ReportIssueScreen context={reportContext} onBack={goHome} />
+      return (
+        <ReportIssueScreen
+          context={reportContext}
+          onBack={reportContext?.screen === 'settings' ? () => setScreen('settings') : goHome}
+        />
+      )
 
     case 'force-update':
       return <ForceUpdateScreen />
@@ -927,7 +980,9 @@ const pickCategory = useCallback(async (category, difficulty) => {
         <DailyQuizScreen
           sessionId={daily.session_id}
           questions={daily.questions}
-          onComplete={completeDaily}
+          startIndex={daily.answered ?? 0}
+          startCorrect={daily.correct ?? 0}
+          onComplete={() => completeDaily()}
           onError={showError}
         />
       )
@@ -1099,7 +1154,6 @@ const pickCategory = useCallback(async (category, difficulty) => {
           result={lessonResult}
           exam={lesson?.exam}
           onBackToCourse={backToCourse}
-          onRetakeExam={() => startLesson(courseKey, { examOnly: true, ui: lesson?.ui })}
         />
       )
 

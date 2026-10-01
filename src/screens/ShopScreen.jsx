@@ -152,14 +152,19 @@ export default function ShopScreen({ user, onUpdateUser }) {
       if (status === 'paid') {
         setNotice('Оплата прошла — обновляем баланс…')
         const before = user?.coins
+        let credited = false
         for (let attempt = 0; attempt < 5; attempt++) {
           await new Promise((r) => setTimeout(r, 700))
           const me = await fetchMe().catch(() => null)
           if (!me) continue
           onUpdateUser(me.user)
-          if (me.user.coins !== before) break
+          if (me.user.coins !== before) {
+            credited = true
+            break
+          }
         }
-        setNotice('Готово! Монеты начислены.')
+        // Вебхук мог не успеть за 3,5 с — не обещаем того, чего не видим.
+        setNotice(credited ? 'Готово! Монеты начислены.' : 'Оплата принята — монеты появятся в течение минуты.')
         haptic.success()
       } else if (status !== 'cancelled') {
         setNotice('Не получилось провести оплату.')
