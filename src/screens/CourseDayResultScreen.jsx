@@ -92,7 +92,7 @@ export default function CourseDayResultScreen({ result, exam, onBackToCourse, on
       </div>
 
       <p className="mt-4 text-center text-xs text-tg-hint">
-        Уловки, которые ты отметил как «забыл», вернутся в повторение уже завтра
+        Всё, что ты отметил как «забыл», вернётся в повторение уже завтра
       </p>
 
       <LessonButton onClick={onBackToCourse}>Отлично</LessonButton>

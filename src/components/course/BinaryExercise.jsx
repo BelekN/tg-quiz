@@ -5,13 +5,12 @@ import LessonButton from './LessonButton'
 import ReviewBadge from './ReviewBadge'
 import { haptic } from '../../lib/telegram'
 
-const CHOICES = [
-  { trick: false, label: '✅ Честный довод' },
-  { trick: true, label: '🚩 Уловка' },
-]
-
-/** «Честно или уловка?» — самое быстрое упражнение, на один тап. */
-export default function BinaryExercise({ step, onResult, onNext }) {
+/** «Честно или уловка?» — самое быстрое упражнение, на один тап. Подписи — из ui курса. */
+export default function BinaryExercise({ step, ui, onResult, onNext }) {
+  const choices = [
+    { trick: false, label: ui.binary_honest },
+    { trick: true, label: ui.binary_trick },
+  ]
   const [picked, setPicked] = useState(null)
   const answered = picked !== null
   const ok = answered && picked === step.trick
@@ -29,14 +28,14 @@ export default function BinaryExercise({ step, onResult, onNext }) {
     <>
       <div className="mt-6">
         <ReviewBadge show={step.is_review} />
-        <p className="text-sm font-semibold text-tg-hint">Честный довод или уловка?</p>
+        <p className="text-sm font-semibold text-tg-hint">{ui.binary_prompt}</p>
       </div>
       <div className="animate-rise mt-3">
         <Quote>{step.quote}</Quote>
       </div>
 
       <div className="mt-5 grid grid-cols-2 gap-2.5">
-        {CHOICES.map((c) => {
+        {choices.map((c) => {
           const isPicked = picked === c.trick
           const isRight = c.trick === step.trick
           const skin = !answered

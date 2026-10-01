@@ -47,7 +47,10 @@ export default function CourseScreen({ courseKey, busy, onBack, onStartDay, onOp
 
   let cta = null
   if (course.completed) {
-    cta = { label: '🏅 Мой сертификат', onClick: () => onOpenCertificate(course.certificate) }
+    cta = {
+      label: '🏅 Мой сертификат',
+      onClick: () => onOpenCertificate({ ...course.certificate, ui: course.ui }),
+    }
   } else if (course.available_today) {
     cta = {
       label: busy
@@ -57,7 +60,8 @@ export default function CourseScreen({ courseKey, busy, onBack, onStartDay, onOp
           : course.started
             ? `Начать день ${nextDay}`
             : 'Начать курс',
-      onClick: () => onStartDay(course.key, { examOnly: isExamDay && course.exam_attempts > 0 }),
+      onClick: () =>
+        onStartDay(course.key, { examOnly: isExamDay && course.exam_attempts > 0, ui: course.ui }),
     }
   }
 

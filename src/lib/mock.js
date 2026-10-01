@@ -3,7 +3,6 @@
  * Позволяют крутить все экраны в обычном браузере, без бота
  * и без задеплоенной Edge Function.
  */
-import logicFallaciesCourse from '../../supabase/courses/logic-fallacies.json'
 const QUESTIONS = [
   {
     id: 'q1',
@@ -237,7 +236,9 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms))
 
 // ---- «Учёба»: та же логика, что в 076_courses.sql, но в памяти и без
 // календарной блокировки — в моке все 7 дней проходятся подряд ----
-const MOCK_COURSES = [logicFallaciesCourse]
+const MOCK_COURSES = Object.values(
+  import.meta.glob('../../supabase/courses/*.json', { eager: true, import: 'default' }),
+).sort((a, b) => a.ord - b.ord)
 const courseProgress = {} // key -> { days_done, exam_attempts, exam_best, completed_at, certificate_no, cards: {key: {box, due_day, reviews}} }
 
 const courseByKey = (key) => {
@@ -958,6 +959,7 @@ export const mockApi = {
       subtitle: c.subtitle,
       description: c.description,
       icon: c.icon,
+      ui: c.ui ?? {},
       total_days: c.days.length,
       pass_score: c.pass_score,
       exam_total: c.exam.length,

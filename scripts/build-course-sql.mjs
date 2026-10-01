@@ -29,12 +29,12 @@ function build(course) {
   out.push('-- Идемпотентно: можно прогонять повторно после правок контента.')
   out.push('begin;')
   out.push('')
-  out.push(`insert into public.courses (key, category, title, subtitle, description, icon, total_days, pass_score, exam, exam_key, ord)
+  out.push(`insert into public.courses (key, category, title, subtitle, description, icon, ui, total_days, pass_score, exam, exam_key, ord)
 values (${lit(course.key)}, ${lit(course.category)}, ${lit(course.title)}, ${lit(course.subtitle)}, ${lit(course.description)}, ${lit(course.icon)},
-        ${course.days.length}, ${course.pass_score}, ${jsonb(exam)}, ${jsonb(examKey)}, ${course.ord})
+        ${jsonb(course.ui ?? {})}, ${course.days.length}, ${course.pass_score}, ${jsonb(exam)}, ${jsonb(examKey)}, ${course.ord})
 on conflict (key) do update set
   category = excluded.category, title = excluded.title, subtitle = excluded.subtitle, description = excluded.description,
-  icon = excluded.icon, total_days = excluded.total_days, pass_score = excluded.pass_score,
+  icon = excluded.icon, ui = excluded.ui, total_days = excluded.total_days, pass_score = excluded.pass_score,
   exam = excluded.exam, exam_key = excluded.exam_key, ord = excluded.ord;`)
   out.push('')
 

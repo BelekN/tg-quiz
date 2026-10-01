@@ -10,7 +10,7 @@ import SpotExercise from '../components/course/SpotExercise'
 import MatchExercise from '../components/course/MatchExercise'
 import RatingStep from '../components/course/RatingStep'
 import ExamStep from '../components/course/ExamStep'
-import { PHASE_LABELS, buildLessonSteps, isExercise } from '../lib/course'
+import { PHASE_LABELS, buildLessonSteps, courseUi, isExercise } from '../lib/course'
 
 const EXERCISES = {
   binary: BinaryExercise,
@@ -27,6 +27,7 @@ const EXERCISES = {
  */
 export default function CourseLessonScreen({ lesson, examOnly, onComplete, onExit }) {
   const steps = useMemo(() => buildLessonSteps(lesson, { examOnly }), [lesson, examOnly])
+  const ui = useMemo(() => courseUi(lesson.ui), [lesson.ui])
   const [index, setIndex] = useState(0)
   const [submitted, setSubmitted] = useState(false)
   const scoreRef = useRef({ correct: 0, total: 0 })
@@ -60,14 +61,15 @@ export default function CourseLessonScreen({ lesson, examOnly, onComplete, onExi
   if (step.type === 'intro' || step.type === 'tip') {
     body = <TextStep step={step} onNext={theoryNext} />
   } else if (step.type === 'chat') {
-    body = <ChatStep step={step} cardTitle={cardTitles[step.card]} onNext={theoryNext} />
+    body = <ChatStep step={step} ui={ui} cardTitle={cardTitles[step.card]} onNext={theoryNext} />
   } else if (step.type === 'concept') {
-    body = <ConceptStep step={step} onNext={theoryNext} />
+    body = <ConceptStep step={step} ui={ui} onNext={theoryNext} />
   } else if (EXERCISES[step.type]) {
     const Exercise = EXERCISES[step.type]
     body = (
       <Exercise
         step={step}
+        ui={ui}
         onResult={onResult}
         onNext={isLastStep ? () => finish({}) : next}
       />
@@ -76,7 +78,7 @@ export default function CourseLessonScreen({ lesson, examOnly, onComplete, onExi
     body = <RatingStep step={step} busy={submitted} onDone={(ratings) => finish({ ratings })} />
   } else if (step.type === 'exam') {
     body = (
-      <ExamStep step={step} busy={submitted} onDone={(examAnswers) => finish({ examAnswers })} />
+      <ExamStep step={step} ui={ui} busy={submitted} onDone={(examAnswers) => finish({ examAnswers })} />
     )
   }
 

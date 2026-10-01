@@ -6,7 +6,7 @@ import ReviewBadge from './ReviewBadge'
 import { haptic } from '../../lib/telegram'
 
 /** «Найди реплику с уловкой» — тап прямо по сообщению в переписке. */
-export default function SpotExercise({ step, onResult, onNext }) {
+export default function SpotExercise({ step, ui, onResult, onNext }) {
   const [picked, setPicked] = useState(null)
   const answered = picked !== null
   const ok = picked === step.answer
@@ -33,7 +33,12 @@ export default function SpotExercise({ step, onResult, onNext }) {
         <p className="text-sm font-semibold text-tg-hint">👆 {step.prompt}</p>
       </div>
       <div className="mt-3">
-        <ChatBubbles messages={step.messages} marks={marks} onTap={answered ? undefined : pick} />
+        <ChatBubbles
+          messages={step.messages}
+          marks={marks}
+          flagIcon={ui.flag_icon}
+          onTap={answered ? undefined : pick}
+        />
       </div>
 
       {answered && <Feedback ok={ok} explain={step.explain} />}

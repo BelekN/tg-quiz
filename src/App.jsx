@@ -640,12 +640,13 @@ const pickCategory = useCallback(async (category, difficulty) => {
     setScreen('course')
   }, [])
 
-  const startLesson = useCallback(async (key, { examOnly = false } = {}) => {
+  // ui — подписи под тему курса (courses.ui), приходят с экрана курса
+  const startLesson = useCallback(async (key, { examOnly = false, ui = null } = {}) => {
     setBusy(true)
     try {
       const started = await startCourseDay(key)
       setCourseKey(key)
-      setLesson({ ...started, examOnly })
+      setLesson({ ...started, examOnly, ui })
       setScreen('course-lesson')
     } catch (e) {
       showError(e)
@@ -669,7 +670,7 @@ const pickCategory = useCallback(async (category, difficulty) => {
         setUser((u) => (u ? { ...u, coins: res.coins_balance } : u))
       }
       if (res.is_last && res.passed) {
-        setCertificate({ ...res.certificate, coins_earned: res.coins_earned })
+        setCertificate({ ...res.certificate, coins_earned: res.coins_earned, ui: lesson.ui })
         setScreen('certificate')
       } else {
         setLessonResult(res)
@@ -1098,7 +1099,7 @@ const pickCategory = useCallback(async (category, difficulty) => {
           result={lessonResult}
           exam={lesson?.exam}
           onBackToCourse={backToCourse}
-          onRetakeExam={() => startLesson(courseKey, { examOnly: true })}
+          onRetakeExam={() => startLesson(courseKey, { examOnly: true, ui: lesson?.ui })}
         />
       )
 

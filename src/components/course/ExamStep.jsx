@@ -10,7 +10,7 @@ const ADVANCE_MS = 350
  * ошибок покажет экран результата. Порядок вариантов не перемешиваем:
  * сервер сверяет индексы с exam_key в авторском порядке.
  */
-export default function ExamStep({ step, busy, onDone }) {
+export default function ExamStep({ step, ui, busy, onDone }) {
   const [index, setIndex] = useState(0)
   const [picked, setPicked] = useState(null)
   const answersRef = useRef([])
@@ -36,7 +36,7 @@ export default function ExamStep({ step, busy, onDone }) {
   return (
     <>
       <div className="mt-6 flex items-center justify-between">
-        <p className="text-sm font-semibold text-tg-hint">Какая уловка?</p>
+        <p className="text-sm font-semibold text-tg-hint">{ui.exam_prompt}</p>
         <p className="text-sm tabular-nums text-tg-hint">
           {index + 1}/{step.questions.length}
         </p>

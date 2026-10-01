@@ -13,9 +13,6 @@ export const LEARN_CATEGORIES = [
 ]
 
 export const UPCOMING_COURSES = [
-  { category: 'thinking', icon: '🌀', title: 'Когнитивные искажения', subtitle: 'Почему мозг нас обманывает' },
-  { category: 'thinking', icon: '🔎', title: 'Проверка фактов', subtitle: 'Как отличить новость от фейка за минуту' },
-  { category: 'thinking', icon: '🧭', title: 'Принятие решений', subtitle: 'Выбирать спокойно, а не наугад' },
   { category: 'money', icon: '💸', title: 'Финансовая грамотность', subtitle: 'Бюджет, вклады, кредиты без боли' },
   { category: 'money', icon: '📈', title: 'Инвестиции с нуля', subtitle: 'Акции, облигации и риск — простыми словами' },
   { category: 'tech', icon: '✨', title: 'Основы ИИ', subtitle: 'Как устроены нейросети — простыми словами' },

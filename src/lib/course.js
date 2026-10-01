@@ -19,6 +19,28 @@ export const RATINGS = [
   { key: 'easy', icon: '😎', label: 'Легко' },
 ]
 
+/**
+ * Подписи, которые зависят от темы курса (у «Логических уловок» —
+ * «Честный довод / Уловка», у «Когнитивных искажений» — свои). Курс
+ * переопределяет любые из них полем ui в своём .json (courses.ui).
+ */
+export const DEFAULT_UI = {
+  binary_prompt: 'Честный довод или уловка?',
+  binary_honest: '✅ Честный довод',
+  binary_trick: '🚩 Уловка',
+  reveal_cta: '🔎 Где подвох?',
+  flag_icon: '🚩', // метка реплики-примера в переписке
+  flag_tone: 'warn', // 'warn' — красная подсветка (ошибка), 'good' — зелёная (удачный приём)
+  exam_prompt: 'Какая уловка?',
+  signs_title: 'Как распознать',
+  counter_title: 'Как ответить',
+  cards_word: 'уловок', // «12 уловок» — родительный падеж мн. числа
+}
+
+export const UI_KEYS = Object.keys(DEFAULT_UI)
+
+export const courseUi = (ui) => ({ ...DEFAULT_UI, ...(ui ?? {}) })
+
 const EXERCISE_TYPES = new Set(['binary', 'choice', 'spot', 'match'])
 
 export const isExercise = (step) => EXERCISE_TYPES.has(step.type)

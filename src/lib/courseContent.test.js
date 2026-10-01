@@ -1,15 +1,22 @@
 import { describe, expect, it } from 'vitest'
-import course from '../../supabase/courses/logic-fallacies.json'
+import { UI_KEYS } from './course'
+
+const COURSES = Object.values(import.meta.glob('../../supabase/courses/*.json', { eager: true, import: 'default' }))
 
 /**
  * Проверка самого контента курса — опечатка в JSON (неверный индекс
  * ответа, ссылка на несуществующую карточку, вариант с уловкой, которую
  * ещё не проходили) иначе всплыла бы только у живого пользователя.
  */
+for (const course of COURSES) {
 const titles = new Map(course.cards.map((c) => [c.title, c]))
-// Короткие подписи в сопоставлении, где полное название не влезает в чип.
-const ALIASES = { 'Бремя доказательства': 'Перекладывание бремени доказательства' }
-const isHonest = (label) => /^Честн/.test(label)
+// Короткие подписи карточек в сопоставлении (полное название не влезает
+// в чип) — course.aliases: { "короткое": "полное название карточки" }.
+const ALIASES = course.aliases ?? {}
+// «Нейтральные» варианты, которые не карточка курса: «Честное возражение»
+// и т.п. — по префиксу «Честн» или явным списком course.extra_options.
+const EXTRA = new Set(course.extra_options ?? [])
+const isHonest = (label) => /^Честн/.test(label) || EXTRA.has(label)
 
 function introDayOf(label) {
   const card = titles.get(ALIASES[label] ?? label)
@@ -56,6 +63,15 @@ function checkExercise(ex, maxDay, where) {
 }
 
 describe(`курс «${course.title}»`, () => {
+  it('has the required meta fields and only known ui keys', () => {
+    for (const f of ['key', 'category', 'title', 'subtitle', 'description', 'icon']) expect(course[f], f).toBeTruthy()
+    expect(course.key).toMatch(/^[a-z0-9-]{1,48}$/)
+    for (const k of Object.keys(course.ui ?? {})) expect(UI_KEYS, k).toContain(k)
+    const keys = course.cards.map((c) => c.key)
+    expect(new Set(keys).size).toBe(keys.length)
+    expect(new Set(course.cards.map((c) => c.title)).size).toBe(keys.length)
+  })
+
   it('has contiguous days, each new card introduced exactly once on its intro_day', () => {
     expect(course.days.map((d) => d.day)).toEqual(course.days.map((_, i) => i + 1))
     const seen = new Set()
@@ -111,7 +127,7 @@ describe(`курс «${course.title}»`, () => {
     }
   })
 
-  it('exam tests every fallacy exactly once, answer indices are valid, pass score reachable', () => {
+  it('exam tests every card exactly once, answer indices are valid, pass score reachable', () => {
     expect(course.pass_score).toBeLessThanOrEqual(course.exam.length)
     const answered = course.exam.map((q) => {
       expect(q.options).toHaveLength(4)
@@ -133,3 +149,4 @@ describe(`курс «${course.title}»`, () => {
     }
   })
 })
+}

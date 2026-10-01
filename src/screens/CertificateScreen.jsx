@@ -1,7 +1,7 @@
 import Screen from '../components/Screen'
 import BackButton from '../components/BackButton'
 import LessonButton from '../components/course/LessonButton'
-import { formatCertificateNo, formatIssuedOn } from '../lib/course'
+import { courseUi, formatCertificateNo, formatIssuedOn } from '../lib/course'
 import { formatNumber } from '../lib/format'
 import { haptic, shareResultToStory } from '../lib/telegram'
 
@@ -12,11 +12,12 @@ import { haptic, shareResultToStory } from '../lib/telegram'
  */
 export default function CertificateScreen({ certificate, coinsEarned, onBack }) {
   const c = certificate
+  const ui = courseUi(c.ui)
 
   const share = () => {
     haptic.tap()
     shareResultToStory(
-      `🏅 Прошёл курс «${c.course_title}» в КвизДуэли: ${c.cards_count} уловок за ${c.total_days} дней, итоговый тест — ${c.score}/${c.exam_total}`,
+      `🏅 Прошёл курс «${c.course_title}» в КвизДуэли: ${c.cards_count} ${ui.cards_word} за ${c.total_days} дней, итоговый тест — ${c.score}/${c.exam_total}`,
     )
   }
 
@@ -42,7 +43,7 @@ export default function CertificateScreen({ certificate, coinsEarned, onBack }) 
             </div>
             <div className="rounded-2xl bg-white/5 py-2.5">
               <p className="text-lg font-bold tabular-nums">{c.cards_count}</p>
-              <p className="text-[10px] text-tg-hint">уловок</p>
+              <p className="text-[10px] text-tg-hint">{ui.cards_word}</p>
             </div>
             <div className="rounded-2xl bg-white/5 py-2.5">
               <p className="text-lg font-bold tabular-nums">

@@ -1,7 +1,7 @@
 import LessonButton from './LessonButton'
 
 /** Карточка уловки: что это, как распознать, как ответить. */
-export default function ConceptStep({ step, onNext }) {
+export default function ConceptStep({ step, ui, onNext }) {
   return (
     <>
       <div className="animate-rise mt-6 rounded-3xl border border-white/5 bg-tg-section p-5">
@@ -14,7 +14,7 @@ export default function ConceptStep({ step, onNext }) {
         <p className="mt-4 text-[15px] leading-relaxed">{step.definition}</p>
 
         <p className="mt-5 text-[11px] font-semibold uppercase tracking-wider text-tg-hint">
-          Как распознать
+          {ui.signs_title}
         </p>
         <ul className="mt-2 flex flex-col gap-1.5">
           {step.signs.map((s) => (
@@ -27,7 +27,7 @@ export default function ConceptStep({ step, onNext }) {
 
         <div className="mt-5 rounded-2xl bg-quiz-right/10 px-4 py-3">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-quiz-right">
-            🛡 Как ответить
+            🛡 {ui.counter_title}
           </p>
           <p className="mt-1 text-[14px] leading-snug">{step.counter}</p>
         </div>

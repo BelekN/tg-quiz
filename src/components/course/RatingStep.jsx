@@ -16,7 +16,7 @@ export default function RatingStep({ step, busy, onDone }) {
       <div className="animate-rise mt-6">
         <h1 className="text-[20px] font-bold">Как запомнилось?</h1>
         <p className="mt-1 text-sm text-tg-hint">
-          Честно — от этого зависит, когда уловка вернётся в повторение
+          Честно — от этого зависит, когда тема вернётся в повторение
         </p>
       </div>
 

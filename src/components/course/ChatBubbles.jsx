@@ -7,11 +7,13 @@
  */
 const MARK_SKIN = {
   flag: 'ring-2 ring-quiz-wrong bg-quiz-wrong/15',
+  good: 'ring-2 ring-quiz-right bg-quiz-right/15',
   wrong: 'ring-2 ring-quiz-wrong bg-quiz-wrong/15 animate-shake',
   right: 'ring-2 ring-quiz-right bg-quiz-right/15 animate-pop',
 }
 
-export default function ChatBubbles({ messages, visible = messages.length, marks = {}, onTap }) {
+export default function ChatBubbles({ messages, visible = messages.length, marks = {}, onTap, flagIcon = '🚩' }) {
+  // marks: 'good' — та же метка, что 'flag', но зелёная (ui.flag_tone курса)
   const leftName = messages[0]?.name
 
   return (
@@ -33,7 +35,7 @@ export default function ChatBubbles({ messages, visible = messages.length, marks
           >
             <span className={`text-xs font-semibold ${left ? 'text-tg-link' : 'text-quiz-gold'}`}>
               {m.name}
-              {mark === 'flag' && <span className="ml-1.5">🚩</span>}
+              {(mark === 'flag' || mark === 'good') && <span className="ml-1.5">{flagIcon}</span>}
             </span>
             <span className="mt-0.5 whitespace-pre-line text-[15px] leading-snug">{m.text}</span>
           </Tag>
