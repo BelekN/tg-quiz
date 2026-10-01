@@ -122,10 +122,31 @@ Deno.serve(async (req) => {
     await logPushSent(r.tg_id, "inactivity_nudge", variant);
   }
 
+  // ---- пуш №4: вчера прошёл день курса, сегодня ещё нет (см.
+  // get_course_reminders: не чаще раза в сутки, только с 18:00 Бишкек) ----
+  const { data: courseReminders, error: courseErr } = await supabase.rpc(
+    "get_course_reminders",
+    { p_limit: 50 },
+  );
+  if (courseErr) console.error("get_course_reminders failed", courseErr);
+
+  for (const r of courseReminders ?? []) {
+    const name = r.first_name ? `${escapeHtml(r.first_name)}, ` : "";
+    const title = r.day_title ? ` «${escapeHtml(r.day_title)}»` : "";
+    await sendTelegramMessage(
+      BOT_TOKEN,
+      r.tg_id,
+      `📚 ${name}день ${r.day} из ${r.total_days}${title} уже открыт. 4 минуты — и серия не прервётся!`,
+      { text: "Продолжить курс", url: appDeepLink(BOT_USERNAME, APP_SHORT_NAME, `course_${r.course_key}`) },
+    ).catch(() => {});
+    await logPushSent(r.tg_id, "course_reminder", 0);
+  }
+
   return new Response(
     JSON.stringify({
       duel_reminders: duelReminders?.length ?? 0,
       inactivity_reminders: inactiveReminders?.length ?? 0,
+      course_reminders: courseReminders?.length ?? 0,
     }),
     { headers: { "Content-Type": "application/json" } },
   );

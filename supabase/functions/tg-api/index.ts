@@ -88,6 +88,8 @@ const FUNNEL_ACTIONS = new Set([
   "buy_persona_category",
   "buy_numerology_test",
   "claim_referral",
+  "start_course_day",
+  "complete_course_day",
 ]);
 
 const json = (body: unknown, status = 200) =>
@@ -908,6 +910,51 @@ Deno.serve(async (req) => {
       // ---- реферал: сколько друзей уже пришло по моей ссылке ----
       case "referral_stats": {
         const { data, error } = await supabase.rpc("get_referral_stats", { p_tg_id: tgId });
+        if (error) throw error;
+        return json(data);
+      }
+
+      // ---- «Учёба»: каталог курсов с прогрессом ----
+      case "courses": {
+        const { data, error } = await supabase.rpc("get_courses", { p_tg_id: tgId });
+        if (error) throw error;
+        return json({ items: data });
+      }
+
+      // ---- «Учёба»: экран курса (дни, изученные карточки, сертификат) ----
+      case "course": {
+        const { data, error } = await supabase.rpc("get_course", {
+          p_tg_id: tgId,
+          p_course_key: payload.course_key,
+        });
+        if (error) throw error;
+        return json(data);
+      }
+
+      // ---- «Учёба»: старт текущего дня (теория + практика + повторение) ----
+      case "start_course_day": {
+        const { data, error } = await supabase.rpc("start_course_day", {
+          p_tg_id: tgId,
+          p_course_key: payload.course_key,
+        });
+        if (error) throw error;
+        return json(data);
+      }
+
+      // ---- «Учёба»: завершить день (оценки карточек) или сдать итоговый тест ----
+      case "complete_course_day": {
+        const examAnswers = Array.isArray(payload.exam_answers)
+          ? payload.exam_answers.map((a: unknown) => (Number.isInteger(a) ? a : -1))
+          : null;
+        const { data, error } = await supabase.rpc("complete_course_day", {
+          p_tg_id: tgId,
+          p_course_key: payload.course_key,
+          p_day: payload.day,
+          p_correct: payload.correct ?? 0,
+          p_total: payload.total ?? 0,
+          p_ratings: payload.ratings ?? null,
+          p_exam_answers: examAnswers,
+        });
         if (error) throw error;
         return json(data);
       }

@@ -1,8 +1,9 @@
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F']
 
 /**
- * state: 'idle' | 'correct' | 'wrong' | 'muted'
+ * state: 'idle' | 'correct' | 'wrong' | 'muted' | 'selected'
  * 'muted' — правильный ответ уже показан, эта кнопка не при делах.
+ * 'selected' — выбор без вердикта (итоговый тест курса: проверяет сервер).
  */
 export default function AnswerButton({ text, index, state, disabled, onClick }) {
   const skin = {
@@ -10,6 +11,7 @@ export default function AnswerButton({ text, index, state, disabled, onClick }) 
     correct: 'bg-quiz-right/20 border-quiz-right text-quiz-right animate-pop',
     wrong: 'bg-quiz-wrong/20 border-quiz-wrong text-quiz-wrong animate-shake',
     muted: 'bg-tg-surface/50 border-transparent text-tg-hint',
+    selected: 'bg-tg-accent/20 border-tg-accent text-tg-text animate-pop',
   }[state]
 
   const badge = {
@@ -17,6 +19,7 @@ export default function AnswerButton({ text, index, state, disabled, onClick }) 
     correct: 'bg-quiz-right text-black',
     wrong: 'bg-quiz-wrong text-white',
     muted: 'bg-white/5 text-tg-hint',
+    selected: 'bg-tg-accent text-tg-accent-text',
   }[state]
 
   return (

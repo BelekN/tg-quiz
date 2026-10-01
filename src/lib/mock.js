@@ -3,6 +3,7 @@
  * Позволяют крутить все экраны в обычном браузере, без бота
  * и без задеплоенной Edge Function.
  */
+import logicFallaciesCourse from '../../supabase/courses/logic-fallacies.json'
 const QUESTIONS = [
   {
     id: 'q1',
@@ -232,6 +233,34 @@ const NUMEROLOGY_TESTS = [
 ]
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms))
+
+
+// ---- «Учёба»: та же логика, что в 076_courses.sql, но в памяти и без
+// календарной блокировки — в моке все 7 дней проходятся подряд ----
+const MOCK_COURSES = [logicFallaciesCourse]
+const courseProgress = {} // key -> { days_done, exam_attempts, exam_best, completed_at, certificate_no, cards: {key: {box, due_day, reviews}} }
+
+const courseByKey = (key) => {
+  const c = MOCK_COURSES.find((x) => x.key === key)
+  if (!c) throw new Error('COURSE_NOT_FOUND')
+  return c
+}
+
+function mockCertificate(course, p) {
+  return {
+    no: p.certificate_no,
+    name: meUser.first_name,
+    course_title: course.title,
+    issued_on: p.completed_at,
+    score: p.exam_best,
+    exam_total: course.exam.length,
+    total_days: course.days.length,
+    cards_count: course.cards.length,
+  }
+}
+
+const courseCardsOf = (course, keys) =>
+  course.cards.filter((c) => keys.includes(c.key)).map(({ key, title, icon }) => ({ key, title, icon }))
 
 export const mockApi = {
   async me() {
@@ -895,6 +924,139 @@ export const mockApi = {
     await wait(300)
     meUser.coins += 30
     return { reward: 30 }
+  },
+
+  async courses() {
+    await wait(250)
+    return {
+      items: MOCK_COURSES.map((c) => {
+        const p = courseProgress[c.key]
+        return {
+          key: c.key,
+          title: c.title,
+          subtitle: c.subtitle,
+          description: c.description,
+          icon: c.icon,
+          total_days: c.days.length,
+          days_done: p?.days_done ?? 0,
+          started: Boolean(p),
+          completed: Boolean(p?.completed_at),
+          available_today: !p?.completed_at,
+        }
+      }),
+    }
+  },
+
+  async course({ course_key }) {
+    await wait(250)
+    const c = courseByKey(course_key)
+    const p = courseProgress[c.key]
+    return {
+      key: c.key,
+      title: c.title,
+      subtitle: c.subtitle,
+      description: c.description,
+      icon: c.icon,
+      total_days: c.days.length,
+      pass_score: c.pass_score,
+      exam_total: c.exam.length,
+      cards_total: c.cards.length,
+      days_done: p?.days_done ?? 0,
+      started: Boolean(p),
+      completed: Boolean(p?.completed_at),
+      exam_attempts: p?.exam_attempts ?? 0,
+      available_today: !p?.completed_at,
+      days: c.days.map(({ day, title, subtitle }) => ({ day, title, subtitle })),
+      cards: c.cards
+        .filter((card) => p?.cards[card.key])
+        .map(({ key, title, icon, summary }) => ({ key, title, icon, summary, box: p.cards[key].box })),
+      certificate: p?.completed_at ? mockCertificate(c, p) : null,
+    }
+  },
+
+  async start_course_day({ course_key }) {
+    await wait(300)
+    const c = courseByKey(course_key)
+    const p = (courseProgress[c.key] ??= { days_done: 0, exam_attempts: 0, exam_best: null, cards: {} })
+    if (p.completed_at) throw new Error('COURSE_COMPLETED')
+    const dayNo = p.days_done + 1
+    const isLast = dayNo >= c.days.length
+    const day = c.days[dayNo - 1]
+
+    const due = Object.entries(p.cards)
+      .filter(([, st]) => isLast || st.due_day <= dayNo)
+      .sort(([ka, a], [kb, b]) => a.box - b.box || a.due_day - b.due_day || ka.localeCompare(kb))
+      .slice(0, isLast ? 6 : 3)
+    const review = due.map(([key, st]) => {
+      const card = c.cards.find((x) => x.key === key)
+      return { ...card.review[st.reviews % card.review.length], card: key, is_review: true }
+    })
+
+    return {
+      course_key: c.key,
+      course_title: c.title,
+      day: dayNo,
+      total_days: c.days.length,
+      title: day.title,
+      subtitle: day.subtitle,
+      is_last: isLast,
+      theory: day.theory,
+      practice: day.practice,
+      review,
+      new_cards: courseCardsOf(c, day.cards),
+      review_cards: courseCardsOf(c, due.map(([key]) => key)),
+      exam: isLast ? c.exam.map(({ quote, options }, id) => ({ id, quote, options })) : null,
+      pass_score: c.pass_score,
+      exam_attempts: p.exam_attempts,
+    }
+  },
+
+  async complete_course_day({ course_key, day, correct, total, ratings, exam_answers }) {
+    await wait(400)
+    const c = courseByKey(course_key)
+    const p = courseProgress[c.key]
+    if (!p) throw new Error('COURSE_NOT_STARTED')
+    if (day !== p.days_done + 1) throw new Error('COURSE_DAY_MISMATCH')
+
+    if (day >= c.days.length) {
+      const results = c.exam.map((q, i) => ({
+        answer: q.answer,
+        chosen: exam_answers[i],
+        correct: exam_answers[i] === q.answer,
+        explain: q.explain,
+      }))
+      const score = results.filter((r) => r.correct).length
+      p.exam_attempts += 1
+      p.exam_best = Math.max(p.exam_best ?? 0, score)
+      const base = { is_last: true, score, exam_total: c.exam.length, pass_score: c.pass_score, results }
+      if (score < c.pass_score) return { ...base, passed: false }
+      p.days_done = day
+      p.completed_at = new Date().toISOString().slice(0, 10)
+      p.certificate_no = 42
+      meUser.coins += 30
+      return { ...base, passed: true, coins_earned: 30, coins_balance: meUser.coins, certificate: mockCertificate(c, p) }
+    }
+
+    const BOX = { forgot: [1, 1], hard: [2, 2], easy: [3, 4] }
+    for (const [key, rating] of Object.entries(ratings ?? {})) {
+      if (!BOX[rating]) continue
+      const prev = p.cards[key]
+      p.cards[key] = { box: BOX[rating][0], due_day: day + BOX[rating][1], reviews: prev ? prev.reviews + 1 : 0 }
+    }
+    for (const key of c.days[day - 1].cards) p.cards[key] ??= { box: 2, due_day: day + 2, reviews: 0 }
+
+    p.days_done = day
+    meUser.coins += 5
+    return {
+      is_last: false,
+      day,
+      total_days: c.days.length,
+      correct,
+      total,
+      coins_earned: 5,
+      coins_balance: meUser.coins,
+      next_day_title: c.days[day]?.title ?? null,
+    }
   },
 
   async duel_progress() {

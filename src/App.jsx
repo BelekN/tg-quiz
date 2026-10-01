@@ -37,6 +37,11 @@ import CompatResultScreen from './screens/CompatResultScreen'
 import NumerologyListScreen from './screens/NumerologyListScreen'
 import NumerologyInputScreen from './screens/NumerologyInputScreen'
 import NumerologyResultScreen from './screens/NumerologyResultScreen'
+import LearnScreen from './screens/LearnScreen'
+import CourseScreen from './screens/CourseScreen'
+import CourseLessonScreen from './screens/CourseLessonScreen'
+import CourseDayResultScreen from './screens/CourseDayResultScreen'
+import CertificateScreen from './screens/CertificateScreen'
 import { Loader, ErrorView } from './components/StateView'
 import ReportIssueScreen from './screens/ReportIssueScreen'
 import SettingsScreen from './screens/SettingsScreen'
@@ -71,6 +76,9 @@ import {
   parseReferralStartParam,
   parseSourceStartParam,
   claimReferral,
+  startCourseDay,
+  completeCourseDay,
+  parseCourseStartParam,
 } from './lib/api'
 import { computePersonaResult } from './lib/persona'
 import { getRank } from './lib/ranks'
@@ -151,6 +159,11 @@ export default function App() {
   const [numerologyTest, setNumerologyTest] = useState(null) // { key, title, description, icon }
   const [numerologyResult, setNumerologyResult] = useState(null)
 
+  const [courseKey, setCourseKey] = useState(null)
+  const [lesson, setLesson] = useState(null) // ответ start_course_day + examOnly
+  const [lessonResult, setLessonResult] = useState(null)
+  const [certificate, setCertificate] = useState(null) // { ...certificate, coins_earned? }
+
   const [newAchievements, setNewAchievements] = useState(null)
   const [newRank, setNewRank] = useState(null)
   const [reportContext, setReportContext] = useState(null)
@@ -226,6 +239,15 @@ export default function App() {
           } else {
             setScreen('compat-intro')
           }
+          return
+        }
+
+        // ?startapp=course_<key> -> пуш «день курса ждёт» ведёт сразу
+        // на экран курса, а не на главную вкладку
+        const startCourseKey = parseCourseStartParam(me.start_param ?? getStartParam())
+        if (startCourseKey) {
+          setCourseKey(startCourseKey)
+          setScreen('course')
           return
         }
 
@@ -613,6 +635,58 @@ const pickCategory = useCallback(async (category, difficulty) => {
     }
   }, [showError])
 
+  const openCourse = useCallback((key) => {
+    setCourseKey(key)
+    setScreen('course')
+  }, [])
+
+  const startLesson = useCallback(async (key, { examOnly = false } = {}) => {
+    setBusy(true)
+    try {
+      const started = await startCourseDay(key)
+      setCourseKey(key)
+      setLesson({ ...started, examOnly })
+      setScreen('course-lesson')
+    } catch (e) {
+      showError(e)
+    } finally {
+      setBusy(false)
+    }
+  }, [showError])
+
+  // Сдал итоговый тест — сразу на сертификат; иначе — экран итога дня
+  // (для несданного теста там разбор ошибок и пересдача).
+  const completeLesson = useCallback(async ({ correct, total, ratings, examAnswers }) => {
+    setScreen('finishing')
+    try {
+      const res = await completeCourseDay(lesson.course_key, lesson.day, {
+        correct,
+        total,
+        ratings,
+        examAnswers,
+      })
+      if (res.coins_balance !== undefined) {
+        setUser((u) => (u ? { ...u, coins: res.coins_balance } : u))
+      }
+      if (res.is_last && res.passed) {
+        setCertificate({ ...res.certificate, coins_earned: res.coins_earned })
+        setScreen('certificate')
+      } else {
+        setLessonResult(res)
+        setScreen('course-done')
+      }
+    } catch (e) {
+      showError(e)
+    }
+  }, [lesson, showError])
+
+  const backToCourse = useCallback(() => {
+    setLesson(null)
+    setLessonResult(null)
+    setCertificate(null)
+    setScreen('course')
+  }, [])
+
   const goHome = useCallback(async () => {
     setDuel(null)
     setResult(null)
@@ -630,6 +704,9 @@ const pickCategory = useCallback(async (category, difficulty) => {
     setCompatResult(null)
     setNumerologyTest(null)
     setNumerologyResult(null)
+    setLesson(null)
+    setLessonResult(null)
+    setCertificate(null)
     setError(null)
     setScreen('home')
     // подтянуть баланс на случай, если соперник дозакрыл дуэль
@@ -988,6 +1065,52 @@ const pickCategory = useCallback(async (category, difficulty) => {
         />
       )
 
+    case 'learn':
+      return <LearnScreen onOpenCourse={openCourse} />
+
+    case 'course':
+      return (
+        <CourseScreen
+          courseKey={courseKey}
+          busy={busy}
+          onBack={() => setScreen('learn')}
+          onStartDay={startLesson}
+          onOpenCertificate={(cert) => {
+            setCertificate(cert)
+            setScreen('certificate')
+          }}
+        />
+      )
+
+    case 'course-lesson':
+      return (
+        <CourseLessonScreen
+          lesson={lesson}
+          examOnly={lesson.examOnly}
+          onComplete={completeLesson}
+          onExit={backToCourse}
+        />
+      )
+
+    case 'course-done':
+      return (
+        <CourseDayResultScreen
+          result={lessonResult}
+          exam={lesson?.exam}
+          onBackToCourse={backToCourse}
+          onRetakeExam={() => startLesson(courseKey, { examOnly: true })}
+        />
+      )
+
+    case 'certificate':
+      return (
+        <CertificateScreen
+          certificate={certificate}
+          coinsEarned={certificate?.coins_earned}
+          onBack={backToCourse}
+        />
+      )
+
     case 'profile':
       return (
         <ProfileScreen
@@ -1024,10 +1147,10 @@ const pickCategory = useCallback(async (category, difficulty) => {
   }
   })()
 
-  // Таббар — только на 4 корневых экранах; во время игры/подэкранов
+  // Таббар — только на 5 корневых экранах; во время игры/подэкранов
   // (даже внутри своей вкладки, например Настройки под Профилем) не
   // рендерится вовсе, а не просто прячется стилями.
-  const ROOT_TABS = ['home', 'fun-hub', 'shop', 'profile']
+  const ROOT_TABS = ['home', 'learn', 'fun-hub', 'shop', 'profile']
 
   return (
     <>

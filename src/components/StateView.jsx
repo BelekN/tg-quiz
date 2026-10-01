@@ -23,6 +23,10 @@ const MESSAGES = {
   ALREADY_PLAYED: 'Вы уже сыграли в этой дуэли.',
   ALREADY_PLAYED_TODAY: 'Вы уже прошли сегодняшний вызов — новый будет завтра.',
   NOT_ENOUGH_QUESTIONS: 'В базе пока мало вопросов.',
+  COURSE_NOT_FOUND: 'Курс не найден — возможно, его сняли с публикации.',
+  COURSE_DAY_LOCKED: 'На сегодня день курса уже пройден — следующий откроется завтра.',
+  COURSE_COMPLETED: 'Курс уже пройден — сертификат ждёт тебя на экране курса.',
+  COURSE_DAY_MISMATCH: 'Этот день уже засчитан. Вернитесь к курсу — прогресс сохранён.',
 }
 
 export function ErrorView({ code, detail, onRetry, secondaryAction, onReport }) {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseDuelStartParam } from './api'
+import { parseDuelStartParam, parseCourseStartParam } from './api'
 
 describe('parseDuelStartParam', () => {
   it('extracts the uuid out of a duel_<uuid> start param', () => {
@@ -13,5 +13,18 @@ describe('parseDuelStartParam', () => {
     expect(parseDuelStartParam('')).toBeNull()
     expect(parseDuelStartParam('not_a_duel_param')).toBeNull()
     expect(parseDuelStartParam('duel_not-a-real-uuid')).toBeNull()
+  })
+})
+
+describe('parseCourseStartParam', () => {
+  it('extracts the course key from course_<key>', () => {
+    expect(parseCourseStartParam('course_logic-fallacies')).toBe('logic-fallacies')
+  })
+
+  it('rejects malformed params', () => {
+    expect(parseCourseStartParam(null)).toBeNull()
+    expect(parseCourseStartParam('course_')).toBeNull()
+    expect(parseCourseStartParam('course_Bad Key')).toBeNull()
+    expect(parseCourseStartParam('duel_logic')).toBeNull()
   })
 })

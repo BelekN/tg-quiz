@@ -314,3 +314,36 @@ export const claimReferral = (referrerTgId) =>
 
 /** Сколько друзей уже пришло по моей ссылке. -> { invited_count, coins_per_referral } */
 export const fetchReferralStats = () => call('referral_stats')
+
+/** «Учёба»: каталог курсов с прогрессом. -> { items: [{key, title, subtitle, description, icon, total_days, days_done, started, completed, available_today}] } */
+export const fetchCourses = () => call('courses')
+
+/** Экран курса: дни, изученные карточки (с box Лейтнера), сертификат если сдан. */
+export const fetchCourse = (courseKey) => call('course', { course_key: courseKey })
+
+/**
+ * Старт текущего дня курса (записывает на курс при первом заходе).
+ * -> { day, total_days, title, is_last, theory, practice, review, new_cards, review_cards, exam, pass_score, exam_attempts }
+ */
+export const startCourseDay = (courseKey) => call('start_course_day', { course_key: courseKey })
+
+/**
+ * Завершить день: ratings — { card_key: 'forgot'|'hard'|'easy' }. На
+ * последнем дне вместо оценок — examAnswers (индексы вариантов по
+ * порядку вопросов), их проверяет сервер.
+ */
+export const completeCourseDay = (courseKey, day, { correct, total, ratings, examAnswers }) =>
+  call('complete_course_day', {
+    course_key: courseKey,
+    day,
+    correct,
+    total,
+    ratings: ratings ?? null,
+    exam_answers: examAnswers ?? null,
+  })
+
+/** course_<key> -> key (ссылка из пуша «день курса ждёт») */
+export function parseCourseStartParam(startParam) {
+  const m = /^course_([a-z0-9-]{1,48})$/.exec(startParam ?? '')
+  return m ? m[1] : null
+}

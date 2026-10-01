@@ -3,9 +3,9 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import TabBar from './TabBar'
 
 describe('TabBar', () => {
-  it('renders exactly 4 tabs', () => {
+  it('renders exactly 5 tabs', () => {
     render(<TabBar active="home" onChange={vi.fn()} />)
-    expect(screen.getAllByRole('button')).toHaveLength(4)
+    expect(screen.getAllByRole('button')).toHaveLength(5)
   })
 
   it('calls onChange with the tapped tab key', () => {
