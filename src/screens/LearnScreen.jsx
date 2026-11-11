@@ -59,7 +59,7 @@ function CourseCard({ course: c, iconBg, onOpen }) {
  * Без очков и рейтинга, как и «Для удовольствия». Курсы разложены по
  * разделам (lib/learnCatalog.js), сверху — чипы-фильтры по разделам.
  */
-export default function LearnScreen({ onOpenCourse }) {
+export default function LearnScreen({ onOpenCourse, onOpenPdd }) {
   const [state, setState] = useState({ status: 'loading', items: [] })
   const [filter, setFilter] = useState('all')
   const groups = useMemo(() => groupLearnCatalog(state.items), [state.items])
@@ -85,6 +85,23 @@ export default function LearnScreen({ onOpenCourse }) {
       <p className="mt-1 text-sm text-tg-hint">
         3–5 минут в день: немного теории, немного практики — и через 7 дней тема твоя
       </p>
+
+      {/* ПДД — не 7-дневный курс, а тренажёр: свой экран, всегда сверху */}
+      <button
+        type="button"
+        onClick={() => {
+          haptic.tap()
+          onOpenPdd()
+        }}
+        className="animate-rise mt-4 flex items-center gap-3.5 rounded-3xl border border-white/5 bg-tg-section p-4 text-left transition-transform active:scale-[0.98]"
+      >
+        <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-amber-500/20 text-3xl">🚗</span>
+        <span className="flex-1">
+          <span className="block text-[16px] font-bold leading-tight">ПДД Кыргызстана</span>
+          <span className="mt-0.5 block text-xs text-tg-hint">Экзамен как на права и тренировка по темам</span>
+        </span>
+        <span className="text-tg-hint">›</span>
+      </button>
 
       <div className="-mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
         {[{ key: 'all', icon: '✨', title: 'Все' }, ...groups].map((g) => (

@@ -342,6 +342,25 @@ export const completeCourseDay = (courseKey, day, { correct, total, ratings, exa
     exam_answers: examAnswers ?? null,
   })
 
+/** «Учёба» → ПДД: правила и статистика экзамена + темы с прогрессом. */
+export const fetchPdd = () => call('pdd')
+
+/** Тренировка по теме. -> { topic, questions: [{id, question, sign, options, answer, explain}] } */
+export const startPddTraining = (topicKey) => call('start_pdd_training', { topic_key: topicKey })
+
+/** Итог раунда тренировки (только для прогресса). -> { correct, total, best_correct, topic_total } */
+export const finishPddTraining = (topicKey, { correct, total }) =>
+  call('finish_pdd_training', { topic_key: topicKey, correct, total })
+
+/** Экзамен. -> { exam_id, questions, minutes, max_errors, started_at, questions: [{id, question, sign, options}] } */
+export const startPddExam = () => call('start_pdd_exam')
+
+/**
+ * Сдать экзамен: answers — индексы в ИСХОДНОМ порядке options, -1 — без
+ * ответа. -> { correct, total, passed, timed_out, max_errors, review: [{id, picked, answer, correct, explain}] }
+ */
+export const finishPddExam = (examId, answers) => call('finish_pdd_exam', { exam_id: examId, answers })
+
 /** course_<key> -> key (ссылка из пуша «день курса ждёт») */
 export function parseCourseStartParam(startParam) {
   const m = /^course_([a-z0-9-]{1,48})$/.exec(startParam ?? '')

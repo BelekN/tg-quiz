@@ -90,6 +90,10 @@ const FUNNEL_ACTIONS = new Set([
   "claim_referral",
   "start_course_day",
   "complete_course_day",
+  "start_pdd_training",
+  "finish_pdd_training",
+  "start_pdd_exam",
+  "finish_pdd_exam",
 ]);
 
 const json = (body: unknown, status = 200) =>
@@ -976,6 +980,57 @@ Deno.serve(async (req) => {
           p_total: payload.total ?? 0,
           p_ratings: payload.ratings ?? null,
           p_exam_answers: examAnswers,
+        });
+        if (error) throw error;
+        return json(data);
+      }
+
+      // ---- «Учёба» → ПДД: правила экзамена, статистика, темы с прогрессом ----
+      case "pdd": {
+        const { data, error } = await supabase.rpc("get_pdd", { p_tg_id: tgId });
+        if (error) throw error;
+        return json(data);
+      }
+
+      // ---- ПДД: тренировка по теме (вопросы сразу с ответами) ----
+      case "start_pdd_training": {
+        const { data, error } = await supabase.rpc("start_pdd_training", {
+          p_tg_id: tgId,
+          p_topic_key: String(payload.topic_key ?? ""),
+        });
+        if (error) throw error;
+        return json(data);
+      }
+
+      // ---- ПДД: итог раунда тренировки (только прогресс, без наград) ----
+      case "finish_pdd_training": {
+        const { data, error } = await supabase.rpc("finish_pdd_training", {
+          p_tg_id: tgId,
+          p_topic_key: String(payload.topic_key ?? ""),
+          p_correct: Number.isInteger(payload.correct) ? payload.correct : 0,
+          p_total: Number.isInteger(payload.total) ? payload.total : 0,
+        });
+        if (error) throw error;
+        return json(data);
+      }
+
+      // ---- ПДД: экзамен — 20 вопросов без ответов ----
+      case "start_pdd_exam": {
+        const { data, error } = await supabase.rpc("start_pdd_exam", { p_tg_id: tgId });
+        if (error) throw error;
+        return json(data);
+      }
+
+      // ---- ПДД: сдать экзамен — проверяет сервер, время тоже считает сервер ----
+      case "finish_pdd_exam": {
+        if (!Number.isInteger(payload.exam_id)) return json({ error: "PDD_EXAM_NOT_FOUND" }, 400);
+        const answers = Array.isArray(payload.answers)
+          ? payload.answers.slice(0, 100).map((a: unknown) => (Number.isInteger(a) ? a : -1))
+          : null;
+        const { data, error } = await supabase.rpc("finish_pdd_exam", {
+          p_tg_id: tgId,
+          p_exam_id: payload.exam_id,
+          p_answers: answers,
         });
         if (error) throw error;
         return json(data);

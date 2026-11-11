@@ -42,6 +42,9 @@ import CourseScreen from './screens/CourseScreen'
 import CourseLessonScreen from './screens/CourseLessonScreen'
 import CourseDayResultScreen from './screens/CourseDayResultScreen'
 import CertificateScreen from './screens/CertificateScreen'
+import PddScreen from './screens/PddScreen'
+import PddQuizScreen from './screens/PddQuizScreen'
+import PddResultScreen from './screens/PddResultScreen'
 import { Loader, ErrorView } from './components/StateView'
 import ReportIssueScreen from './screens/ReportIssueScreen'
 import SettingsScreen from './screens/SettingsScreen'
@@ -79,7 +82,12 @@ import {
   startCourseDay,
   completeCourseDay,
   parseCourseStartParam,
+  startPddTraining,
+  finishPddTraining,
+  startPddExam,
+  finishPddExam,
 } from './lib/api'
+import { shuffleQuestion, toOriginalIndex, toShownIndex } from './lib/pdd'
 import { computePersonaResult } from './lib/persona'
 import { getRank } from './lib/ranks'
 import { initTelegram, getTgUser, getStartParam } from './lib/telegram'
@@ -189,6 +197,9 @@ export default function App() {
   const [lesson, setLesson] = useState(null) // ответ start_course_day + examOnly
   const [lessonResult, setLessonResult] = useState(null)
   const [certificate, setCertificate] = useState(null) // { ...certificate, coins_earned? }
+
+  const [pdd, setPdd] = useState(null) // { mode, topicKey?, examId?, title, icon, questions, rules?, deadline? }
+  const [pddResult, setPddResult] = useState(null)
 
   const [newAchievements, setNewAchievements] = useState(null)
   const [newRank, setNewRank] = useState(null)
@@ -729,6 +740,114 @@ export default function App() {
     }
   }, [lesson, showError])
 
+  // ---- «Учёба» → ПДД ----
+  // Варианты перемешиваем здесь, один раз на попытку: в банке правильный
+  // ответ часто стоит первым (см. lib/pdd.js).
+  const startPddTopic = useCallback(
+    (topicKey) =>
+      runStart(
+        () => startPddTraining(topicKey),
+        (started) => {
+          setPddResult(null)
+          setPdd({
+            mode: 'training',
+            topicKey,
+            title: started.topic.title,
+            icon: started.topic.icon,
+            questions: started.questions.map((q) => shuffleQuestion(q)),
+          })
+          setScreen('pdd-quiz')
+        },
+      ),
+    [runStart],
+  )
+
+  const startPddExamFlow = useCallback(
+    () =>
+      runStart(
+        () => startPddExam(),
+        (started) => {
+          setPddResult(null)
+          setPdd({
+            mode: 'exam',
+            examId: started.exam_id,
+            title: 'Экзамен',
+            icon: '📝',
+            rules: { questions: started.questions.length, minutes: started.minutes, max_errors: started.max_errors },
+            // Срок считаем от момента, когда билет пришёл; сервер проверяет
+            // своё время с минутой запаса на сеть.
+            deadline: Date.now() + started.minutes * 60_000,
+            questions: started.questions.map((q) => shuffleQuestion(q)),
+          })
+          setScreen('pdd-quiz')
+        },
+      ),
+    [runStart],
+  )
+
+  const finishPdd = useCallback(
+    async ({ answers, correct, total }) => {
+      const session = pdd
+      setScreen('finishing')
+      if (session.mode === 'training') {
+        // Прогресс по теме — best-effort: не сохранился, разбор всё равно покажем.
+        try {
+          await withNetworkRetry(() => finishPddTraining(session.topicKey, { correct, total }))
+        } catch {
+          /* прогресс не записался — не повод терять разбор */
+        }
+        setPddResult({
+          mode: 'training',
+          title: `${session.icon} ${session.title}`,
+          correct,
+          total,
+          mistakes: session.questions
+            .map((q, i) => ({ ...q, picked: answers[i] ?? -1 }))
+            .filter((q) => q.picked !== q.answer),
+        })
+        setScreen('pdd-result')
+        return
+      }
+      try {
+        const res = await withNetworkRetry(() =>
+          finishPddExam(
+            session.examId,
+            session.questions.map((q, i) => toOriginalIndex(q, answers[i])),
+          ),
+        )
+        const byId = new Map(res.review.map((r) => [r.id, r]))
+        setPddResult({
+          mode: 'exam',
+          title: '📝 Экзамен по ПДД',
+          correct: res.correct,
+          total: res.total,
+          passed: res.passed,
+          timedOut: res.timed_out,
+          maxErrors: res.max_errors,
+          mistakes: session.questions
+            .map((q) => ({ q, r: byId.get(q.id) }))
+            .filter(({ r }) => r && !r.correct)
+            .map(({ q, r }) => ({
+              ...q,
+              picked: toShownIndex(q, r.picked),
+              answer: toShownIndex(q, r.answer),
+              explain: r.explain,
+            })),
+        })
+        setScreen('pdd-result')
+      } catch (e) {
+        showError(e)
+      }
+    },
+    [pdd, showError],
+  )
+
+  const backToPdd = useCallback(() => {
+    setPdd(null)
+    setPddResult(null)
+    setScreen('pdd')
+  }, [])
+
   const backToCourse = useCallback(() => {
     setLesson(null)
     setLessonResult(null)
@@ -756,6 +875,8 @@ export default function App() {
     setLesson(null)
     setLessonResult(null)
     setCertificate(null)
+    setPdd(null)
+    setPddResult(null)
     setError(null)
     setScreen('home')
     // подтянуть баланс на случай, если соперник дозакрыл дуэль
@@ -1122,7 +1243,30 @@ export default function App() {
       )
 
     case 'learn':
-      return <LearnScreen onOpenCourse={openCourse} />
+      return <LearnScreen onOpenCourse={openCourse} onOpenPdd={() => setScreen('pdd')} />
+
+    case 'pdd':
+      return (
+        <PddScreen
+          busy={busy}
+          onBack={() => setScreen('learn')}
+          onStartExam={startPddExamFlow}
+          onStartTopic={startPddTopic}
+        />
+      )
+
+    case 'pdd-quiz':
+      return <PddQuizScreen key={pdd.examId ?? pdd.topicKey} session={pdd} onFinish={finishPdd} onExit={backToPdd} />
+
+    case 'pdd-result':
+      return (
+        <PddResultScreen
+          result={pddResult}
+          busy={busy}
+          onAgain={pddResult.mode === 'exam' ? startPddExamFlow : () => startPddTopic(pdd.topicKey)}
+          onBack={backToPdd}
+        />
+      )
 
     case 'course':
       return (

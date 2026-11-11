@@ -3,6 +3,7 @@
  * Позволяют крутить все экраны в обычном браузере, без бота
  * и без задеплоенной Edge Function.
  */
+import PDD_BANK from '../../supabase/pdd/questions.json'
 const QUESTIONS = [
   {
     id: 'q1',
@@ -264,6 +265,15 @@ const cardOrd = (course, key) => course.cards.findIndex((c) => c.key === key)
 
 const courseCardsOf = (course, keys) =>
   course.cards.filter((c) => keys.includes(c.key)).map(({ key, title, icon }) => ({ key, title, icon }))
+
+
+// ---- «Учёба» → ПДД: та же логика, что в 080_pdd.sql, но в памяти ----
+
+const PDD_RULES = { questions: 20, minutes: 25, max_errors: 2 }
+const pddProgress = {} // topic -> { attempts, best_correct, last_correct, last_total }
+const pddExams = [] // { id, ids, started_at, finished_at, correct, passed, timed_out }
+const pddRandom = (arr) => [...arr].sort(() => Math.random() - 0.5)
+const pddPublic = ({ id, question, sign, options }) => ({ id, question, sign: sign ?? null, options })
 
 export const mockApi = {
   async me() {
@@ -927,6 +937,103 @@ export const mockApi = {
     await wait(300)
     meUser.coins += 30
     return { reward: 30 }
+  },
+
+  async pdd() {
+    await wait(250)
+    const done = pddExams.filter((e) => e.finished_at)
+    const last = done.at(-1)
+    return {
+      exam: {
+        ...PDD_RULES,
+        taken: done.length,
+        passed: done.filter((e) => e.passed).length,
+        best: done.some((e) => !e.timed_out) ? Math.max(...done.filter((e) => !e.timed_out).map((e) => e.correct)) : null,
+        last: last
+          ? { correct: last.correct, total: last.ids.length, passed: last.passed, timed_out: last.timed_out, finished_at: last.finished_at }
+          : null,
+      },
+      topics: PDD_BANK.topics.map((t) => {
+        const p = pddProgress[t.key]
+        return {
+          key: t.key,
+          title: t.title,
+          icon: t.icon,
+          in_exam: t.in_exam !== false,
+          total: PDD_BANK.questions.filter((q) => q.topic === t.key).length,
+          attempts: p?.attempts ?? 0,
+          best_correct: p?.best_correct ?? 0,
+          last_correct: p?.last_correct ?? null,
+          last_total: p?.last_total ?? null,
+        }
+      }),
+    }
+  },
+
+  async start_pdd_training({ topic_key }) {
+    await wait(250)
+    const t = PDD_BANK.topics.find((x) => x.key === topic_key)
+    if (!t) throw new Error('PDD_TOPIC_NOT_FOUND')
+    return {
+      topic: { key: t.key, title: t.title, icon: t.icon },
+      questions: pddRandom(PDD_BANK.questions.filter((q) => q.topic === t.key)).map((q) => ({
+        ...pddPublic(q),
+        answer: q.answer,
+        explain: q.explain,
+      })),
+    }
+  },
+
+  async finish_pdd_training({ topic_key, correct, total }) {
+    await wait(200)
+    const max = PDD_BANK.questions.filter((q) => q.topic === topic_key).length
+    const tot = Math.min(Math.max(total, 0), max)
+    const cor = Math.min(Math.max(correct, 0), tot)
+    const p = (pddProgress[topic_key] ??= { attempts: 0, best_correct: 0 })
+    Object.assign(p, { attempts: p.attempts + 1, best_correct: Math.max(p.best_correct, cor), last_correct: cor, last_total: tot })
+    return { correct: cor, total: tot, best_correct: p.best_correct, topic_total: max }
+  },
+
+  async start_pdd_exam() {
+    await wait(300)
+    const examTopics = PDD_BANK.topics.filter((t) => t.in_exam !== false).map((t) => t.key)
+    // как в SQL: по одному вопросу из каждой темы по кругу
+    const byTopic = examTopics.map((k) => pddRandom(PDD_BANK.questions.filter((q) => q.topic === k)))
+    const picked = []
+    for (let round = 0; picked.length < PDD_RULES.questions; round++) {
+      for (const list of pddRandom(byTopic)) {
+        if (list[round] && picked.length < PDD_RULES.questions) picked.push(list[round])
+      }
+    }
+    const exam = { id: pddExams.length + 1, ids: pddRandom(picked).map((q) => q.id), started_at: new Date().toISOString() }
+    pddExams.push(exam)
+    return {
+      ...PDD_RULES,
+      exam_id: exam.id,
+      started_at: exam.started_at,
+      questions: exam.ids.map((id) => pddPublic(PDD_BANK.questions.find((q) => q.id === id))),
+    }
+  },
+
+  async finish_pdd_exam({ exam_id, answers }) {
+    await wait(400)
+    const exam = pddExams.find((e) => e.id === exam_id)
+    if (!exam) throw new Error('PDD_EXAM_NOT_FOUND')
+    if (exam.finished_at) throw new Error('PDD_EXAM_FINISHED')
+    if (answers?.length !== exam.ids.length) throw new Error('INVALID_EXAM_ANSWERS')
+    const review = exam.ids.map((id, i) => {
+      const q = PDD_BANK.questions.find((x) => x.id === id)
+      return { id, picked: answers[i], answer: q.answer, correct: answers[i] === q.answer, explain: q.explain }
+    })
+    const correct = review.filter((r) => r.correct).length
+    const timedOut = Date.now() - Date.parse(exam.started_at) > (PDD_RULES.minutes + 1) * 60_000
+    Object.assign(exam, {
+      finished_at: new Date().toISOString(),
+      correct,
+      timed_out: timedOut,
+      passed: !timedOut && exam.ids.length - correct <= PDD_RULES.max_errors,
+    })
+    return { ...PDD_RULES, correct, total: exam.ids.length, passed: exam.passed, timed_out: timedOut, review }
   },
 
   async courses() {
